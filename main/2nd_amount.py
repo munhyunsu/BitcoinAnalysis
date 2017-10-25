@@ -14,11 +14,16 @@ import datetime
 import hashlib
 # base58: https://github.com/keis/base58
 import base58
-# traceback
-import traceback
+
+otime = 0
+oinputs = list()
+ooutputs = list()
 
 
 def main(argv):
+    global otime
+    global oinputs
+    global ooutputs
     # TODO(LuHa): check argument about analyze target blk file
     if len(argv) < 2:
         print('[BP] Need block file from bitcoin')
@@ -35,62 +40,66 @@ def main(argv):
 
     try:
         while read_block(blk_input):
-            pass
-    except:
-        traceback.print_exc()
+            print('{0} {1}->{2}'.format(otime, oinputs, ooutputs))
+            otime = 0
+            oinputs.clear()
+            ooutputs.clear()
+    except Exception:
+        traceback.print_exception()
 
 
 def read_block(blk):
+    global otime
     # TODO(LuHa): check magic number
     magic_no = read_bytes(blk, 4, True)
     magic_no = magic_no.hex().upper()
     # bitcoins magic number 0xD9B4BEF9, byte ordering: F9BEB4D9
     if magic_no != 'D9B4BEF9':
-        print('[BP] Not bitcoin blk')
+    #    print('[BP] Not bitcoin blk')
         return False
-    print('[BP] Magic number:', magic_no)
+    #print('[BP] Magic number:', magic_no)
 
     # TODO(LuHa): block size
     block_size = read_bytes(blk, 4)
     block_size = int.from_bytes(block_size, byteorder = 'little')
-    print('[BP] Block size:', block_size)
+    #print('[BP] Block size:', block_size)
 
     # TODO(LuHa): version
     version = read_bytes(blk, 4)
     version = int.from_bytes(version, byteorder = 'little')
-    print('[BP] Version:', version)
+    #print('[BP] Version:', version)
 
     # TODO(LuHa): previous hash
     hash_prev_block = read_bytes(blk, 32)
     hash_prev_block = hash_prev_block.hex()
-    print('[BP] Previous hash:', hash_prev_block)
+    #print('[BP] Previous hash:', hash_prev_block)
 
     # TODO(LuHa): merkle hash
     hash_merkle_root = read_bytes(blk, 32)
     hash_merkle_root = hash_merkle_root.hex()
-    print('[BP] Merkle hash:', hash_merkle_root)
+    #print('[BP] Merkle hash:', hash_merkle_root)
 
     # TODO(LuHa): timestamp
     timestamp = read_bytes(blk, 4)
-    print(timestamp)
     timestamp = int.from_bytes(timestamp, byteorder = 'little')
-    print('[BP] Timestamp:', timestamp, 
-                  datetime.datetime.fromtimestamp(timestamp,
-                  datetime.timezone.utc).strftime('%d.%m.%Y %H:%M:%S'))
+    #print('[BP] Timestamp:', timestamp, 
+    #              datetime.datetime.fromtimestamp(timestamp).strftime(
+    #                      '%d.%m.%Y %H:%M'))
+    otime = timestamp
 
     # TODO(LuHa): bits
     bits = read_bytes(blk, 4)
     bits = int.from_bytes(bits, byteorder = 'little')
-    print('[BP] Bits:', bits)
+    #print('[BP] Bits:', bits)
 
     # TODO(LuHa): nonce
     nonce = read_bytes(blk, 4)
     nonce = int.from_bytes(nonce, byteorder = 'little')
-    print('[BP] Nonce:', nonce)
+    #print('[BP] Nonce:', nonce)
 
     # TODO(LuHa): transaction counter
     transaction_counter = read_var_int(blk)
-    print('[BP] Transaction counter:', transaction_counter)
+    #print('[BP] Transaction counter:', transaction_counter)
 
     for index in range(0, transaction_counter):
         read_transaction(blk)
@@ -103,11 +112,11 @@ def read_transaction(blk):
     # TODO(LuHa): version
     version = read_bytes(blk, 4)
     version = int.from_bytes(version, byteorder = 'little')
-    print('[BP] T Version:', version)
+    #print('[BP] T Version:', version)
 
     # TODO(LuHa): in counter
     in_counter = read_var_int(blk)
-    print('[BP] T In counter:', in_counter)
+    #print('[BP] T In counter:', in_counter)
 
     # TODO(LuHa): inputs
     for index in range(0, in_counter):
@@ -115,7 +124,7 @@ def read_transaction(blk):
 
     # TODO(LuHa): out counter
     out_counter = read_var_int(blk)
-    print('[BP] T Out counter:', out_counter)
+    #print('[BP] T Out counter:', out_counter)
 
     # TODO(LuHa): outputs
     for index in range(0, out_counter):
@@ -124,59 +133,63 @@ def read_transaction(blk):
     # TODO(LuHa): locktime
     locktime = read_bytes(blk, 4)
     locktime = int.from_bytes(locktime, byteorder = 'little')
-    print('[BP] T Locktime:', locktime)
+    #print('[BP] T Locktime:', locktime)
 
 
 def read_inputs(blk):
+    global oinputs
     # TODO(LuHa): Previous transaction hash
     prev_tx_hash = read_bytes(blk, 32)
     prev_tx_hash = prev_tx_hash.hex()
-    print('[BP] TI Previous Txin hash:', prev_tx_hash)
+    #print('[BP] TI Previous Txin hash:', prev_tx_hash)
 
     # TODO(LuHa): Previous txout index
     prev_tx_index = read_bytes(blk, 4)
     prev_tx_index = prev_tx_index.hex()
-    print('[BP] TI Previous Txout index:', prev_tx_index)
+    #print('[BP] TI Previous Txout index:', prev_tx_index)
 
     # TODO(LuHa): Txin script length
     txin_script_length = read_var_int(blk)
-    print('[BP] TI Txin script length:', txin_script_length)
+    #print('[BP] TI Txin script length:', txin_script_length)
 
     # TODO(LuHa): Txin script
     txin_script = read_bytes(blk, txin_script_length)
     txin_script = txin_script.hex()
-    print('[BP] TI Txin script:', txin_script)
+    #print('[BP] TI Txin script:', txin_script)
 
     # TODO(LuHa): Txin address
     txin_address = get_address_from_pubkey(txin_script)
-    print('[BP] TI Txin address:', txin_address)
+    oinputs.append(txin_address)
+    #print('[BP] TI Txin address:', txin_address)
 
     # TODO(LuHa): sequence number
     sequence_no = read_bytes(blk, 4)
     sequence_no = sequence_no.hex()
-    print('[BP] TI Sequence number:', sequence_no)
+    #print('[BP] TI Sequence number:', sequence_no)
 
 
 
 def read_outputs(blk):
+    global ooutputs
     # TODO(LuHa): value
     value = read_bytes(blk, 8)
     value = int.from_bytes(value, byteorder = 'little')
     value = value / (100000000.0)
-    print('[BP] TO Value:', value)
+    #print('[BP] TO Value:', value)
 
     # TODO(LuHa): Txout script length
     txout_script_length = read_var_int(blk)
-    print('[BP] TO Txout script length:', txout_script_length)
+    #print('[BP] TO Txout script length:', txout_script_length)
 
     # TODO(LuHa): Txout script
     txout_script = read_bytes(blk, txout_script_length)
     txout_script = txout_script.hex()
-    print('[BP] TO Txout script:', txout_script)
+    #print('[BP] TO Txout script:', txout_script)
 
     # TODO(LuHa): Txout address
     txout_address = get_address_from_pubkey(txout_script)
-    print('[BP] TO Txout address:', txout_address)
+    #print('[BP] TO Txout address:', txout_address)
+    ooutputs.append((txout_address, value))
 
 
 def read_bytes(blk, size, reverse = False):
