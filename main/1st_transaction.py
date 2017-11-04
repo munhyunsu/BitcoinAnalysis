@@ -35,14 +35,15 @@ def main(argv):
 
     try:
         while read_block(blk_input):
-            pass
+            break
     except:
         traceback.print_exc()
+        print('Error line:', hex(blk_input.tell()))
 
 
 def read_block(blk):
     # TODO(LuHa): check magic number
-    magic_no = read_bytes(blk, 4, True)
+    magic_no = read_bytes(blk, 4, reverse = True)
     magic_no = magic_no.hex().upper()
     # bitcoins magic number 0xD9B4BEF9, byte ordering: F9BEB4D9
     if magic_no != 'D9B4BEF9':
@@ -55,28 +56,30 @@ def read_block(blk):
     block_size = int.from_bytes(block_size, byteorder = 'little')
     print('[BP] Block size:', block_size)
 
+    # Begin of block header: 80 bytes
     # TODO(LuHa): version
-    version = read_bytes(blk, 4)
-    version = int.from_bytes(version, byteorder = 'little')
-    print('[BP] Version:', version)
+    #version = read_bytes(blk, 4)
+    #version = int.from_bytes(version, byteorder = 'little')
+    version = read_bytes(blk, 4, reverse = True)
+    version = version.hex()
+    print('[BP] Version: 0x{0}'.format(version))
 
     # TODO(LuHa): previous hash
-    hash_prev_block = read_bytes(blk, 32)
+    hash_prev_block = read_bytes(blk, 32, reverse = True)
     hash_prev_block = hash_prev_block.hex()
     print('[BP] Previous hash:', hash_prev_block)
 
     # TODO(LuHa): merkle hash
-    hash_merkle_root = read_bytes(blk, 32)
+    hash_merkle_root = read_bytes(blk, 32, reverse = True)
     hash_merkle_root = hash_merkle_root.hex()
     print('[BP] Merkle hash:', hash_merkle_root)
 
     # TODO(LuHa): timestamp
     timestamp = read_bytes(blk, 4)
-    print(timestamp)
     timestamp = int.from_bytes(timestamp, byteorder = 'little')
     print('[BP] Timestamp:', timestamp, 
                   datetime.datetime.fromtimestamp(timestamp,
-                  datetime.timezone.utc).strftime('%d.%m.%Y %H:%M:%S'))
+                  datetime.timezone.utc).strftime('%Y.%m.%d %H:%M:%S'))
 
     # TODO(LuHa): bits
     bits = read_bytes(blk, 4)
@@ -87,12 +90,17 @@ def read_block(blk):
     nonce = read_bytes(blk, 4)
     nonce = int.from_bytes(nonce, byteorder = 'little')
     print('[BP] Nonce:', nonce)
+    # End of block header
 
     # TODO(LuHa): transaction counter
     transaction_counter = read_var_int(blk)
     print('[BP] Transaction counter:', transaction_counter)
 
-    for index in range(0, transaction_counter):
+    # TODO(LuHa): first transacion of block
+    read_codebase(blk)
+
+    # TODO(LuHa): read transacion
+    for index in range(0, transaction_counter-1):
         read_transaction(blk)
 
     return True
@@ -101,13 +109,28 @@ def read_block(blk):
 
 def read_transaction(blk):
     # TODO(LuHa): version
-    version = read_bytes(blk, 4)
-    version = int.from_bytes(version, byteorder = 'little')
-    print('[BP] T Version:', version)
+    #version = read_bytes(blk, 4)
+    #version = int.from_bytes(version, byteorder = 'little')
+    version = read_bytes(blk, 4, reverse = True)
+    version = version.hex()
+    #print('[BP] T Version: 0x{0}'.format(version))
+    print('[BP] T Version: 0x{0} {1}'.format(version, hex(blk.tell())))
 
     # TODO(LuHa): in counter
     in_counter = read_var_int(blk)
     print('[BP] T In counter:', in_counter)
+
+    # TODO(LuHa): in_counter zero exception
+#    if in_counter == 0:
+#        junction = read_bytes(blk, 1)
+#        junction = read_bytes(blk, 1)
+#        junction = junction.hex()
+#        if junction == '01':
+#            read_inzero(blk)
+#        #elif junction == '03':
+#        else:
+#            read_inscript(blk)
+#        return
 
     # TODO(LuHa): inputs
     for index in range(0, in_counter):
@@ -125,6 +148,199 @@ def read_transaction(blk):
     locktime = read_bytes(blk, 4)
     locktime = int.from_bytes(locktime, byteorder = 'little')
     print('[BP] T Locktime:', locktime)
+
+
+def read_inscript(blk):
+    # TODO(LuHa): script counter
+    script_counter = read_var_int(blk)
+    print('[BP] IS script counter:', script_counter)
+
+    # TODO(LuHa): script
+    for index in range(0, script_counter):
+        script_length = read_var_int(blk)
+        print('[BP] IS script length:', script_length)
+        script = read_bytes(blk, script_length)
+        script = script.hex()
+        print('[BP] IS script: 0x{0}'.format(script))
+
+    # TODO(LuHa): sequence
+    sequence = read_bytes(blk, 4)
+    sequence = sequence.hex()
+    print('[BP] IS Sequence: 0x{0}'.format(sequence))
+        
+    # TODO(LuHa): out counter
+    out_counter = read_var_int(blk)
+    print('[BP] IZ Out counter:', out_counter)
+
+    # TODO(LuHa): outputs
+    for index in range(0, out_counter):
+        read_outputs(blk)
+
+    # TODO(LuHa): unknown script counter
+    unknown_counter = read_var_int(blk)
+    print('[BP] IZ Unknown script counter:', unknown_counter)
+
+    # TODO(LuHa): unknown script
+    for index in range(0, unknown_counter):
+        script_size = read_var_int(blk)
+        print('[BP] IZ Unknown script size:', script_size)
+        script = read_bytes(blk, script_size)
+        script = script.hex()
+        print('[BP] IZ Unknown script 0x{0}'.format(script))
+
+    # TODO(LuHa): unknown locktime
+    locktime = read_bytes(blk, 4)
+    locktime = int.from_bytes(locktime, byteorder = 'little')
+    print('[BP] iz Unknown locktime:', locktime)
+    
+
+
+def read_inzero(blk):
+    # TODO(LuHa): i dont know
+    unknown = read_bytes(blk, 1)
+    unknown = unknown.hex()
+    print('[BP] IZ unknown: 0x{0}'.format(unknown))
+    
+    # TODO(LuHa): hash
+    hash_cb = read_bytes(blk, 32)
+    hash_cb = hash_cb.hex()
+    print('[BP] IZ unknown hash: 0x{0}'.format(hash_cb))
+
+    # TODO(LuHa): index
+    index = read_bytes(blk, 5)
+    index = index.hex()
+    print('[BP] IZ Index: 0x{0}'.format(index))
+
+
+    # TODO(LuHa): height size
+    #height_size = read_bytes(blk, 1)
+    #height_size = int.from_bytes(height_size, byteorder = 'little')
+    #print('[BP] IZ Height size:', height_size)
+
+    # TODO(LuHa): height
+    #height = read_bytes(blk, height_size) # temporary
+    #height = read_bytes(blk, 2)
+    #height = int.from_bytes(height, byteorder = 'little')
+    #print('[BP] IZ Height:', height)
+
+    # TODO(LuHa): data
+    #data = read_bytes(blk, height_size)
+    #data = data.hex()
+    #print('[BP] IZ Data: 0x{0}'.format(data))
+
+    # TODO(LuHa): sequence
+    sequence = read_bytes(blk, 4)
+    sequence = sequence.hex()
+    print('[BP] IZ Sequence: 0x{0}'.format(sequence))
+
+    # TODO(LuHa): out counter
+    out_counter = read_var_int(blk)
+    print('[BP] IZ Out counter:', out_counter)
+
+    # TODO(LuHa): outputs
+    for index in range(0, out_counter):
+        read_outputs(blk)
+
+    # TODO(LuHa): unknown script counter
+    unknown_counter = read_var_int(blk)
+    print('[BP] IZ Unknown script counter:', unknown_counter)
+
+    # TODO(LuHa): unknown script
+    for index in range(0, unknown_counter):
+        script_size = read_var_int(blk)
+        print('[BP] IZ Unknown script size:', script_size)
+        script = read_bytes(blk, script_size)
+        script = script.hex()
+        print('[BP] IZ Unknown script 0x{0}'.format(script))
+
+    # TODO(LuHa): unknown locktime
+    locktime = read_bytes(blk, 4)
+    locktime = int.from_bytes(locktime, byteorder = 'little')
+    print('[BP] iz Unknown locktime:', locktime)
+    
+
+
+def read_codebase(blk):
+    # TODO(LuHa): version
+    #version = read_bytes(blk, 4)
+    #version = int.from_bytes(version, byteorder = 'little')
+    version = read_bytes(blk, 4, reverse = True)
+    version = version.hex()
+    print('[BP] T Version: 0x{0}'.format(version))
+
+    # TODO(LuHa): in counter
+    in_counter = read_var_int(blk)
+    print('[BP] T In counter:', in_counter)
+
+    # TODO(LuHa): i dont know
+    unknown = read_bytes(blk, 2)
+    unknown = unknown.hex()
+    print('[BP] CB unknown: 0x{0}'.format(unknown))
+    
+    # TODO(LuHa): hash
+    hash_cb = read_bytes(blk, 32)
+    hash_cb = hash_cb.hex()
+    print('[BP] CB Codebase hash: 0x{0}'.format(hash_cb))
+
+    # TODO(LuHa): index
+    index = read_bytes(blk, 4)
+    index = index.hex()
+    print('[BP] CB Index: 0x{0}'.format(index))
+
+    # TODO(LuHa): script bytes
+    script_bytes = read_var_int(blk)
+    print('[BP] CB Script bytes:', script_bytes)
+
+    # TODO(LuHa): height size
+    height_size = read_bytes(blk, 1)
+    height_size = int.from_bytes(height_size, byteorder = 'little')
+    print('[BP] CB Height size:', height_size)
+
+    # TODO(LuHa): height
+    #height = read_bytes(blk, height_size) # temporary
+    height = read_bytes(blk, 3)
+    height = int.from_bytes(height, byteorder = 'little')
+    print('[BP] CB Height:', height)
+
+    # TODO(LuHa): data
+    data = read_bytes(blk, script_bytes - 4)
+    data = data.hex()
+    print('[BP] CB Data: 0x{0}'.format(data))
+
+    # TODO(LuHa): sequence
+    sequence = read_bytes(blk, 4)
+    sequence = sequence.hex()
+    print('[BP] CB Sequence: 0x{0}'.format(sequence))
+
+    # TODO(LuHa): out counter
+    out_counter = read_var_int(blk)
+    print('[BP] CB Out counter:', out_counter)
+
+    # TODO(LuHa): outputs
+    for index in range(0, out_counter):
+        read_outputs(blk)
+
+    # TODO(LuHa): unknown script counter
+    unknown_counter = read_var_int(blk)
+    print('[BP] CB Unknown script counter:', unknown_counter)
+
+    # TODO(LuHa): unknown script
+    for index in range(0, unknown_counter):
+        script_size = read_var_int(blk)
+        print('[BP] CB Unknown script size:', script_size)
+        script = read_bytes(blk, script_size)
+        script = script.hex()
+        print('[BP] CB Unknown script 0x{0}'.format(script))
+
+    # TODO(LuHa): unknown locktime
+    locktime = read_bytes(blk, 4)
+    locktime = int.from_bytes(locktime, byteorder = 'little')
+    print('[BP] CB Unknown locktime:', locktime)
+    
+
+
+
+    
 
 
 def read_inputs(blk):
