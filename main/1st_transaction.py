@@ -33,9 +33,11 @@ def main(argv):
     #                   fieldnames = ['timestamp', 'from', 'to', 'btc'],
     #                   )
 
+    num = 1
     try:
         while read_block(blk_input):
-            break
+            print('[BP] Block number of this file:', num)
+            num = num+2
     except:
         traceback.print_exc()
         print('Error line:', hex(blk_input.tell()))
@@ -97,10 +99,10 @@ def read_block(blk):
     print('[BP] Transaction counter:', transaction_counter)
 
     # TODO(LuHa): first transacion of block
-    read_codebase(blk)
+    #read_codebase(blk)
 
     # TODO(LuHa): read transacion
-    for index in range(0, transaction_counter-1):
+    for index in range(0, transaction_counter):
         read_transaction(blk)
 
     return True
