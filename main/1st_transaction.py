@@ -37,7 +37,7 @@ def main(argv):
     try:
         while read_block(blk_input):
             print('[BP] Block number of this file:', num)
-            num = num+2
+            num = num+1
     except:
         traceback.print_exc()
         print('Error line:', hex(blk_input.tell()))
@@ -195,6 +195,12 @@ def read_inscript(blk):
     locktime = int.from_bytes(locktime, byteorder = 'little')
     print('[BP] iz Unknown locktime:', locktime)
     
+
+
+def read_witness(blk):
+    # TODO(LuHa): version
+    pass
+
 
 
 def read_inzero(blk):
