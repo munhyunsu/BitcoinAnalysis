@@ -38,6 +38,7 @@ def main(argv):
         while read_block(blk_input):
             print('[BP] Block number of this file:', num)
             num = num+1
+            break
     except:
         traceback.print_exc()
         print('Error line:', hex(blk_input.tell()))
@@ -51,17 +52,15 @@ def read_block(blk):
     if magic_no != 'D9B4BEF9':
         print('[BP] Not bitcoin blk')
         return False
-    print('[BP] Magic number:', magic_no)
+    print('[BP] Magic number: 0x{0}'.format(magic_no))
 
     # TODO(LuHa): block size
     block_size = read_bytes(blk, 4)
     block_size = int.from_bytes(block_size, byteorder = 'little')
     print('[BP] Block size:', block_size)
 
-    # Begin of block header: 80 bytes
+    ### Begin of block header: 80 bytes
     # TODO(LuHa): version
-    #version = read_bytes(blk, 4)
-    #version = int.from_bytes(version, byteorder = 'little')
     version = read_bytes(blk, 4, reverse = True)
     version = version.hex()
     print('[BP] Version: 0x{0}'.format(version))
@@ -92,17 +91,17 @@ def read_block(blk):
     nonce = read_bytes(blk, 4)
     nonce = int.from_bytes(nonce, byteorder = 'little')
     print('[BP] Nonce:', nonce)
-    # End of block header
+    ### End of block header
 
     # TODO(LuHa): transaction counter
     transaction_counter = read_var_int(blk)
     print('[BP] Transaction counter:', transaction_counter)
 
-    # TODO(LuHa): first transacion of block
-    #read_codebase(blk)
+    # TODO(LuHa): read codebase
+    read_codebase(blk)
 
     # TODO(LuHa): read transacion
-    for index in range(0, transaction_counter):
+    for index in range(0, transaction_counter-1):
         read_transaction(blk)
 
     return True
@@ -110,31 +109,23 @@ def read_block(blk):
 
 
 def read_transaction(blk):
+    ### begin of raw transaction: 4+v+v+v+v+4 Bytes
     # TODO(LuHa): version
-    #version = read_bytes(blk, 4)
-    #version = int.from_bytes(version, byteorder = 'little')
     version = read_bytes(blk, 4, reverse = True)
     version = version.hex()
-    #print('[BP] T Version: 0x{0}'.format(version))
-    print('[BP] T Version: 0x{0} {1}'.format(version, hex(blk.tell())))
+    print('[BP] T Version: 0x{0} {1}'.format(version, hex(blk.tell()-4)))
 
-    # TODO(LuHa): in counter
+    # TODO(LuHa): split point
+    #             https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki
     in_counter = read_var_int(blk)
+    # TODO(LuHa): split inputs's form to original 
+    #             or the witness the soft fork
+    if in_counter == 0:
+        read_witness(blk)
+        return
+
+    # TODO(LuHa): in counter of the original
     print('[BP] T In counter:', in_counter)
-
-    # TODO(LuHa): in_counter zero exception
-#    if in_counter == 0:
-#        junction = read_bytes(blk, 1)
-#        junction = read_bytes(blk, 1)
-#        junction = junction.hex()
-#        if junction == '01':
-#            read_inzero(blk)
-#        #elif junction == '03':
-#        else:
-#            read_inscript(blk)
-#        return
-
-    # TODO(LuHa): inputs
     for index in range(0, in_counter):
         read_inputs(blk)
 
@@ -150,56 +141,81 @@ def read_transaction(blk):
     locktime = read_bytes(blk, 4)
     locktime = int.from_bytes(locktime, byteorder = 'little')
     print('[BP] T Locktime:', locktime)
+    ### end of raw transaction
 
 
-def read_inscript(blk):
-    # TODO(LuHa): script counter
-    script_counter = read_var_int(blk)
-    print('[BP] IS script counter:', script_counter)
+def read_witness(blk):
+    # TODO(LuHa): flag
+    flag = read_bytes(blk, 1)
+    flag = flag.hex()
+    print('\x1B[38;5;5m[BP] TW Flag: 0x{0}\x1B[0m'.format(flag))
 
-    # TODO(LuHa): script
-    for index in range(0, script_counter):
-        script_length = read_var_int(blk)
-        print('[BP] IS script length:', script_length)
-        script = read_bytes(blk, script_length)
-        script = script.hex()
-        print('[BP] IS script: 0x{0}'.format(script))
+    # TODO(LuHa): in counter
+    in_counter = read_var_int(blk)
+    print('[BP] TW In counter:', in_counter)
 
-    # TODO(LuHa): sequence
-    sequence = read_bytes(blk, 4)
-    sequence = sequence.hex()
-    print('[BP] IS Sequence: 0x{0}'.format(sequence))
-        
+    # TODO(LuHa): in counter of the original
+    for index in range(0, in_counter):
+        read_inputs(blk)
+
     # TODO(LuHa): out counter
     out_counter = read_var_int(blk)
-    print('[BP] IZ Out counter:', out_counter)
+    print('[BP] TW Out counter:', out_counter)
 
     # TODO(LuHa): outputs
     for index in range(0, out_counter):
         read_outputs(blk)
 
-    # TODO(LuHa): unknown script counter
-    unknown_counter = read_var_int(blk)
-    print('[BP] IZ Unknown script counter:', unknown_counter)
+    # TODO(LuHa): witness counter
+    witness_counter = read_var_int(blk)
+    print('[BP] TW Witness counter:', witness_counter)
 
-    # TODO(LuHa): unknown script
-    for index in range(0, unknown_counter):
-        script_size = read_var_int(blk)
-        print('[BP] IZ Unknown script size:', script_size)
-        script = read_bytes(blk, script_size)
-        script = script.hex()
-        print('[BP] IZ Unknown script 0x{0}'.format(script))
+    # TODO(LuHa): witness data
+    for index in range(0, witness_counter):
+        witness_length = read_var_int(blk)
+        print('[BP] TW Witness length:', witness_length)
+        witness_data = read_bytes(blk, witness_length)
+        witness_data = witness_data.hex()
+        print('[BP] TW Witness data: 0x{0}'.format(witness_data))
 
-    # TODO(LuHa): unknown locktime
+    # TODO(LuHa): locktime
     locktime = read_bytes(blk, 4)
     locktime = int.from_bytes(locktime, byteorder = 'little')
-    print('[BP] iz Unknown locktime:', locktime)
-    
 
 
-def read_witness(blk):
-    # TODO(LuHa): version
-    pass
+
+def read_original(blk):
+    # TODO(LuHa): in counter of the original
+    print('[BP] T In counter:', in_counter)
+    for index in range(0, in_counter):
+        read_inputs(blk)
+
+    # TODO(LuHa): out counter
+    out_counter = read_var_int(blk)
+    print('[BP] T Out counter:', out_counter)
+
+    # TODO(LuHa): outputs
+    for index in range(0, out_counter):
+        read_outputs(blk)
+
+    # TODO(LuHa): witness
+    if marker != None:
+        # TODO(LuHa): witness counter
+        witness_counter = read_var_int(blk)
+        print('[BP] T Witness counter:', witness_counter)
+
+        # TODO(LuHa): witness data
+        for index in range(0, witness_counter):
+            witness_length = read_var_int(blk)
+            print('[BP] T Witness length:', witness_length)
+            witness_data = read_bytes(blk, witness_length)
+            witness_data = witness_data.hex()
+            print('[BP] T Witness data: 0x{0}'.format(witness_data))
+
+    # TODO(LuHa): locktime
+    locktime = read_bytes(blk, 4)
+    locktime = int.from_bytes(locktime, byteorder = 'little')
+    print('[BP] T Locktime:', locktime)
 
 
 
@@ -352,15 +368,11 @@ def read_codebase(blk):
 
 
 def read_inputs(blk):
+    ### begin of TxIn: 36+v+v+4 Bytes
     # TODO(LuHa): Previous transaction hash
-    prev_tx_hash = read_bytes(blk, 32)
+    prev_tx_hash = read_bytes(blk, 36)
     prev_tx_hash = prev_tx_hash.hex()
-    print('[BP] TI Previous Txin hash:', prev_tx_hash)
-
-    # TODO(LuHa): Previous txout index
-    prev_tx_index = read_bytes(blk, 4)
-    prev_tx_index = prev_tx_index.hex()
-    print('[BP] TI Previous Txout index:', prev_tx_index)
+    print('[BP] TI Previous Txin hash: 0x{0}'.format(prev_tx_hash))
 
     # TODO(LuHa): Txin script length
     txin_script_length = read_var_int(blk)
@@ -372,13 +384,46 @@ def read_inputs(blk):
     print('[BP] TI Txin script:', txin_script)
 
     # TODO(LuHa): Txin address
-    txin_address = get_address_from_pubkey(txin_script)
-    print('[BP] TI Txin address:', txin_address)
+    if len(txin_script) > 0:
+        txin_address = get_address_from_pubkey(txin_script)
+        print('[BP] TI Txin address:', txin_address)
 
     # TODO(LuHa): sequence number
     sequence_no = read_bytes(blk, 4)
     sequence_no = sequence_no.hex()
     print('[BP] TI Sequence number:', sequence_no)
+
+
+
+def read_witness_inputs(blk):
+    # TODO(LuHa): Previous transaction hash
+    prev_tx_hash = read_bytes(blk, 32)
+    prev_tx_hash = prev_tx_hash.hex()
+    print('[BP] TWI Previous Txin hash:', prev_tx_hash)
+
+    # TODO(LuHa): Previous txout index
+    prev_tx_index = read_bytes(blk, 4)
+    prev_tx_index = prev_tx_index.hex()
+    print('[BP] TWI Previous Txout index:', prev_tx_index)
+
+    # TODO(LuHa): Txin script length
+    txin_script_length = read_var_int(blk)
+    print('[BP] TIW Txin script length:', txin_script_length)
+
+    # TODO(LuHa): Txin script
+    txin_script = read_bytes(blk, txin_script_length)
+    txin_script = txin_script.hex()
+    print('[BP] TIW Txin script:', txin_script)
+
+    # TODO(LuHa): Txin address
+    txin_address = get_address_from_pubkey(txin_script)
+    print('[BP] TIW Txin address:', txin_address)
+
+    # TODO(LuHa): sequence number
+    sequence_no = read_bytes(blk, 4)
+    sequence_no = sequence_no.hex()
+    print('[BP] TIW Sequence number:', sequence_no)
+
 
 
 
