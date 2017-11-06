@@ -148,7 +148,7 @@ def read_witness(blk):
     # TODO(LuHa): flag
     flag = read_bytes(blk, 1)
     flag = flag.hex()
-    print('\x1B[38;5;5m[BP] TW Flag: 0x{0}\x1B[0m'.format(flag))
+    print('[BP] TW Flag: 0x{0}'.format(flag))
 
     # TODO(LuHa): in counter
     in_counter = read_var_int(blk)
@@ -173,7 +173,7 @@ def read_witness(blk):
     # TODO(LuHa): witness data
     for index in range(0, witness_counter):
         witness_length = read_var_int(blk)
-        print('[BP] TW Witness length:', witness_length)
+        print('\x1B[38;5;2m[BP] TW Witness length:\x1B[0m', witness_length)
         witness_data = read_bytes(blk, witness_length)
         witness_data = witness_data.hex()
         print('[BP] TW Witness data: 0x{0}'.format(witness_data))
