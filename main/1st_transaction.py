@@ -36,9 +36,8 @@ def main(argv):
     num = 1
     try:
         while read_block(blk_input):
-            print('[BP] Block number of this file:', num)
+            print('\x1B[37;5;3m[BP] Block number of this file:\x1B[0m', num)
             num = num+1
-            break
     except:
         traceback.print_exc()
         print('Error line:', hex(blk_input.tell()))
@@ -98,10 +97,10 @@ def read_block(blk):
     print('[BP] Transaction counter:', transaction_counter)
 
     # TODO(LuHa): read codebase
-    read_codebase(blk)
+    #read_codebase(blk)
 
     # TODO(LuHa): read transacion
-    for index in range(0, transaction_counter-1):
+    for index in range(0, transaction_counter):
         read_transaction(blk)
 
     return True
@@ -113,7 +112,7 @@ def read_transaction(blk):
     # TODO(LuHa): version
     version = read_bytes(blk, 4, reverse = True)
     version = version.hex()
-    print('[BP] T Version: 0x{0} {1}'.format(version, hex(blk.tell()-4)))
+    print('\x1B[38;5;1m[BP] T Version: 0x{0} {1}\x1B[0m'.format(version, hex(blk.tell()-4)))
 
     # TODO(LuHa): split point
     #             https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki
@@ -140,7 +139,7 @@ def read_transaction(blk):
     # TODO(LuHa): locktime
     locktime = read_bytes(blk, 4)
     locktime = int.from_bytes(locktime, byteorder = 'little')
-    print('[BP] T Locktime:', locktime)
+    print('[BP] T Locktime:', locktime, hex(blk.tell()-4))
     ### end of raw transaction
 
 
@@ -166,21 +165,23 @@ def read_witness(blk):
     for index in range(0, out_counter):
         read_outputs(blk)
 
-    # TODO(LuHa): witness counter
-    witness_counter = read_var_int(blk)
-    print('[BP] TW Witness counter:', witness_counter)
-
-    # TODO(LuHa): witness data
-    for index in range(0, witness_counter):
-        witness_length = read_var_int(blk)
-        print('\x1B[38;5;2m[BP] TW Witness length:\x1B[0m', witness_length)
-        witness_data = read_bytes(blk, witness_length)
-        witness_data = witness_data.hex()
-        print('[BP] TW Witness data: 0x{0}'.format(witness_data))
+    # TODO(LuHa): witness data for txin
+    for index in range(0, in_counter):
+        # TODO(LuHa): witness counter
+        witness_counter = read_var_int(blk)
+        print('[BP] TW Witness counter:', witness_counter)
+        # TODO(LuHa): witness data
+        for index2 in range(0, witness_counter):
+            witness_length = read_var_int(blk)
+            print('[BP] TW Witness length:', witness_length)
+            witness_data = read_bytes(blk, witness_length)
+            witness_data = witness_data.hex()
+            print('[BP] TW Witness data: 0x{0}'.format(witness_data))
 
     # TODO(LuHa): locktime
     locktime = read_bytes(blk, 4)
     locktime = int.from_bytes(locktime, byteorder = 'little')
+    print('[BP] T Locktime:', locktime, hex(blk.tell()-4))
 
 
 
