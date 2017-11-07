@@ -185,189 +185,6 @@ def read_witness(blk):
 
 
 
-def read_original(blk):
-    # TODO(LuHa): in counter of the original
-    print('[BP] T In counter:', in_counter)
-    for index in range(0, in_counter):
-        read_inputs(blk)
-
-    # TODO(LuHa): out counter
-    out_counter = read_var_int(blk)
-    print('[BP] T Out counter:', out_counter)
-
-    # TODO(LuHa): outputs
-    for index in range(0, out_counter):
-        read_outputs(blk)
-
-    # TODO(LuHa): witness
-    if marker != None:
-        # TODO(LuHa): witness counter
-        witness_counter = read_var_int(blk)
-        print('[BP] T Witness counter:', witness_counter)
-
-        # TODO(LuHa): witness data
-        for index in range(0, witness_counter):
-            witness_length = read_var_int(blk)
-            print('[BP] T Witness length:', witness_length)
-            witness_data = read_bytes(blk, witness_length)
-            witness_data = witness_data.hex()
-            print('[BP] T Witness data: 0x{0}'.format(witness_data))
-
-    # TODO(LuHa): locktime
-    locktime = read_bytes(blk, 4)
-    locktime = int.from_bytes(locktime, byteorder = 'little')
-    print('[BP] T Locktime:', locktime)
-
-
-
-def read_inzero(blk):
-    # TODO(LuHa): i dont know
-    unknown = read_bytes(blk, 1)
-    unknown = unknown.hex()
-    print('[BP] IZ unknown: 0x{0}'.format(unknown))
-    
-    # TODO(LuHa): hash
-    hash_cb = read_bytes(blk, 32)
-    hash_cb = hash_cb.hex()
-    print('[BP] IZ unknown hash: 0x{0}'.format(hash_cb))
-
-    # TODO(LuHa): index
-    index = read_bytes(blk, 5)
-    index = index.hex()
-    print('[BP] IZ Index: 0x{0}'.format(index))
-
-
-    # TODO(LuHa): height size
-    #height_size = read_bytes(blk, 1)
-    #height_size = int.from_bytes(height_size, byteorder = 'little')
-    #print('[BP] IZ Height size:', height_size)
-
-    # TODO(LuHa): height
-    #height = read_bytes(blk, height_size) # temporary
-    #height = read_bytes(blk, 2)
-    #height = int.from_bytes(height, byteorder = 'little')
-    #print('[BP] IZ Height:', height)
-
-    # TODO(LuHa): data
-    #data = read_bytes(blk, height_size)
-    #data = data.hex()
-    #print('[BP] IZ Data: 0x{0}'.format(data))
-
-    # TODO(LuHa): sequence
-    sequence = read_bytes(blk, 4)
-    sequence = sequence.hex()
-    print('[BP] IZ Sequence: 0x{0}'.format(sequence))
-
-    # TODO(LuHa): out counter
-    out_counter = read_var_int(blk)
-    print('[BP] IZ Out counter:', out_counter)
-
-    # TODO(LuHa): outputs
-    for index in range(0, out_counter):
-        read_outputs(blk)
-
-    # TODO(LuHa): unknown script counter
-    unknown_counter = read_var_int(blk)
-    print('[BP] IZ Unknown script counter:', unknown_counter)
-
-    # TODO(LuHa): unknown script
-    for index in range(0, unknown_counter):
-        script_size = read_var_int(blk)
-        print('[BP] IZ Unknown script size:', script_size)
-        script = read_bytes(blk, script_size)
-        script = script.hex()
-        print('[BP] IZ Unknown script 0x{0}'.format(script))
-
-    # TODO(LuHa): unknown locktime
-    locktime = read_bytes(blk, 4)
-    locktime = int.from_bytes(locktime, byteorder = 'little')
-    print('[BP] iz Unknown locktime:', locktime)
-    
-
-
-def read_codebase(blk):
-    # TODO(LuHa): version
-    #version = read_bytes(blk, 4)
-    #version = int.from_bytes(version, byteorder = 'little')
-    version = read_bytes(blk, 4, reverse = True)
-    version = version.hex()
-    print('[BP] T Version: 0x{0}'.format(version))
-
-    # TODO(LuHa): in counter
-    in_counter = read_var_int(blk)
-    print('[BP] T In counter:', in_counter)
-
-    # TODO(LuHa): i dont know
-    unknown = read_bytes(blk, 2)
-    unknown = unknown.hex()
-    print('[BP] CB unknown: 0x{0}'.format(unknown))
-    
-    # TODO(LuHa): hash
-    hash_cb = read_bytes(blk, 32)
-    hash_cb = hash_cb.hex()
-    print('[BP] CB Codebase hash: 0x{0}'.format(hash_cb))
-
-    # TODO(LuHa): index
-    index = read_bytes(blk, 4)
-    index = index.hex()
-    print('[BP] CB Index: 0x{0}'.format(index))
-
-    # TODO(LuHa): script bytes
-    script_bytes = read_var_int(blk)
-    print('[BP] CB Script bytes:', script_bytes)
-
-    # TODO(LuHa): height size
-    height_size = read_bytes(blk, 1)
-    height_size = int.from_bytes(height_size, byteorder = 'little')
-    print('[BP] CB Height size:', height_size)
-
-    # TODO(LuHa): height
-    #height = read_bytes(blk, height_size) # temporary
-    height = read_bytes(blk, 3)
-    height = int.from_bytes(height, byteorder = 'little')
-    print('[BP] CB Height:', height)
-
-    # TODO(LuHa): data
-    data = read_bytes(blk, script_bytes - 4)
-    data = data.hex()
-    print('[BP] CB Data: 0x{0}'.format(data))
-
-    # TODO(LuHa): sequence
-    sequence = read_bytes(blk, 4)
-    sequence = sequence.hex()
-    print('[BP] CB Sequence: 0x{0}'.format(sequence))
-
-    # TODO(LuHa): out counter
-    out_counter = read_var_int(blk)
-    print('[BP] CB Out counter:', out_counter)
-
-    # TODO(LuHa): outputs
-    for index in range(0, out_counter):
-        read_outputs(blk)
-
-    # TODO(LuHa): unknown script counter
-    unknown_counter = read_var_int(blk)
-    print('[BP] CB Unknown script counter:', unknown_counter)
-
-    # TODO(LuHa): unknown script
-    for index in range(0, unknown_counter):
-        script_size = read_var_int(blk)
-        print('[BP] CB Unknown script size:', script_size)
-        script = read_bytes(blk, script_size)
-        script = script.hex()
-        print('[BP] CB Unknown script 0x{0}'.format(script))
-
-    # TODO(LuHa): unknown locktime
-    locktime = read_bytes(blk, 4)
-    locktime = int.from_bytes(locktime, byteorder = 'little')
-    print('[BP] CB Unknown locktime:', locktime)
-    
-
-
-
-    
-
-
 def read_inputs(blk):
     ### begin of TxIn: 36+v+v+4 Bytes
     # TODO(LuHa): Previous transaction hash
@@ -396,38 +213,6 @@ def read_inputs(blk):
 
 
 
-def read_witness_inputs(blk):
-    # TODO(LuHa): Previous transaction hash
-    prev_tx_hash = read_bytes(blk, 32)
-    prev_tx_hash = prev_tx_hash.hex()
-    print('[BP] TWI Previous Txin hash:', prev_tx_hash)
-
-    # TODO(LuHa): Previous txout index
-    prev_tx_index = read_bytes(blk, 4)
-    prev_tx_index = prev_tx_index.hex()
-    print('[BP] TWI Previous Txout index:', prev_tx_index)
-
-    # TODO(LuHa): Txin script length
-    txin_script_length = read_var_int(blk)
-    print('[BP] TIW Txin script length:', txin_script_length)
-
-    # TODO(LuHa): Txin script
-    txin_script = read_bytes(blk, txin_script_length)
-    txin_script = txin_script.hex()
-    print('[BP] TIW Txin script:', txin_script)
-
-    # TODO(LuHa): Txin address
-    txin_address = get_address_from_pubkey(txin_script)
-    print('[BP] TIW Txin address:', txin_address)
-
-    # TODO(LuHa): sequence number
-    sequence_no = read_bytes(blk, 4)
-    sequence_no = sequence_no.hex()
-    print('[BP] TIW Sequence number:', sequence_no)
-
-
-
-
 def read_outputs(blk):
     # TODO(LuHa): value
     value = read_bytes(blk, 8)
@@ -449,6 +234,7 @@ def read_outputs(blk):
     print('[BP] TO Txout address:', txout_address)
 
 
+
 def read_bytes(blk, size, reverse = False):
     result = blk.read(size)
     if reverse:
@@ -456,6 +242,7 @@ def read_bytes(blk, size, reverse = False):
         result.reverse()
         result = bytes(result)
     return result
+
 
 
 def read_var_int(blk):
