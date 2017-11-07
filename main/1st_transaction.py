@@ -112,7 +112,7 @@ def read_transaction(blk):
     # TODO(LuHa): version
     version = read_bytes(blk, 4, reverse = True)
     version = version.hex()
-    print('\x1B[38;5;1m[BP] T Version: 0x{0} {1}\x1B[0m'.format(version, hex(blk.tell()-4)))
+    print('[BP] T Version: 0x{0} {1}'.format(version, hex(blk.tell()-4)))
 
     # TODO(LuHa): split point
     #             https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki
