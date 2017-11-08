@@ -264,7 +264,9 @@ def read_var_int(blk):
     return result
 
 
-
+# TODO(LuHa): re-coding address translation function
+#             In now, this function decode some script not all
+#             reference: https://bitcoin.org/en/developer-reference#address-conversion
 def get_address_from_pubkey(pubkey):
     result = None
     op_code = pubkey[0:2]
@@ -289,11 +291,13 @@ def get_address_from_pubkey(pubkey):
     return result
 
 
-
+# TODO(LuHa): re-coding base58encode function
+#             reference: https://bitcoin.org/en/developer-reference#address-conversion
 def b58encode(data):
-    """ encode v, which is a string of bytes, to base58.        
+    """ encode data which is a string of bytes to base58.
     """
     __b58chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+    
     __b58base = len(__b58chars)
 
 
