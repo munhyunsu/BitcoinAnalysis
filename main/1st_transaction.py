@@ -291,45 +291,6 @@ def get_address_from_pubkey(pubkey):
     return result
 
 
-# TODO(LuHa): re-coding base58encode function
-#             reference: https://bitcoin.org/en/developer-reference#address-conversion
-def b58encode(data):
-    """
-    encode data with base58 rule
-    """
-    # prepare encode
-    code_string = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
-    output_string = ''
-
-
-
-    return output_string
-    
-def b58encode_(data):
-    """ encode data which is a string of bytes to base58.
-    """
-    __b58chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
-    
-    __b58base = len(__b58chars)
-
-
-    long_value = int(data.hex(), 16)
-
-    result = ''
-    while long_value >= __b58base:
-        div, mod = divmod(long_value, __b58base)
-        result = __b58chars[mod] + result
-        long_value = div
-    result = __b58chars[long_value] + result
-
-    # Bitcoin does a little leading-zero-compression:
-    # leading 0-bytes in the input become leading-1s
-    nPad = 0
-    for c in data:
-        if c == '\0': nPad += 1
-        else: break
-
-    return (__b58chars[0]*nPad) + result
 
 
 
