@@ -13,10 +13,12 @@ import datetime
 # hashlib
 import hashlib
 # base58: https://github.com/keis/base58
-import base58
+#import base58
 # traceback
 import traceback
 
+# base58, address_from_pubkey
+import utils
 
 def main(argv):
     # TODO(LuHa): check argument about analyze target blk file

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# sha256
+import hashlib
+# hexlify
+import binascii
+
 # TODO(LuHa): re-coding base58encode function
 #             reference: https://bitcoin.org/en/developer-reference#address-conversion
 def b58encode(data):
@@ -43,13 +48,13 @@ def get_address_from_pubkey(pubkey):
         h5 = hashlib.sha256(result)
         h6 = hashlib.sha256(h5.digest())
         result += h6.digest()[:4]
-        result = base58.b58encode(result)
+        result = b58encode(result)
     if pubkey.lower().startswith('76a914'):
         pub = pubkey[6:-4]
         result = (b'\x00') + binascii.unhexlify(pub)
         h5 = hashlib.sha256(result)
         h6 = hashlib.sha256(h5.digest())
         result += h6.digest()[:4]
-        result = base58.b58encode(result)
+        result = b58encode(result)
         
     return result
