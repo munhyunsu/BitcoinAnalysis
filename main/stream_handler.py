@@ -2,6 +2,10 @@
 
 import sys
 
+class BCStream(object):
+    def __init__(self):
+        pass
+
 def main(argv):
     pass
 
