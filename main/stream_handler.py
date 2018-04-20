@@ -4,7 +4,7 @@ import sys
 
 class BCStream(object):
     def __init__(self):
-        pass
+        self.row = ''
 
 def main(argv):
     pass
