@@ -6,6 +6,10 @@ class BCStream(object):
     def __init__(self):
         self.row = ''
 
+    def connect(self):
+        pass
+
+
 def main(argv):
     pass
 
