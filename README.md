@@ -5,3 +5,4 @@
 - Fix Bitcoin address
 - Analyze stream of transactions
 - (Refactoring) Class
+- export to csv
