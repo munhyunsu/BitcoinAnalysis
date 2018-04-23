@@ -15,9 +15,14 @@ import hashlib
 # base58: https://github.com/keis/base58
 import base58
 
+
+### NEED FIX: decode b58 address of wallet
+
 otime = 0
 oinputs = list()
 ooutputs = list()
+
+
 
 
 def main(argv):
