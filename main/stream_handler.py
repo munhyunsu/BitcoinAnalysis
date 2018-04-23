@@ -9,6 +9,9 @@ class BCStream(object):
     def connect(self):
         pass
 
+    def disconnect(self):
+        pass
+
 
 def main(argv):
     pass
