@@ -5,6 +5,8 @@ import hashlib
 # hexlify
 import binascii
 
+# TODO: OP-Code machine
+
 # TODO(LuHa): re-coding base58encode function
 #             reference: https://bitcoin.org/en/developer-reference#address-conversion
 def b58encode(data):
