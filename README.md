@@ -7,3 +7,6 @@
 - (Refactoring) Class
 - export to csv
 - Stack machine renew: OPCODE error accured
+
+# Created by
+- LuHa(munhyunsu@gmail.com)
