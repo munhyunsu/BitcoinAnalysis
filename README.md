@@ -11,6 +11,8 @@
 - export to csv
 - Stack machine renew: OPCODE error accured
 
+## Requirements
+- BlockChain Parser
 
 # Created by
 - LuHa(munhyunsu@gmail.com)
