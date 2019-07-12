@@ -1,3 +1,6 @@
+# pickle
+*.pickle
+
 # ignore swap files (https://github.com/github/gitignore/tree/master/Global)
 # swap
 [._]*.s[a-w][a-z]
