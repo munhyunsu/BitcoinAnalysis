@@ -1,5 +1,6 @@
-# pickle
+# temparorary files
 *.pickle
+*.db
 
 # ignore swap files (https://github.com/github/gitignore/tree/master/Global)
 # swap
