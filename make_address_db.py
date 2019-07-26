@@ -1,4 +1,5 @@
 import os
+import sys
 import sqlite3
 
 from blockchain_parser.blockchain import Blockchain
@@ -96,12 +97,17 @@ def main(_):
     # restore inserted block
     pheight = max(0, get_max_height(conn)-1)
     dprint('Restored block height: {0}'.format(pheight))
+    # prevent revered parse
+    if FLAGS.end is not None:
+        if pheight > end:
+            dprint('Prev height > end')
+            return
 
     # loop blocks
     block_path = os.path.join(FLAGS.input, 'blocks')
     index_path = os.path.join(block_path, 'index')
     for block in get_blocks(block_path, index_path, start=pheight, 
-                                                    end=100000):
+                                                    end=FLAGS.end):
         for tx in block.transactions:
             tx_data = process_tx(block, tx)
             # write data into db
@@ -118,8 +124,11 @@ if __name__ == '__main__':
                         default='~/.bitcoin')
     parser.add_argument('--output', type=str,
                         default='./address.db')
+    parser.add_argument('--end', type=int,
+                        default=None)
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--reset', action='store_true')
+    
 
     FLAGS, _ = parser.parse_known_args()
     DEBUG = FLAGS.debug
