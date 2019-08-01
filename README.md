@@ -1,5 +1,5 @@
 # BitcoinAnalysis
-- Bitcoin analysis
+- Block preprocessing based bitcoin analysis library
 
 # Usage
 - Download blocks using bitcoind
