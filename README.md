@@ -2,7 +2,8 @@
 - Block preprocessing based bitcoin analysis library
 
 # Usage
-- Download blocks using bitcoind
+- Download blocks using bitcoin core
+- Build address database
 
 # TODO
 - Fix Bitcoin address
