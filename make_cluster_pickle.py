@@ -44,6 +44,9 @@ def build_address_db(blockchain, index, end, start=0):
         ADDR[0] = block.height
         print('Builing ', ADDR[0])
 
+def get_txin_address(conn, txhash, idx):
+    pass
+
 
 def is_std_tx(tx):
     if len(tx.inputs) == 0:
