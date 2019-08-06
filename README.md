@@ -11,6 +11,8 @@
 - (Refactoring) Class
 - export to csv
 - Stack machine renew: OPCODE error accured
+- Bug: bitcoin.core.script.CScriptTruncatedPushDataError: PUSHDATA(1): truncated data
+
 
 ## Requirements
 - BlockChain Parser
