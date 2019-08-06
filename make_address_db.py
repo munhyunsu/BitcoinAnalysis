@@ -109,7 +109,10 @@ def main(_):
     for block in get_blocks(block_path, index_path, start=pheight, 
                                                     end=FLAGS.end):
         for tx in block.transactions:
-            tx_data = process_tx(block, tx)
+            try:
+                tx_data = process_tx(block, tx)
+            except bitcoin.core.script.CScriptTruncatedPushDataError:
+                continue
             # write data into db
             write_txs(conn, tx_data)
         dprint('Complete block height: {0}'.format(block.height))
