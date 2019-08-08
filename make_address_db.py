@@ -2,6 +2,7 @@ import os
 import sys
 import sqlite3
 
+import bitcoin
 from blockchain_parser.blockchain import Blockchain
 
 FLAGS = None
