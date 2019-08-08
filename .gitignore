@@ -1,6 +1,7 @@
 # temparorary files
 *.pickle
 *.db
+*.db-journal
 
 # ignore swap files (https://github.com/github/gitignore/tree/master/Global)
 # swap
