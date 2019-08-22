@@ -5,12 +5,6 @@
 - Download blocks using bitcoin core
 - Build address database
 
-# TODO
-- Fix Bitcoin address
-- Analyze stream of transactions
-- (Refactoring) Class
-- export to csv
-
 ## Requirements
 - BlockChain Parser
 
