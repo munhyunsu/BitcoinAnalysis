@@ -3,4 +3,5 @@ setuptools
 
 # https://github.com/alecalve/python-bitcoin-blockchain-parser.git
 #plyvel
-rocksdb
+# https://github.com/twmht/python-rocksdb
+pyrocksdb
