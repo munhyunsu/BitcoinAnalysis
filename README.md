@@ -7,6 +7,7 @@
 
 ## Requirements
 - BlockChain Parser
+- PyRocksDB
 
 # Created by
 - LuHa(munhyunsu@gmail.com)
