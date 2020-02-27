@@ -15,3 +15,4 @@ pandas
 
 # https://github.com/alecalve/python-bitcoin-blockchain-parser.git
 # https://github.com/twmht/python-rocksdb/tree/pybind11
+python-bitcoinrpc
