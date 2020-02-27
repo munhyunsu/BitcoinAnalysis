@@ -1,4 +1,17 @@
 pip
 setuptools
 
+jupyter
+jupyterlab
+## jupyter labextension install @jupyter-widgets/jupyterlab-manager
+## jupyter labextension install jupyter-matplotlib
+ipykernel
+ipympl
+
+# essential
+matplotlib
+numpy
+pandas
+
 # https://github.com/alecalve/python-bitcoin-blockchain-parser.git
+# https://github.com/twmht/python-rocksdb/tree/pybind11

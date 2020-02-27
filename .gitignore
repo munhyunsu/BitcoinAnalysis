@@ -1,3 +1,7 @@
+# other git repository
+python-bitcoin-blockchain-parser/
+python-rocksdb/
+
 # temparorary files
 *.pickle
 *.db
