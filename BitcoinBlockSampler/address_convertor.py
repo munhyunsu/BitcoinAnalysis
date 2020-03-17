@@ -2,8 +2,12 @@
 # 578755 block processing: 3141d7e07774f6e9d2d9266bd2070d996b0ae946b464acd5dbe47007da4faf31
 ## 0 index txid of above: d663ed61f6320d768edf518ae272f96ac52b95a9417368e6c01565d2bcbe9be2
 ## the block hash of above: 00000000000000000015f2df4e3fdbafa3b12726de3308064c51fed3dd85e1da
-# https://github.com/bitcoinjs/bitcoinjs-lib/issues/1000
 ## https://en.bitcoin.it/wiki/File:PubKeyToAddr.png
+### Ref1: https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses
+### Ref2: https://en.bitcoin.it/wiki/Base58Check_encoding
+### Ref3: https://en.bitcoin.it/wiki/Script
+### Ref4: https://github.com/bitcoinjs/bitcoinjs-lib/issues/1000
+### Ref5(Minor): https://stackoverflow.com/questions/46328870/getting-hash160-bitcoin-address-in-python
 
 import hashlib
 
