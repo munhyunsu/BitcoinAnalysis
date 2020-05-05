@@ -5,7 +5,7 @@
     - line 72
 
       ```bash
-        txindex=1
+        server=1
       ```
     
     - line 99
