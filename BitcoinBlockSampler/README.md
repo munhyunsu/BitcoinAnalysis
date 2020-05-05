@@ -1,6 +1,11 @@
 ### Usage
 
+
   - configuration edit
+  
+    - Download configuration file
+    
+      - [bitcoin.conf](https://github.com/bitcoin/bitcoin/blob/master/share/examples/bitcoin.conf)
 
     - line 72
 
