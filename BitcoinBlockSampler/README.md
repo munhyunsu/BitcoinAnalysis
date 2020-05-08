@@ -1,36 +1,65 @@
 ### Usage
 
-
-  - configuration edit
-  
-    - Download configuration file
+  1. Download (bitcoin core)[https://bitcoin.org/en/download] and Block data
     
-      - [bitcoin.conf](https://github.com/bitcoin/bitcoin/blob/master/share/examples/bitcoin.conf)
+    - Run bitcoind or bitcoin-qt
+    
+      - CLI version
 
-    - line 72
+      ```bash
+      ./bitcoind
+      ```
+
+      - GUI version
+
+      ```bash
+      ./bitcoin-qt
+      ```
+
+  2. configuration edit
+  
+    - Download sample [bitcoin.conf](https://github.com/bitcoin/bitcoin/blob/master/share/examples/bitcoin.conf)
+
+    - Edit file
+    
+      - add at line 72
 
       ```bash
         server=1
       ```
     
-    - line 99
+      - add at line 99: result from _BitcoinCoreRPCAuth.ipynb_
 
       ```bash
         rpcauth=...
       ```
 
-    - line 151
+      - add at line 151
 
       ```bash
         txindex=1
       ```
 
-  - Reindex and Rescan
+  3. Reindex and Rescan (JUST ONCE!!)
 
+    - CLI version
     ```bash
-      bitcoind-cli -reindex -rescan
+      bitcoind -reindex -rescan
     ```
 
+    - GUI version
+
+    ```bash
+      bitcoin-qt -reindex -rescan
+    ```
+
+    - After performing once, run without parameters
+
+  4. Check bitcoin-cli COMMAND
+
+  ```bash
+    ./bitcoin-cli getblockheight 1
+  ```
 
 #### BlockHeightFinder
   - Bitcoin block height finder by datatime
