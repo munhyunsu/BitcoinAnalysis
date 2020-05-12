@@ -61,6 +61,17 @@
     ./bitcoin-cli getblockheight 1
   ```
 
+#### BlockClustering
+  - Crate Bitcoin Address - Transaction Hash Table
+
+##### TODO
+
+  - Size efficient Address - Transaction Table Needed
+
+    - csv ?
+
+    - TxID / AddressID ?
+
 #### BlockHeightFinder
   - Bitcoin block height finder by datatime
 
