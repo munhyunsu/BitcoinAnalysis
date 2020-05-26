@@ -69,13 +69,7 @@
 
   1. Execute ipynb
 
-  2. Create index
-
-  ```bash
-  CREATE INDEX blkhashidx ON BlkID (blkhash);
-  CREATE INDEX txhashidx ON TxID (txhash);
-  CREATE INDEX addridx ON AddrID (addr);
-  ```
+    - It create INDEX automatically by UNIQUE column
 
 #### BlockClustering
   - Crate Bitcoin Address - Transaction Hash Table
