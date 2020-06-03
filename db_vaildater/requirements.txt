@@ -1,7 +1,0 @@
-pip
-setuptools
-
-# https://github.com/alecalve/python-bitcoin-blockchain-parser.git
-#plyvel
-# https://github.com/twmht/python-rocksdb
-pyrocksdb
