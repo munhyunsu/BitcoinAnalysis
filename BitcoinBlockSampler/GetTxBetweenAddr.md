@@ -23,13 +23,10 @@
         WHERE TxIn.addr=FromAddrID AND TxOut.addr=ToAddrID;
     ```
 
-    - Example
-
-        - [Reference](https://www.blockchain.com/btc/tx/677b67a894d2587c423976ed65131d5ea730d9bd164e7692beffc0441f40eebf)
+    - Example: [Reference](https://www.blockchain.com/btc/tx/677b67a894d2587c423976ed65131d5ea730d9bd164e7692beffc0441f40eebf)
         
         ```sql
         .header on
         SELECT * FROM TxIn INNER JOIN TxOut ON TxIn.tx = TxOut.tx AND TxIn.n = TxOut.n 
             WHERE TxIn.addr=339583522 AND TxOut.addr=349873947;
         ```
-
