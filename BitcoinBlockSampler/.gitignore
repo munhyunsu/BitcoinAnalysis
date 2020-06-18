@@ -3,5 +3,9 @@ secret.py
 
 Practice.*
 
+# archived file
+*.igraph
+*.pickle
+
 # data directory
 data/
