@@ -34,6 +34,8 @@ QUERY['CREATE_TXOUT_TABLE'] = '''
       n INTEGER,
       addr INTEGER,
       UNIQUE (tx, n, addr));'''
+QUERY['INSERT_META'] = '''
+    UPDATE Meta '''
 
 
 class DBManager(object):
@@ -50,9 +52,9 @@ class DBManager(object):
             if k.startswith('CREATE'):
                 self.cur.execute(QUERY[k])
         self.commit()
-        
+
     def begin():
         self.cur.execute('BEGIN TRANSACTION;')
-        
+
     def commit():
         self.cur.execute('COMMIT TRANSACTION;')
