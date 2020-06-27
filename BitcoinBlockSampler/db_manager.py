@@ -35,8 +35,12 @@ QUERY['CREATE_TXOUT_TABLE'] = '''
       addr INTEGER,
       UNIQUE (tx, n, addr));'''
 QUERY['INSERT_META'] = '''
-    UPDATE Meta '''
-
+    INSERT OR IGNORE INTO Meta (
+      key, value) VALUES (
+      ?, ?);'''
+QUERY['UPDATE_META'] = '''
+    UPDATE Meta SET value=? 
+    WHERE key=?;'''
 
 class DBManager(object):
     def __init__(self, dbpath):
