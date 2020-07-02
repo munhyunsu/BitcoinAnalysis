@@ -99,3 +99,15 @@
         - Total without height field in TxID: 44640000 + 36642527856 + 27041663055 + 29827499208 + 32431025688 = 125987355807 (125 GBytes)
 
         - With indexes: 44640000*2 + 36642527856*2 + 27041663055*2 + 29827499208*3 + 32431025688*3 = 314233236510 (314 GBytes)
+
+#### Child database tables
+
+- Edge table
+```sql
+    CREATE TABLE Edge AS
+        SELECT other.TxIn.addr AS src, other.TxOut.addr AS dst, COUNT(other.TxIn.tx) AS weight
+        FROM other.TxIn
+        INNER JOIN other.TxOut ON other.TxIn.tx = other.TxOut.tx
+        WHERE other.TxIn.addr != 0 AND other.TxOut.addr != 0
+        GROUP BY other.TxIn.addr, other.TxOut.addr;
+```
