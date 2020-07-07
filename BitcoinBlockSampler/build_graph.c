@@ -18,8 +18,9 @@ int main(int argc, char* argv[]) {
     igraph_read_graph_edgelist(&graph, input, 0, 0);
     fclose(input);
     time(&etime);
-    printf("[%ld] Graph load complete with %i vertices and %i edges\n",
-             (etime-stime), igraph_vcount(&graph), igraph_ecount(&graph));
+    printf("[%ld] Graph load complete with %li vertices and %li edges\n",
+             (etime-stime), (long int) igraph_vcount(&graph), 
+             (long int) igraph_ecount(&graph));
 
     time(&stime);
     igraph_vector_t membership, degree;
@@ -35,14 +36,14 @@ int main(int argc, char* argv[]) {
     time(&stime);
     igraph_community_leiden(&graph, 
                             NULL, &degree, 
-                            1.0/(2*igraph_ecount(&graph)), 0.01, 0, 
+                            1.0/(2*((long int)igraph_ecount(&graph))), 0.01, 0,
                             &membership, &nb_clusters, &quality);
     time(&etime);
     printf("[%ld] Leiden found %i clusters using modularity, quality is %.4f.\n",
              (etime-stime), nb_clusters, quality);
 
     time(&stime);
-    printf("Membership exporting...");
+    printf("Membership exporting...\n");
     int n = igraph_vector_size(&membership);
     FILE *fptr = fopen("membership.txt", "w");
     for(int i = 0; i < n; i++) {
