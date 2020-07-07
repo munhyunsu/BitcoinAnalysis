@@ -1,18 +1,23 @@
 #include <igraph.h>
 
-int main(void) {
+int main(int argc, char* argv[]) {
     igraph_t graph;
     FILE *input;
 
-    input = fopen("edge.csv", "r");
+    if(argc <= 1) {
+        return 0;
+    }
+    input = fopen(argv[1], "r");
     if(!input) {
         return 1;
     }
-    igraph_read_graph_edgelist(&graph, input, 10, 0);
+    igraph_read_graph_edgelist(&graph, input, 0, 0);
     fclose(input);
 
     igraph_vector_t membership, degree;
     igraph_vector_init(&membership, igraph_vcount(&graph));
+    igraph_vector_init(&degree, igraph_vcount(&graph));
+    igraph_degree(&graph, &degree, igraph_vss_all(), IGRAPH_ALL, 1);
     igraph_integer_t nb_clusters;
     igraph_real_t quality;
 
@@ -23,6 +28,8 @@ int main(void) {
 
     printf("Leiden found %i clusters using modularity, quality is %.4f.\n",
              nb_clusters, quality);
+    igraph_vector_print(&membership);
+    printf("\n");
 
     igraph_vector_destroy(&degree);
     igraph_vector_destroy(&membership);
