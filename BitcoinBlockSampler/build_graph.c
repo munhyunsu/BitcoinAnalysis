@@ -13,6 +13,8 @@ int main(int argc, char* argv[]) {
     }
     igraph_read_graph_edgelist(&graph, input, 0, 0);
     fclose(input);
+    printf("Graph load complete with %i vertices and %i edges\n",
+             igraph_vcount(&graph), igraph_ecount(&graph));
 
     igraph_vector_t membership, degree;
     igraph_vector_init(&membership, igraph_vcount(&graph));
