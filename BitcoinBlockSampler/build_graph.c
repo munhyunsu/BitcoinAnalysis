@@ -8,10 +8,11 @@ int main(void) {
     if(!input) {
         return 1;
     }
-    igraph_read_graph_edgelist(&graph, input, 0, 0);
+    igraph_read_graph_edgelist(&graph, input, 10, 0);
     fclose(input);
 
     igraph_vector_t membership, degree;
+    igraph_vector_init(&membership, igraph_vcount(&graph));
     igraph_integer_t nb_clusters;
     igraph_real_t quality;
 

@@ -4,10 +4,13 @@ CFLAGS += `pkg-config --cflags /opt/igraph/lib/pkgconfig/igraph.pc`
 LDFLAGS =
 LDFLAGS += `pkg-config --libs /opt/igraph/lib/pkgconfig/igraph.pc`
 
-TARGET = build_graph
+OBJS = build_graph \
+	leiden
 
-$(TARGET): $(TARGET).c
-	$(CC) $(TARGET).c $(CFLAGS) $(LDFLAGS) -o $(TARGET)
+all: $(OBJS)
+
+$(OBJS): %: %.c
+	$(CC) $< $(CFLAGS) $(LDFLAGS) -o $@
 
 clean:
-	$(RM) $(TARGET)
+	$(RM) $(OBJS)
