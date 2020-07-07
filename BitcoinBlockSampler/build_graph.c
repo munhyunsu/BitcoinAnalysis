@@ -40,8 +40,16 @@ int main(int argc, char* argv[]) {
     time(&etime);
     printf("[%ld] Leiden found %i clusters using modularity, quality is %.4f.\n",
              (etime-stime), nb_clusters, quality);
-    igraph_vector_print(&membership);
-    printf("\n");
+
+    time(&stime);
+    printf("Membership exporting...");
+    int n = igraph_vector_size(&membership);
+    FILE *fptr = fopen("membership.txt", "w");
+    for(int i = 0; i < n; i++) {
+        fprintf(fptr, "%.0f\n", VECTOR(membership)[i]);
+    }
+    time(&etime);
+    printf("[%ld] Membership export complete\n", (etime-stime));
 
     igraph_vector_destroy(&degree);
     igraph_vector_destroy(&membership);
