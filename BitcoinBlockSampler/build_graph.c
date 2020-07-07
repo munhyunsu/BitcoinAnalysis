@@ -22,6 +22,7 @@ int main(int argc, char* argv[]) {
     igraph_degree(&graph, &degree, igraph_vss_all(), IGRAPH_ALL, 1);
     igraph_integer_t nb_clusters;
     igraph_real_t quality;
+    printf("Initialize for community detection complete\n");
 
     igraph_community_leiden(&graph, 
                             NULL, &degree, 
