@@ -8,10 +8,12 @@ int main(int argc, char* argv[]) {
 
     time_t stime, etime;
     time(&stime);
-    if(argc <= 1) {
+    if(argc <= 2) {
         return 0;
     }
-    input = fopen(argv[1], "r");
+    char *path = argv[1];
+    double resolution = strtod(argv[2], NULL);
+    input = fopen(path, "r");
     if(!input) {
         return 1;
     }
@@ -19,7 +21,7 @@ int main(int argc, char* argv[]) {
     fclose(input);
     time(&etime);
     printf("[%ld] Graph load complete with %li vertices and %li edges\n",
-             (etime-stime), (long int) igraph_vcount(&graph), 
+             (etime-stime), (long int) igraph_vcount(&graph),
              (long int) igraph_ecount(&graph));
 
     time(&stime);
@@ -34,9 +36,13 @@ int main(int argc, char* argv[]) {
               (etime-stime));
 
     time(&stime);
-    igraph_community_leiden(&graph, 
-                            NULL, &degree, 
-                            1.0/(2*((long int)igraph_ecount(&graph))), 0.01, 0,
+    // printf("[DEBUG] %i\n", igraph_ecount(&graph));
+    // printf("[DEBUG] %li\n", (long int) igraph_ecount(&graph));
+    // printf("[DEBUG] %lf\n", 1.0/(2*igraph_ecount(&graph)));
+    // printf("[DEBUG] %lf\n", 1.0/(2*((long int) igraph_ecount(&graph))));
+    igraph_community_leiden(&graph,
+                            NULL, &degree,
+                            resolution, 0.01, 0,
                             &membership, &nb_clusters, &quality);
     time(&etime);
     printf("[%ld] Leiden found %i clusters using modularity, quality is %.4f.\n",
