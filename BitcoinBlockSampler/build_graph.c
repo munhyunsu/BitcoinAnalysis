@@ -4,7 +4,7 @@
 
 int main(int argc, char* argv[]) {
     igraph_t graph;
-    FILE *input;
+    FILE *input, *output;
 
     time_t stime, etime;
     time(&stime);
@@ -12,7 +12,6 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     char *path = argv[1];
-    double resolution = strtod(argv[2], NULL);
     input = fopen(path, "r");
     if(!input) {
         return 1;
@@ -24,43 +23,13 @@ int main(int argc, char* argv[]) {
              (etime-stime), (long int) igraph_vcount(&graph),
              (long int) igraph_ecount(&graph));
 
-    time(&stime);
-    igraph_vector_t membership, degree;
-    igraph_vector_init(&membership, igraph_vcount(&graph));
-    igraph_vector_init(&degree, igraph_vcount(&graph));
-    igraph_degree(&graph, &degree, igraph_vss_all(), IGRAPH_ALL, 1);
-    igraph_integer_t nb_clusters;
-    igraph_real_t quality;
-    time(&etime);
-    printf("[%ld] Initialize for community detection complete\n",
-              (etime-stime));
-
-    time(&stime);
-    // printf("[DEBUG] %i\n", igraph_ecount(&graph));
-    // printf("[DEBUG] %li\n", (long int) igraph_ecount(&graph));
-    // printf("[DEBUG] %lf\n", 1.0/(2*igraph_ecount(&graph)));
-    // printf("[DEBUG] %lf\n", 1.0/(2*((long int) igraph_ecount(&graph))));
-    igraph_community_leiden(&graph,
-                            NULL, &degree,
-                            resolution, 0.01, 0,
-                            &membership, &nb_clusters, &quality);
-    time(&etime);
-    printf("[%ld] Leiden found %i clusters using modularity, quality is %.4f.\n",
-             (etime-stime), nb_clusters, quality);
-
-    time(&stime);
-    printf("Membership exporting...\n");
-    int n = igraph_vector_size(&membership);
-    FILE *fptr = fopen("membership.txt", "w");
-    for(int i = 0; i < n; i++) {
-        fprintf(fptr, "%.0f\n", VECTOR(membership)[i]);
+    path = argv[2];
+    output = fopen(path, "w");
+    if(!output) {
+        return 1;
     }
-    time(&etime);
-    printf("[%ld] Membership export complete\n", (etime-stime));
-
-    igraph_vector_destroy(&degree);
-    igraph_vector_destroy(&membership);
-    igraph_destroy(&graph);
+    igraph_write_graph_edgelist(&graph, output);
+    fclose(output);
 
     return 0;
 }
