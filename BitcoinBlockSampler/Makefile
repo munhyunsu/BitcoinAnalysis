@@ -4,8 +4,7 @@ CFLAGS += `pkg-config --cflags /opt/igraph/lib/pkgconfig/igraph.pc`
 LDFLAGS =
 LDFLAGS += `pkg-config --libs /opt/igraph/lib/pkgconfig/igraph.pc`
 
-OBJS = build_graph \
-	leiden
+OBJS = find_community_leiden
 
 all: $(OBJS)
 
