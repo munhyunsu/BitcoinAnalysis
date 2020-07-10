@@ -1,10 +1,7 @@
 pip
-setuptools
 
-jupyter
-jupyterlab
-## jupyter labextension install @jupyter-widgets/jupyterlab-manager
-## jupyter labextension install jupyter-matplotlib
+#jupyter
+#jupyterlab
 ipykernel
 ipympl
 
