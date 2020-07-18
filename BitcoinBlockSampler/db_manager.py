@@ -9,7 +9,8 @@ QUERY['CREATE_META_TABLE'] = '''
       value TEXT);'''
 QUERY['CREATE_BLKID_TABLE'] = '''
     CREATE TABLE IF NOT EXISTS BlkID (
-      id INTEGER PRIMARY KEY);'''
+      id INTEGER PRIMARY KEY,
+      blkhash TEXT NOT NULL UNIQUE);'''
 QUERY['CREATE_TXID_TABLE'] = '''
     CREATE TABLE IF NOT EXISTS TxID (
       id INTEGER PRIMARY KEY,
@@ -42,23 +43,35 @@ QUERY['UPDATE_META'] = '''
     UPDATE Meta SET value=? 
     WHERE key=?;'''
 
-class DBManager(object):
-    def __init__(self, dbpath):
-        self.dbpath = os.path.abspath(os.path.expanduser(dbpath))
+class DBBuilder(object):
+    def __init__(self, dbtype: str, dbpath: str):
+        self.dbpath = dbpath
         self.conn = sqlite3.connect(self.dbpath)
-        self.cur = self.conn.cursor()    
-        self._create_table_all()
+        self.cur = self.conn.cursor()
+        dbtype = dbtype.lower()
+        if dbtype == 'index':
+            self._create_table_index()
+        elif dbtype == 'core':
+            self._create_table_core()
+        elif dbtype == 'util':
+            self._create_table_util()
+        else:
+            assert Exception('[Error] dbtype is not one of [index, core, util]')
 
-    def _create_table_all():
+    def _create_table_index(self):
         self.begin()
-        self.cur
-        for k in QUERY:
-            if k.startswith('CREATE'):
-                self.cur.execute(QUERY[k])
+        for q in ['CREATE_META_TABLE',
+                  'CREATE_BLKID_TABLE',
+                  'CREATE_TXID_TABLE',
+                  'CREATE_ADDRID_TABLE']:
+            self.cur.execute(QUERY[q])
         self.commit()
-
-    def begin():
+            
+    def begin(self):
         self.cur.execute('BEGIN TRANSACTION;')
 
-    def commit():
+    def commit(self):
         self.cur.execute('COMMIT TRANSACTION;')
+
+    def close(self):
+        self.conn.close()
