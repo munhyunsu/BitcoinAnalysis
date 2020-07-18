@@ -1,7 +1,10 @@
 import os
+import time
 
+
+from secret import rpc_user, rpc_password
 from db_manager import QUERY, DBBuilder
-
+from rpc_manager import RPCManager
 
 FLAGS = None
 _ = None
@@ -12,9 +15,16 @@ def main():
     if DEBUG:
         print(f'Parsed arguments {FLAGS}')
         print(f'Unparsed arguments {_}')
-    manager = DBBuilder(FLAGS.type, FLAGS.output)
+    dbb = DBBuilder(FLAGS.type, FLAGS.output)
+    rpcm = RPCManager(rpc_user, rpc_password)
 
-    manager.close()
+    for h in range(1, 10):
+        blkhash = rpcm.getblockhash(h)
+        blk = rpcm.getblock(blkhash)
+        for tx in blk['tx']:
+            print(blk['hash'][-8:], len(tx['vin']), len(tx['vout']))
+
+    dbb.close()
 
 
 if __name__ == '__main__':
