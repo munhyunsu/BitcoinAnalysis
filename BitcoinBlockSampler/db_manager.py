@@ -35,10 +35,27 @@ QUERY['CREATE_TXOUT_TABLE'] = '''
       n INTEGER,
       addr INTEGER,
       UNIQUE (tx, n, addr));'''
+
+QUERY['SELECT_MAX_BLKID'] = '''
+    SELECT MAX(id) FROM BlkID;'''
+
 QUERY['INSERT_META'] = '''
     INSERT OR IGNORE INTO Meta (
       key, value) VALUES (
       ?, ?);'''
+QUERY['INSERT_BLKID'] = '''
+    INSERT OR IGNORE INTO BlkID (
+      id, blkhash) VALUES (
+      ?, ?);'''
+QUERY['INSERT_TXID'] = '''
+    INSERT OR IGNORE INTO TxID (
+      txid) VALUES (
+      ?);'''
+QUERY['INSERT_ADDRID'] = '''
+    INSERT OR IGNORE INTO AddrID (
+      addr) VALUES (
+      ?);'''
+
 QUERY['UPDATE_META'] = '''
     UPDATE Meta SET value=? 
     WHERE key=?;'''
@@ -66,7 +83,25 @@ class DBBuilder(object):
                   'CREATE_ADDRID_TABLE']:
             self.cur.execute(QUERY[q])
         self.commit()
-            
+    
+    def select(self, query, *args):
+        self.cur.execute(QUERY[query], *args)
+        value = self.cur.fetchone()
+        if value is not None:
+            value = value[0]
+        return value
+
+    def selectall(self, query, *args):
+        self.cur.execute(QUERY[query], *args)
+        return self.cur.fetchall()
+
+    def insert(self, query, *args):
+        self.cur.execute(QUERY[query], *args)
+        self.commit()
+
+    def insertmany(self, query, *args):
+        self.cur.executemany(QUERY[query], *args)
+
     def begin(self):
         self.cur.execute('BEGIN TRANSACTION;')
 

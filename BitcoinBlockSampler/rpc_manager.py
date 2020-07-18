@@ -28,7 +28,7 @@ class RPCManager(object):
                                     timeout=self.timeout)
         return self.rpc
 
-    def rpccall(self, funcname, *args):
+    def call(self, funcname, *args):
         t = 0
         while True:
             t = t + 1
@@ -39,13 +39,3 @@ class RPCManager(object):
                 return func(*args)
             except BrokenPipeError:
                 self.getconn()
-
-    def getblockhash(self, height):
-        return self.rpccall('getblockhash', height)
-
-    def getblock(self, blkhash):
-        return self.rpccall('getblock', blkhash, 2)
-
-    def getrawtransaction(self, txid):
-        return self.rpccall('getrawtransaction', txid, 1)
-
