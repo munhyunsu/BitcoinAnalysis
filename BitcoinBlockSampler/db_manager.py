@@ -60,11 +60,15 @@ QUERY['UPDATE_META'] = '''
     UPDATE Meta SET value=? 
     WHERE key=?;'''
 
+
 class DBBuilder(object):
     def __init__(self, dbtype: str, dbpath: str):
         self.dbpath = dbpath
         self.conn = sqlite3.connect(self.dbpath)
         self.cur = self.conn.cursor()
+        self.cur.execute('PRAGMA synchronous = NORMAL;')
+        self.cur.execute('PRAGMA journal_mode = WAL;')
+        self.conn.commit()
         dbtype = dbtype.lower()
         if dbtype == 'index':
             self._create_table_index()
