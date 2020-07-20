@@ -4,7 +4,7 @@ import sqlite3
 
 from secret import rpc_user, rpc_password
 from time_manager import get_time
-from db_manager import QUERY, DBBuilder
+from db_manager import QUERY, DBBuilder, DBBuilderTest
 from rpc_manager import RPCManager
 from json_parser import vout_addrs_from_tx
 
