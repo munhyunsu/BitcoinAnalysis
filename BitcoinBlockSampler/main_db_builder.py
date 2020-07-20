@@ -17,7 +17,10 @@ def main():
     if DEBUG:
         print(f'Parsed arguments {FLAGS}')
         print(f'Unparsed arguments {_}')
-    dbb = DBBuilder(FLAGS.type, FLAGS.output)
+    if FLAGS.test:
+        dbb = DBBuilderTest(FLAGS.type, FLAGS.output)
+    else:
+        dbb = DBBuilder(FLAGS.type, FLAGS.output)
     rpcm = RPCManager(rpc_user, rpc_password)
 
     start_height = dbb.select('SELECT_MAX_BLKID')
@@ -100,12 +103,19 @@ if __name__ == '__main__':
                         help='The block height that untrusted')
     parser.add_argument('--chunk', type=int, default=10000,
                         help='The chunk size that commit')
+    parser.add_argument('--test', action='store_true',
+                        help='For test DB')
 
     FLAGS, _ = parser.parse_known_args()
 
-    FLAGS.output = os.path.abspath(
-        os.path.expanduser(
-            f'./{FLAGS.prefix}-{FLAGS.type}.db'))
+    if FLAGS.test:
+        FLAGS.output = os.path.abspath(
+            os.path.expanduser(
+                f'./{FLAGS.prefix}-{FLAGS.type}-test.db'))
+    else:
+        FLAGS.output = os.path.abspath(
+            os.path.expanduser(
+                f'./{FLAGS.prefix}-{FLAGS.type}.db'))
     DEBUG = FLAGS.debug
 
     main()
