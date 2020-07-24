@@ -40,8 +40,11 @@ def main():
     blk_writer = csv.writer(blk_file, lineterminator=os.linesep)
     tx_writer = csv.writer(tx_file, lineterminator=os.linesep)
     addr_writer = csv.writer(addr_file, lineterminator=os.linesep)
+    blk_writer.writerow(('height', 'blkhash'))
+    tx_writer.writerow(('txid',))
+    addr_writer.writerow(('addr',))
     
-    term = 10000
+    term = FLAGS.term
     start_height = 0
     best_block_hash = rpcm.call('getbestblockhash')
     best_block = rpcm.call('getblock', best_block_hash)
@@ -62,16 +65,13 @@ def main():
                 try:
                     results = p.imap(get_data, range(sheight, eheight))
                     for blks, txes, addrs in results:
-                        for row in blks:
-                            blk_writer.writerow(row)
-                        for row in txes:
-                            tx_writer.writerow(txes)
-                        for addr in addrs:
-                            addr_writer.writerow(addr)
+                        blk_writer.writerows(blks)
+                        tx_writer.writerows(txes)
+                        addr_writer.writerows(addrs)
                 except KeyboardInterrupt:
                     print(f'KeyboardInterrupt detected. Terminate child processes.')
                     p.terminate()
-                    p.join(timeout)
+                    p.join(10)
                     raise KeyboardInterrupt
             if DEBUG:
                 print(f'Job done from {sheight} to {eheight-1} during {time.time()-stime}')
@@ -102,6 +102,8 @@ if __name__ == '__main__':
                         help='The present debug message')
     parser.add_argument('--untrusted', type=int, default=100,
                         help='The block height that untrusted')
+    parser.add_argument('--term', type=int, default=10000,
+                        help='The term of block height')
     parser.add_argument('--process', type=int, 
                         default=min(multiprocessing.cpu_count()//2, 4),
                         help='The number of multiprocess')
