@@ -11,14 +11,16 @@ from json_parser import vout_addrs_from_tx
 FLAGS = None
 _ = None
 DEBUG = False
+RPCM = None
 
 
 def get_data(height):
+    global RPCM
     blks = list()
     txes = list()
     addrs = list()
-    block_hash = rpcm.call('getblockhash', height)
-    block = rpcm.call('getblock', block_hash, 2)
+    block_hash = RPCM.call('getblockhash', height)
+    block = RPCM.call('getblock', block_hash, 2)
     blks.append((height, block_hash))
     for tx in block['tx']:
         txes.append((tx['txid'],))
@@ -28,11 +30,12 @@ def get_data(height):
 
 
 def main():
+    global RPCM
     if DEBUG:
         print(f'Parsed arguments {FLAGS}')
         print(f'Unparsed arguments {_}')
 
-    rpcm = RPCManager(rpc_user, rpc_password)
+    RPCM = RPCManager(rpc_user, rpc_password)
     blk_file = open(FLAGS.blk, 'w')
     tx_file = open(FLAGS.tx, 'w')
     addr_file = open(FLAGS.addr, 'w')
@@ -42,8 +45,8 @@ def main():
     
     term = 10000
     start_height = 0
-    best_block_hash = rpcm.call('getbestblockhash')
-    best_block = rpcm.call('getblock', best_block_hash)
+    best_block_hash = RPCM.call('getbestblockhash')
+    best_block = RPCM.call('getblock', best_block_hash)
     end_height = best_block['height'] - FLAGS.untrusted
     if DEBUG:
         print((f'Best Block Heights: {best_block["height"]}, '
