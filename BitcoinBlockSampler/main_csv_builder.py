@@ -42,7 +42,7 @@ def main():
             block = rpcm.call('getblock', block_hash, 2)
             blk_writer.writerow((height, block_hash))
             for tx in block['tx']:
-                tx_writer.writerow((tx['txid']))
+                tx_writer.writerow((tx['txid'],))
                 for addr in vout_addrs_from_tx(tx):
                     addr_writer.writerow((addr,))
             if DEBUG:
