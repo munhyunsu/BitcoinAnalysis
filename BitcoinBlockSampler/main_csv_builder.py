@@ -1,6 +1,7 @@
 import os
 import time
 import csv
+import multiprocessing
 
 from secret import rpc_user, rpc_password
 from time_manager import get_time
@@ -12,50 +13,75 @@ _ = None
 DEBUG = False
 
 
+def get_data(height):
+    blks = list()
+    txes = list()
+    addrs = list()
+    block_hash = rpcm.call('getblockhash', height)
+    block = rpcm.call('getblock', block_hash, 2)
+    blks.append((height, block_hash))
+    for tx in block['tx']:
+        txes.append((tx['txid'],))
+        for addr in vout_addrs_from_tx(tx):
+            addrs.append((addr,))
+    return blks, txes, addrs
+
+
 def main():
     if DEBUG:
         print(f'Parsed arguments {FLAGS}')
         print(f'Unparsed arguments {_}')
 
     rpcm = RPCManager(rpc_user, rpc_password)
-
-    start_height = 0
-    best_block_hash = rpcm.call('getbestblockhash')
-    best_block = rpcm.call('getblock', best_block_hash)
-    end_height = best_block['height'] - FLAGS.untrusted + 1
-    if DEBUG:
-        print((f'Best Block Heights: {best_block["height"]}, '
-               f'Time: {get_time(best_block["time"]).isoformat()}'))
-        print(f'Start from {start_height} to {end_height}')
-
-    stime = time.time()
-    mtime = time.time()
     blk_file = open(FLAGS.blk, 'w')
     tx_file = open(FLAGS.tx, 'w')
     addr_file = open(FLAGS.addr, 'w')
     blk_writer = csv.writer(blk_file, lineterminator=os.linesep)
     tx_writer = csv.writer(tx_file, lineterminator=os.linesep)
     addr_writer = csv.writer(addr_file, lineterminator=os.linesep)
+    
+    term = 10000
+    start_height = 0
+    best_block_hash = rpcm.call('getbestblockhash')
+    best_block = rpcm.call('getblock', best_block_hash)
+    end_height = best_block['height'] - FLAGS.untrusted
+    if DEBUG:
+        print((f'Best Block Heights: {best_block["height"]}, '
+               f'Time: {get_time(best_block["time"]).isoformat()}'))
+        print(f'Start from {start_height} to {end_height}')
+    pool_num = min(multiprocessing.cpu_count()//2, 4)
+
+    stime = time.time()
     try:
-        for height in range(start_height, end_height):
-            block_hash = rpcm.call('getblockhash', height)
-            block = rpcm.call('getblock', block_hash, 2)
-            blk_writer.writerow((height, block_hash))
-            for tx in block['tx']:
-                tx_writer.writerow((tx['txid'],))
-                for addr in vout_addrs_from_tx(tx):
-                    addr_writer.writerow((addr,))
+        for sheight, eheight in zip(range(start_height, end_height, term), 
+                                    range(start_height+term, end_height+term, term)):
+            if eheight >= end_height:
+                eheight = end_height+1
+            with multiprocessing.Pool(pool_num) as p:
+                try:
+                    results = p.imap(get_data, range(sheight, eheight))
+                    for blks, txes, addrs in results:
+                        for row in blks:
+                            blk_writer.writerow(row)
+                        for row in txes:
+                            tx_writer.writerow(txes)
+                        for addr in addrs:
+                            addr_writer.writerow(addr)
+                except KeyboardInterrupt:
+                    print(f'KeyboardInterrupt detected. Terminate child processes.')
+                    p.terminate()
+                    p.join(timeout)
+                    raise KeyboardInterrupt
             if DEBUG:
-                print(f'Processing {height} after {time.time()-stime}', 
-                      end='\r')
+                print(f'Job done from {sheight} to {eheight-1} during {time.time()-stime}')
     except KeyboardInterrupt:
-        print(f'\nKeyboardInterrupt detected. Commit transactions.')
-        if DEBUG:
-            print(f'Processing from {start_height} to {end_height} during {time.time()-stime}')
+        print(f'Closing...')
     finally:
         blk_file.close()
         tx_file.close()
         addr_file.close()
+        if DEBUG:
+            print(f'All job completed {start_height} to {end_height} during {time.time()-stime}')
 
 
 if __name__ == '__main__':
@@ -75,6 +101,9 @@ if __name__ == '__main__':
                         help='The present debug message')
     parser.add_argument('--untrusted', type=int, default=100,
                         help='The block height that untrusted')
+    parser.add_argument('--process', type=int, 
+                        default=min(multiprocessing.cpu_count()//2, 4),
+                        help='The number of multiprocess')
 
     FLAGS, _ = parser.parse_known_args()
 
