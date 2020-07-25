@@ -11,13 +11,15 @@ from json_parser import vout_addrs_from_tx
 FLAGS = None
 _ = None
 DEBUG = False
+RPCM = dict()
 
 
 def get_data(height):
+    pid = os.getpid()
     blks = list()
     txes = list()
     addrs = list()
-    rpcm = RPCManager(rpc_user, rpc_password)
+    rpcm = RPCM.get(pid, RPCManager(rpc_user, rpc_password))
     block_hash = rpcm.call('getblockhash', height)
     block = rpcm.call('getblock', block_hash, 2)
     blks.append((height, block_hash))
@@ -25,6 +27,7 @@ def get_data(height):
         txes.append((tx['txid'],))
         for addr in vout_addrs_from_tx(tx):
             addrs.append((addr,))
+    RPCM[pid] = rpcm
     return blks, txes, addrs
 
 
@@ -107,6 +110,8 @@ if __name__ == '__main__':
     parser.add_argument('--process', type=int, 
                         default=min(multiprocessing.cpu_count()//2, 4),
                         help='The number of multiprocess')
+    parser.add_argument('--basedb', type=str, 
+                        help='The base index database (in core / util type db)')
 
     FLAGS, _ = parser.parse_known_args()
 
