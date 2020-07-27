@@ -43,7 +43,6 @@ def main():
     dbb.cur.execute(f'''PRAGMA journal_mode = OFF;''')
     dbb.cur.execute(f'''PRAGMA synchronous = OFF;''')
     dbb.cur.execute(f'''PRAGMA page_size = {FLAGS.pagesize};''')
-    dbb.cur.execute(f'''PRAGMA page_size = {FLAGS.pagesize};''')
     dbb.cur.execute(f'''PRAGMA cache_size = {FLAGS.cachesize};''')
     dbb.cur.execute(f'''VACUUM;''')
     dbb.conn.commit()
