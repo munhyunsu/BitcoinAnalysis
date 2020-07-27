@@ -131,7 +131,7 @@ if __name__ == '__main__':
     parser.add_argument('--pagesize', type=int, default=1024*64,
                         help='The page size of database')
     parser.add_argument('--cachesize', type=int, default=-1*1024*16,
-                        help='The cache size of page')
+                        help='The cache size of page (GBx1024×1024×1024÷(64×1024))')
 
     FLAGS, _ = parser.parse_known_args()
 
