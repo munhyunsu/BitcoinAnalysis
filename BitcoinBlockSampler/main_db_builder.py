@@ -17,7 +17,6 @@ RPCM = None
 
 def get_data(height):
     global RPCM
-    pid = os.getpid()
     blks = list()
     txes = list()
     addrs = list()
