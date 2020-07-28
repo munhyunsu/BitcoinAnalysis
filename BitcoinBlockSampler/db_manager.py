@@ -61,6 +61,24 @@ QUERY['INSERT_ADDRID'] = '''
     INSERT OR IGNORE INTO AddrID (
       addr) VALUES (
       ?);'''
+
+QUERY['INSERT_BLKTIME'] = '''
+    INSERT OR IGNORE INTO BlkTime (
+      blk, unixtime) VALUES (
+      ?, ?);'''
+QUERY['INSERT_BLKTX'] = '''
+    INSERT OR IGNORE INTO BlkTx (
+      blk, tx) VALUES (
+      ?, ?);'''
+QUERY['INSERT_TXIN'] = '''
+    INSERT OR IGNORE INTO TxIn (
+      tx, n, addr, btc) VALUES (
+      ?, ?, ?, ?);'''
+QUERY['INSERT_TXOUT'] = '''
+    INSERT OR IGNORE INTO TxOut (
+      tx, n, addr, btc) VALUES (
+      ?, ?, ?, ?);'''
+
 QUERY['UPDATE_META'] = '''
     UPDATE Meta SET value = ? 
       WHERE key = ?;'''

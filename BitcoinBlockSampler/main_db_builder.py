@@ -7,7 +7,7 @@ from secret import rpc_user, rpc_password
 from time_manager import get_time
 from db_manager import QUERY, DBBuilder, DBReader
 from rpc_manager import RPCManager
-from json_parser import vout_addrs_from_tx, vin_tx_n_from_tx, addr_btc_from_tx_n
+from json_parser import addr_btc_from_vout
 
 FLAGS = None
 _ = None
@@ -30,8 +30,9 @@ def get_data_index(height):
     blks.append((height, block_hash))
     for tx in block['tx']:
         txes.append((tx['txid'],))
-        for addr, _ in vout_addrs_from_tx(tx):
-            addrs.append((addr,))
+        for n, vout in enumerate(tx['vout']):
+            for addr, btc in addr_btc_from_vout(tx['txid'], vout):
+                addrs.append((addr,))
     RPCM = rpcm
     return blks, txes, addrs
 
@@ -54,16 +55,18 @@ def get_data_core(height):
     for tx in block['tx']:
         txid = INDEX.select('SELECT_TXID', tx['txid'])
         blktx.append((blkid, txid))
-        for ptxid, n in vin_tx_n_from_tx(tx):
-            ptx = rpcm.call('getrawtransaction', ptxid, 1)
-            for addr, btc in addr_btc_from_tx_n(ptx, n):
+        for n, vin in enumerate(tx['vin']):
+            ptx = rpcm.call('getrawtransaction', vin['txid'], 1)
+            pvout = ptx['vout'][vin['vout']]
+            for addr, btc in addr_btc_from_vout(ptx['txid'], pvout):
                 addrid = INDEX.select('SELECT_ADDRID', addr)
                 txin.append((txid, n, addrid, btc))
-        for n, (addr, btc) in vout_addrs_from_tx(tx):
-            addrid = INDEX.select('SELECT_ADDRID', addr)
-            addrs.append((addr, btc))
+        for n, vout in enumerate(tx['vout']):
+            for addr, btc in addr_btc_from_vout(tx['txid'], vout):
+                addrid = INDEX.select('SELECT_ADDRID', addr)
+                txout.append((txid, n, addrid, btc))
     RPCM = rpcm
-    return blks, txes, addrs
+    return blktime, blktx, txin, txout
 
 
 def main():
@@ -158,16 +161,18 @@ def main():
                 dbb.begin()
                 with multiprocessing.Pool(pool_num) as p:
                     try:
-                        results = p.imap(get_data, range(sheight, eheight))
-                        for blks, txes, addrs in results:
-                            dbb.insertmany('INSERT_BLKID', blks)
-                            dbb.insertmany('INSERT_TXID', txes)
-                            dbb.insertmany('INSERT_ADDRID', addrs)
+                        results = p.imap(get_data_core, range(sheight, eheight))
+                        for blktime, blktx, txin, txout in results:
+                            dbb.insertmany('INSERT_BLKTIME', blktime)
+                            dbb.insertmany('INSERT_BLKTX', blktx)
+                            dbb.insertmany('INSERT_TXIN', txin)
+                            dbb.insertmany('INSERT_TXOUT', txout)
                     except KeyboardInterrupt:
                         print(f'KeyboardInterrupt detected. Terminate child processes.')
                         p.terminate()
                         p.join(60)
                         raise KeyboardInterrupt
+                dbb.putmeta('ProcessedBlockHeight', eheight-1)
                 dbb.commit()
                 if DEBUG:
                     print(f'Job done from {sheight} to {eheight-1} during {time.time()-stime}')
