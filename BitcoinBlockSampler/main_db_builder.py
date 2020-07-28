@@ -50,20 +50,23 @@ def get_data_core(height):
         rpcm = RPCManager(rpc_user, rpc_password)
     block_hash = rpcm.call('getblockhash', height)
     block = rpcm.call('getblock', block_hash, 2)
-    blkid = INDEX.select('SELECT_BLKID', block['hash'])
+    blkid = INDEX.select('SELECT_BLKID', (block['hash'],))
     blktime.append((blkid, block['time']))
     for tx in block['tx']:
-        txid = INDEX.select('SELECT_TXID', tx['txid'])
+        txid = INDEX.select('SELECT_TXID', (tx['txid'],))
         blktx.append((blkid, txid))
         for n, vin in enumerate(tx['vin']):
+            if 'coinbase' in vin:
+                txin.append((txid, n, 0, 0.0))
+                continue
             ptx = rpcm.call('getrawtransaction', vin['txid'], 1)
             pvout = ptx['vout'][vin['vout']]
             for addr, btc in addr_btc_from_vout(ptx['txid'], pvout):
-                addrid = INDEX.select('SELECT_ADDRID', addr)
+                addrid = INDEX.select('SELECT_ADDRID', (addr,))
                 txin.append((txid, n, addrid, btc))
         for n, vout in enumerate(tx['vout']):
             for addr, btc in addr_btc_from_vout(tx['txid'], vout):
-                addrid = INDEX.select('SELECT_ADDRID', addr)
+                addrid = INDEX.select('SELECT_ADDRID', (addr,))
                 txout.append((txid, n, addrid, btc))
     RPCM = rpcm
     return blktime, blktx, txin, txout
@@ -147,7 +150,7 @@ def main():
         else:
             start_height = int(start_height)
         start_height = max(start_height - FLAGS.untrusted, 0)
-        end_height = dbr_index.select('SELECT_MAX_BLKID')
+        end_height = INDEX.select('SELECT_MAX_BLKID')
         print(f'Start from {start_height} to {end_height}')
         pool_num = FLAGS.process
 

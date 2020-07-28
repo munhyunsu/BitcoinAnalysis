@@ -153,9 +153,7 @@ class DBBuilder(object):
         
     def putmeta(self, key, value):
         self.cur.execute(QUERY['INSERT_META'], (key, value))
-        self.conn.commit()
         self.cur.execute(QUERY['UPDATE_META'], (value, key))
-        self.conn.commit()
     
     def getmeta(self, key):
         self.cur.execute(QUERY['SELECT_META'], (key,))
