@@ -34,8 +34,8 @@ QUERY['CREATE_TXIN_TABLE'] = '''
     CREATE TABLE IF NOT EXISTS TxIn (
       tx INTEGER NOT NULL,
       n INTEGER NOT NULL,
-      addr INTEGER NOT NULL,
-      btc REAL NOT NULL, 
+      ptx INTEGER NOT NULL,
+      pn INTEGER NOT NULL,
       UNIQUE (tx, n));'''
 QUERY['CREATE_TXOUT_TABLE'] = '''
     CREATE TABLE IF NOT EXISTS TxOut (
@@ -43,7 +43,7 @@ QUERY['CREATE_TXOUT_TABLE'] = '''
       n INTEGER NOT NULL,
       addr INTEGER NOT NULL,
       btc REAL NOT NULL,
-      UNIQUE (tx, n));'''
+      UNIQUE (tx, n, addr));'''
 
 QUERY['INSERT_META'] = '''
     INSERT OR IGNORE INTO Meta (
@@ -72,7 +72,7 @@ QUERY['INSERT_BLKTX'] = '''
       ?, ?);'''
 QUERY['INSERT_TXIN'] = '''
     INSERT OR IGNORE INTO TxIn (
-      tx, n, addr, btc) VALUES (
+      tx, n, ptx, pn) VALUES (
       ?, ?, ?, ?);'''
 QUERY['INSERT_TXOUT'] = '''
     INSERT OR IGNORE INTO TxOut (

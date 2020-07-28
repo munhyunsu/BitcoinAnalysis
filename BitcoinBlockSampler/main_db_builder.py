@@ -57,13 +57,11 @@ def get_data_core(height):
         blktx.append((blkid, txid))
         for n, vin in enumerate(tx['vin']):
             if 'coinbase' in vin:
-                txin.append((txid, n, 0, 0.0))
+                txin.append((txid, n, 0, 0))
                 continue
-            ptx = rpcm.call('getrawtransaction', vin['txid'], 1)
-            pvout = ptx['vout'][vin['vout']]
-            for addr, btc in addr_btc_from_vout(ptx['txid'], pvout):
-                addrid = INDEX.select('SELECT_ADDRID', (addr,))
-                txin.append((txid, n, addrid, btc))
+            ptxid = INDEX.select('SELECT_TXID', (vin['txid'],))
+            pn = vin['vout']
+            txin.append((txid, n, ptxid, pn))
         for n, vout in enumerate(tx['vout']):
             for addr, btc in addr_btc_from_vout(tx['txid'], vout):
                 addrid = INDEX.select('SELECT_ADDRID', (addr,))
@@ -213,12 +211,10 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--type', type=str, required=True,
-                        choices=('index', 'core', 'util'),
+                        choices=('index', 'core'),
                         help='The type for building database')
     parser.add_argument('--index', type=str,
                         help='The path for index database')
-    parser.add_argument('--core', type=str,
-                        help='The path for core database')
     parser.add_argument('--prefix', type=str, default='dbv3',
                         help='The prefix of output database')
     parser.add_argument('--debug', action='store_true',
@@ -243,8 +239,6 @@ if __name__ == '__main__':
             f'./{FLAGS.prefix}-{FLAGS.type}.db'))
     if FLAGS.index is not None:
         FLAGS.index = os.path.abspath(os.path.expanduser(FLAGS.index))
-    if FLAGS.core is not None:
-        FLAGS.core = os.path.abspath(os.path.expanduser(FLAGS.core))
     DEBUG = FLAGS.debug
 
     main()
