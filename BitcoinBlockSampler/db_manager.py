@@ -7,6 +7,7 @@ QUERY['CREATE_META_TABLE'] = '''
     CREATE TABLE IF NOT EXISTS Meta (
       key TEXT PRIMARY KEY,
       value TEXT);'''
+
 QUERY['CREATE_BLKID_TABLE'] = '''
     CREATE TABLE IF NOT EXISTS BlkID (
       id INTEGER PRIMARY KEY,
@@ -19,24 +20,31 @@ QUERY['CREATE_ADDRID_TABLE'] = '''
     CREATE TABLE IF NOT EXISTS AddrID (
       id INTEGER PRIMARY KEY,
       addr TEXT NOT NULL UNIQUE);'''
-QUERY['CREATE_TXHEIGHT_TABLE'] = '''
-    CREATE TABLE IF NOT EXISTS TxHeight (
-      tx INTEGER PRIMARY KEY,
-      height INTEGER NOT NULL);'''
+
+QUERY['CREATE_BLKTIME_TABLE'] = '''
+    CREATE TABLE IF NOT EXISTS BlkTime (
+      blk INTEGER PRIMARY KEY,
+      unixtime INTEGER NOT NULL);'''
+QUERY['CREATE_BLKTX_TABLE'] = '''
+    CREATE TABLE IF NOT EXISTS BlkTx (
+      blk INTEGER NOT NULL,
+      tx INTEGER NOT NULL,
+      UNIQUE (blk, tx));'''
 QUERY['CREATE_TXIN_TABLE'] = '''
     CREATE TABLE IF NOT EXISTS TxIn (
-      tx INTEGER,
-      n INTEGER,
-      addr INTEGER,
-      UNIQUE (tx, n, addr));'''
+      tx INTEGER NOT NULL,
+      n INTEGER NOT NULL,
+      addr INTEGER NOT NULL,
+      btc REAL NOT NULL, 
+      UNIQUE (tx, n));'''
 QUERY['CREATE_TXOUT_TABLE'] = '''
     CREATE TABLE IF NOT EXISTS TxOut (
-      tx INTEGER,
-      n INTEGER,
-      addr INTEGER,
-      UNIQUE (tx, n, addr));'''
-QUERY['SELECT_MAX_BLKID'] = '''
-    SELECT MAX(id) FROM BlkID;'''
+      tx INTEGER NOT NULL,
+      n INTEGER NOT NULL,
+      addr INTEGER NOT NULL,
+      btc REAL NOT NULL,
+      UNIQUE (tx, n));'''
+
 QUERY['INSERT_META'] = '''
     INSERT OR IGNORE INTO Meta (
       key, value) VALUES (
@@ -54,8 +62,20 @@ QUERY['INSERT_ADDRID'] = '''
       addr) VALUES (
       ?);'''
 QUERY['UPDATE_META'] = '''
-    UPDATE Meta SET value=? 
-    WHERE key=?;'''
+    UPDATE Meta SET value = ? 
+      WHERE key = ?;'''
+
+QUERY['SELECT_BLKID'] = '''
+    SELECT id FROM BlkID WHERE blkhash = ?;'''
+QUERY['SELECT_TXID'] = '''
+    SELECT id FROM TxID WHERE txid = ?;'''
+QUERY['SELECT_ADDRID'] = '''
+    SELECT id FROM AddrID WHERE addr = ?;'''
+QUERY['SELECT_MAX_BLKID'] = '''
+    SELECT MAX(id) FROM BlkID;'''
+QUERY['SELECT_META'] = '''
+    SELECT value FROM Meta
+      WHERE key = ?'''
 
 
 class DBBuilder(object):
@@ -84,6 +104,16 @@ class DBBuilder(object):
                   'CREATE_ADDRID_TABLE']:
             self.cur.execute(QUERY[q])
         self.commit()
+        
+    def _create_table_core(self):
+        self.begin()
+        for q in ['CREATE_META_TABLE',
+                  'CREATE_BLKTIME_TABLE',
+                  'CREATE_BLKTX_TABLE',
+                  'CREATE_TXIN_TABLE',
+                  'CREATE_TXOUT_TABLE']:
+            self.cur.execute(QUERY[q])
+        self.commit()
     
     def select(self, query, *args):
         self.cur.execute(QUERY[query], *args)
@@ -102,12 +132,50 @@ class DBBuilder(object):
 
     def insertmany(self, query, *args):
         self.cur.executemany(QUERY[query], *args)
-
+        
+    def putmeta(self, key, value):
+        self.cur.execute(QUERY['INSERT_META'], (key, value))
+        self.conn.commit()
+        self.cur.execute(QUERY['UPDATE_META'], (value, key))
+        self.conn.commit()
+    
+    def getmeta(self, key):
+        self.cur.execute(QUERY['SELECT_META'], (key,))
+        value = self.cur.fetchone()
+        if value is not None:
+            value = value[0]
+        return value
+        
     def begin(self):
         self.cur.execute('BEGIN TRANSACTION;')
 
     def commit(self):
         self.cur.execute('COMMIT TRANSACTION;')
+
+    def close(self):
+        self.conn.close()
+
+
+class DBReader(object):
+    def __init__(self, dbpath: str):
+        self.dbpath = dbpath
+        self.conn = sqlite3.connect(f'file:{self.dbpath}?mode=ro', uri=True)
+        self.cur = self.conn.cursor()
+    
+    def select(self, query, *args):
+        self.cur.execute(QUERY[query], *args)
+        value = self.cur.fetchone()
+        if value is not None:
+            value = value[0]
+        return value
+
+    def selectall(self, query, *args):
+        self.cur.execute(QUERY[query], *args)
+        return self.cur.fetchall()
+    
+    def selectcur(self, query, *args):
+        self.cur.execute(QUERY[query], *args)
+        return self.cur
 
     def close(self):
         self.conn.close()
