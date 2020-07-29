@@ -150,3 +150,58 @@ CREATE TABLE IF NOT EXISTS UTXO (
     n INTEGER NOT NULL,
     UNIQUE (tx, n));
 ```
+
+---
+#### Hierarchical database design (a.k.a. Version 4)
+
+- Level 1: Index Tables (file: index.db)
+
+```sql
+CREATE TABLE IF NOT EXISTS BlkID (
+    id INTEGER PRIMARY KEY, -- block height
+    blkhash TEXT NOT NULL UNIQUE);
+
+CREATE TABLE IF NOT EXISTS TxID (
+    id INTEGER PRIMARY KEY,
+    txid TEXT NOT NULL UNIQUE);
+
+CREATE TAblE IF NOT EXISTS AddrID (
+    id INTEGER PRIMARY KEY,
+    addr TEXT NOT NULL UNIQUE);
+```
+
+- Level 2: Core Tables (file: core.db)
+
+```sql
+CREATE TABLE IF NOT EXISTS BlkTime (
+    blk INTEGER PRIMARY KEY,
+    unixtime INTEGER NOT NULL);
+
+CREATE TABLE IF NOT EXISTS BlkTx (
+    blk INTEGER NOT NULL,
+    tx INTEGER NOT NULL,
+    UNIQUE (blk, tx));
+
+CREATE TABLE IF NOT EXISTS TxIn (
+    tx INTEGER NOT NULL,
+    n INTEGER NOT NULL,
+    ptx INTEGER NOT NULL,
+    pn INTEGER NOT NULL,
+    UNIQUE (tx, n));
+
+CREATE TABLE IF NOT EXISTS TxOut (
+    tx INTEGER NOT NULL,
+    n INTEGER NOT NULL,
+    addr INTEGER NOT NULL,
+    btc REAL NOT NULL,
+    UNIQUE (tx, n, addr));
+```
+
+##### Indexes
+
+```sql
+CREATE INDEX idx_BlkTime_2 ON BlkTime(unixtime);
+CREATE INDEX idx_BlkTx_2 ON BlkTx(tx);
+CREATE INDEX idx_TxIn_3_4 ON TxIn(ptx, pn);
+CREATE INDEX idx_TxOut_3 ON TxOut(addr);
+```
