@@ -224,7 +224,7 @@ if __name__ == '__main__':
     parser.add_argument('--term', type=int, default=10000,
                         help='The term of block height')
     parser.add_argument('--process', type=int, 
-                        default=min(multiprocessing.cpu_count()//2, 4),
+                        default=min(multiprocessing.cpu_count()//2, 16),
                         help='The number of multiprocess')
     parser.add_argument('--pagesize', type=int, default=1024*64,
                         help='The page size of database')
