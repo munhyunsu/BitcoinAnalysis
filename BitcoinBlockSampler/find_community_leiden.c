@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
 
     igraph_community_leiden(&graph,
                             NULL, &degree,
-                            resolution, 0.01, 0,
+                            1.0/(2*igraph_ecount(&graph)), 0.01, 0,
                             &membership, &nb_clusters, &quality);
     time(&etime);
     printf("[%ld] Leiden found %i clusters using modularity, quality is %.4f.\n",
