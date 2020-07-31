@@ -8,11 +8,10 @@ int main(int argc, char* argv[]) {
 
     time_t stime, etime;
     time(&stime);
-    if(argc <= 2) {
+    if(argc <= 1) {
         return 0;
     }
     char *path = argv[1];
-    double resolution = strtod(argv[2], NULL);
     input = fopen(path, "r");
     if(!input) {
         return 1;
