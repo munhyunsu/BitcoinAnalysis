@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
     if(!input) {
         return 1;
     }
-    igraph_read_graph_ncol(&graph, input, NULL, 1, 0, 1);
+    igraph_read_graph_ncol(&graph, input, NULL, 1, 0, 0);
     fclose(input);
     time(&etime);
     printf("[%ld] Graph load complete with %li vertices and %li edges\n",
