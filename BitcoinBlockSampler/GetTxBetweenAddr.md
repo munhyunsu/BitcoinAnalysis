@@ -35,8 +35,69 @@
 
 1. Prepare the query using parameters
 
+    ##### TxIn
     ```sql
-    SELECT * FROM TxIn INNER JOIN TxOut ON TxIn.tx = TxOut.tx AND TxIn.n = TxOut.n WHERE TxIn.addr IN () AND TxOut.addr IN ();
+    EXPLAIN QUERY PLAN SELECT TxIn.tx AS tx, TxIn.n AS n, TxOut.addr AS addr, TxOut.btc AS btc
+    FROM TxIn
+    INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n;
+    ```
+
+    ##### TxOut
+    ```sql
+    EXPLAIN QUERY PLAN SELECT TxOut.tx AS tx, TxOut.n AS n, TxOut.addr AS addr, TxOut.btc AS btc
+    FROM TxOut;
+    ```
+
+    ##### Edges
+    ```sql
+    EXPLAIN QUERY PLAN SELECT TXI.addr, TXO.addr, TXO.btc
+    FROM (SELECT TxIn.tx AS tx, TxIn.n AS n, TxOut.addr AS addr, TxOut.btc AS btc
+          FROM TxIn
+          INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n) AS TXI
+    INNER JOIN (SELECT TxOut.tx AS tx, TxOut.n AS n, TxOut.addr AS addr, TxOut.btc AS btc
+                FROM TxOut) AS TXO ON TXI.tx = TXO.tx;
+    ```
+
+    ##### Edges and group by
+    ```sql
+    EXPLAIN QUERY PLAN SELECT TXI.addr, TXO.addr, COUNT(*), SUM(TXO.btc)
+    FROM (SELECT TxIn.tx AS tx, TxIn.n AS n, TxOut.addr AS addr, TxOut.btc AS btc
+          FROM TxIn
+          INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n) AS TXI
+    INNER JOIN (SELECT TxOut.tx AS tx, TxOut.n AS n, TxOut.addr AS addr, TxOut.btc AS btc
+                FROM TxOut) AS TXO ON TXI.tx = TXO.tx
+    GROUP BY TXI.addr, TXO.addr;
+    ```
+
+    ##### Edge Based on blocktime and group by
+    ```sql
+    EXPLAIN QUERY PLAN SELECT TX.txi, TX.txo, TX.btc
+    FROM (SELECT BlkTx.tx AS tx FROM BlkTime
+            INNER JOIN BlkTx ON BlkTime.blk = BlkTx.blk
+            WHERE 1577804400 <= BlkTime.unixtime AND
+                  BlkTime.unixtime <= 1580482799) AS BT
+    INNER JOIN (SELECT TXI.tx AS tx, TXI.addr AS txi, TXO.addr AS txo, TXO.btc AS btc
+                FROM (SELECT TxIn.tx AS tx, TxIn.n AS n, TxOut.addr AS addr, TxOut.btc AS btc
+                      FROM TxIn
+                      INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n) AS TXI
+                INNER JOIN (SELECT TxOut.tx AS tx, TxOut.n AS n, TxOut.addr AS addr, TxOut.btc AS btc
+                            FROM TxOut) AS TXO ON TXI.tx = TXO.tx) AS TX ON BT.tx = TX.tx;
+    ```
+
+    ##### Edge Based on blocktime and group by
+    ```sql
+    EXPLAIN QUERY PLAN SELECT TX.txi AS src, TX.txo AS dst, COUNT(*) AS cnt, SUM(TX.btc) AS btc
+    FROM (SELECT BlkTx.tx AS tx FROM BlkTime
+            INNER JOIN BlkTx ON BlkTime.blk = BlkTx.blk
+            WHERE 1577804400 <= BlkTime.unixtime AND
+                  BlkTime.unixtime <= 1580482799) AS BT
+    INNER JOIN (SELECT TXI.tx AS tx, TXI.addr AS txi, TXO.addr AS txo, TXO.btc AS btc
+                FROM (SELECT TxIn.tx AS tx, TxIn.n AS n, TxOut.addr AS addr, TxOut.btc AS btc
+                      FROM TxIn
+                      INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n) AS TXI
+                INNER JOIN (SELECT TxOut.tx AS tx, TxOut.n AS n, TxOut.addr AS addr, TxOut.btc AS btc
+                            FROM TxOut) AS TXO ON TXI.tx = TXO.tx) AS TX ON BT.tx = TX.tx
+    GROUP BY TX.txi, TX.txo;
     ```
 
 2. Calculate the maximum number of parameters
