@@ -9,3 +9,7 @@ Practice.*
 
 # data directory
 data/
+
+# Binary
+find_community_leiden
+find_community_multilevel
