@@ -89,11 +89,23 @@ QUERY['SELECT_TXID'] = '''
     SELECT id FROM TxID WHERE txid = ?;'''
 QUERY['SELECT_ADDRID'] = '''
     SELECT id FROM AddrID WHERE addr = ?;'''
+QUERY['SELECT_ADDR'] = '''
+    SELECT addr FROM AddrID WHERE id = ?;'''
 QUERY['SELECT_MAX_BLKID'] = '''
     SELECT MAX(id) FROM BlkID;'''
 QUERY['SELECT_META'] = '''
     SELECT value FROM Meta
       WHERE key = ?'''
+
+QUERY['SELECT_MULTIINPUT'] = '''
+    SELECT TxOut.addr AS addr
+    FROM TxIn
+    INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n
+    WHERE txIn.tx IN (SELECT TxIn.tx
+                      FROM TxIn
+                      INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n
+                      WHERE addr = ?)
+    GROUP BY addr;'''
 
 
 class DBBuilder(object):
