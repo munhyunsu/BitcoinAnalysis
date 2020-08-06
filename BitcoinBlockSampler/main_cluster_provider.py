@@ -68,7 +68,6 @@ class RESTRequestHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(f'''{a}\n'''.encode('utf-8'))
             if DEBUG:
                 addrs = addrs + 1
-        self.wfile.close()
         if DEBUG:
             print(f'[{int(time.time()-STIME)}] {addr} find {addrs}')
 
