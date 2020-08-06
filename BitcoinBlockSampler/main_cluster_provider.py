@@ -3,6 +3,7 @@ import sqlite3
 import time
 import http.server
 import socketserver
+import collections
 
 from db_manager import QUERY, DBReader
 
@@ -31,7 +32,7 @@ class RESTRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         if DEBUG:
-            print((f'[{int(STIME-time.time())}] {self.address_string()} -- '
+            print((f'[{int(time.time()-STIME)}] {self.address_string()} -- '
                    f'[{self.date_time_string()}] {self.requestline}'))
                   
         addr = (self.requestline.split(' ')[1]).split('/')[-1]
@@ -42,17 +43,35 @@ class RESTRequestHandler(http.server.BaseHTTPRequestHandler):
             CUR.execute('''SELECT MAX(cluster)+1 FROM Cluster;''')
             nextclusterid = CUR.fetchone()[0]
             CUR.execute('BEGIN TRANSACTION')
-            for c in CORE.selectcur('SELECT_MULTIINPUT', (addrid,)):
-                CUR.execute('''UPDATE Cluster SET Cluster = ? WHERE addr = ?''', (nextclusterid, c))
+            queue = collections.deque([addrid])
+            visited = set([addrid])
+            while queue:
+                caid = queue.popleft()
+                for c in CORE.selectcur('SELECT_MULTIINPUT', (caid,)):
+                    c = c[0]
+                    CUR.execute('''UPDATE Cluster SET Cluster = ? WHERE addr = ?''', (nextclusterid, c))
+                    if c not in visited:
+                        visited.add(c)
+                        queue.append(c)
             CUR.execute('COMMIT TRANSACTION')
             clusterid = nextclusterid
-        CUR.execute('''SELECT addr FROM Cluster WHERE cluster = ?''', (clusterid,))
-        addrs = list()
-        for a in CUR:
-            aid = INDEX.select('SELECT_ADDRID', (a,))
-            addrs.append(aid)
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html')
+        self.end_headers()
+        if DEBUG:
+            addrs = 0
+        for aid in CUR.execute('''SELECT addr FROM Cluster WHERE cluster = ?''', (clusterid,)):
+            aid = aid[0]
+            a = INDEX.select('SELECT_ADDR', (aid,))
+            if a is None:
+                raise Exception(f'Error! {a}')
+            self.wfile.write(f'''{a}\n'''.encode('utf-8'))
+            if DEBUG:
+                addrs = addrs + 1
+        if DEBUG:
+            print(f'[{int(time.time()-STIME)}] {addr} find {addrs}')
 
-            
+
 def main():
     global STIME
     global INDEX
@@ -66,7 +85,7 @@ def main():
     INDEX = db_index = DBReader(FLAGS.index)
     CORE = db_core = DBReader(FLAGS.core)
     if not os.path.exists(FLAGS.cluster):
-        print(f'[{int(STIME-time.time())}] Initialize Cluster Database')
+        print(f'[{int(time.time()-STIME)}] Initialize Cluster Database')
         conn = sqlite3.connect(FLAGS.cluster)
         cur = conn.cursor()
         cur.execute('''PRAGMA journal_mode = NORMAL''')
@@ -80,20 +99,20 @@ def main():
             cur.execute('''INSERT INTO Cluster (addr, cluster)
                            VALUES (?, ?);''', (i, -1))
         cur.execute('COMMIT TRANSACTION')
-        print(f'[{int(STIME-time.time())}] Bulk Insert Into Cluster Database Complete')
+        print(f'[{int(time.time()-STIME)}] Bulk Insert Into Cluster Database Complete')
         cur.execute('''CREATE INDEX idx_Cluster_2 ON Cluster(cluster);''')
         conn.close()
-        print(f'[{int(STIME-time.time())}] Initialize Cluster Database Complete')
+        print(f'[{int(time.time()-STIME)}] Initialize Cluster Database Complete')
     CONN = conn = sqlite3.connect(FLAGS.cluster)
     CUR = cur = conn.cursor()
 
     with HTTPDaemon((FLAGS.ip, FLAGS.port), 
                     RESTRequestHandler) as httpd:
         try:
-            print(f'[{STIME-int(time.time())}] Serving {httpd.server_address}')
+            print(f'[{int(time.time()-STIME)}] Serving {httpd.server_address}')
             httpd.serve_forever()
         except KeyboardInterrupt:
-            print(f'[{STIME-int(time.time())}] Terminate {httpd.server_address}')
+            print(f'[{int(time.time()-STIME)}] Terminate {httpd.server_address}')
             httpd.shutdown()
 
     CONN.close()
