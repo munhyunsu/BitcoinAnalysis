@@ -71,6 +71,10 @@ class RESTRequestHandler(http.server.BaseHTTPRequestHandler):
         if DEBUG:
             print((f'[{int(time.time()-STIME)}] {self.address_string()} -- '
                    f'[{self.date_time_string()}] {self.requestline}'))
+        endpoint = (self.requestline.split(' ')[1]).split('/')[1]
+        if endpoint != 'addr':
+            self.send_response(404)
+            return
         addr = (self.requestline.split(' ')[1]).split('/')[-1]
         clusterid = get_clusterid(addr)
         self.send_response(200)
