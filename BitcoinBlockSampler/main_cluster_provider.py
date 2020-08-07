@@ -15,6 +15,46 @@ CORE = None
 CONN = None
 CUR = None
 
+def get_clusterid(addr):
+    global INDEX
+    global CORE
+    global CONN
+    global CUR
+    global STIME
+
+    addrid = INDEX.select('SELECT_ADDRID', (addr,))
+    CUR.execute('''SELECT cluster FROM Cluster WHERE addr = ?''', (addrid,))
+    clusterid = CUR.fetchone()[0]
+    if clusterid == -1:
+        CUR.execute('''SELECT MAX(cluster)+1 FROM Cluster;''')
+        nextclusterid = CUR.fetchone()[0]
+        CUR.execute('BEGIN TRANSACTION')
+        queue = collections.deque([addrid])
+        visited = set([addrid])
+        while queue:
+            caid = queue.popleft()
+            for c in CORE.selectcur('SELECT_MULTIINPUT', (caid,)):
+                c = c[0]
+                CUR.execute('''UPDATE Cluster SET Cluster = ? WHERE addr = ?''', (nextclusterid, c))
+                if c not in visited:
+                    visited.add(c)
+                    queue.append(c)
+        CUR.execute('COMMIT TRANSACTION')
+        clusterid = nextclusterid
+    return clusterid
+
+
+def get_addrids(clusterid):
+    global INDEX
+    global CORE
+    global CONN
+    global CUR
+    global STIME
+    
+    for aid in CUR.execute('''SELECT addr FROM Cluster WHERE cluster = ?''', (clusterid,)):
+        yield aid[0]
+    
+
 
 class HTTPDaemon(socketserver.TCPServer):
     allow_reuse_address = True
@@ -27,47 +67,20 @@ class RESTRequestHandler(http.server.BaseHTTPRequestHandler):
     global CUR
     global STIME
 
-    def do_POST(self):
-        pass
-
     def do_GET(self):
         if DEBUG:
             print((f'[{int(time.time()-STIME)}] {self.address_string()} -- '
                    f'[{self.date_time_string()}] {self.requestline}'))
-                  
         addr = (self.requestline.split(' ')[1]).split('/')[-1]
-        addrid = INDEX.select('SELECT_ADDRID', (addr,))
-        CUR.execute('''SELECT cluster FROM Cluster WHERE addr = ?''', (addrid,))
-        clusterid = CUR.fetchone()[0]
-        if clusterid == -1:
-            CUR.execute('''SELECT MAX(cluster)+1 FROM Cluster;''')
-            nextclusterid = CUR.fetchone()[0]
-            CUR.execute('BEGIN TRANSACTION')
-            queue = collections.deque([addrid])
-            visited = set([addrid])
-            while queue:
-                caid = queue.popleft()
-                for c in CORE.selectcur('SELECT_MULTIINPUT', (caid,)):
-                    c = c[0]
-                    CUR.execute('''UPDATE Cluster SET Cluster = ? WHERE addr = ?''', (nextclusterid, c))
-                    if c not in visited:
-                        visited.add(c)
-                        queue.append(c)
-            CUR.execute('COMMIT TRANSACTION')
-            clusterid = nextclusterid
+        clusterid = get_clusterid(addr)
         self.send_response(200)
         self.send_header('Content-Type', 'text/html')
         self.end_headers()
-        if DEBUG:
-            addrs = 0
-        for aid in CUR.execute('''SELECT addr FROM Cluster WHERE cluster = ?''', (clusterid,)):
-            aid = aid[0]
+        addrs = 0
+        for aid in get_addrids(clusterid):
             a = INDEX.select('SELECT_ADDR', (aid,))
-            if a is None:
-                raise Exception(f'Error! {a}')
             self.wfile.write(f'''{a}\n'''.encode('utf-8'))
-            if DEBUG:
-                addrs = addrs + 1
+            addrs = addrs + 1
         if DEBUG:
             print(f'[{int(time.time()-STIME)}] {addr} find {addrs}')
 
