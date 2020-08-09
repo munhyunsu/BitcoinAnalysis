@@ -11,7 +11,7 @@ sqlite3 ./dbv3-core.db
 
 2. Index 데이터베이스 연결
 ```sql
-ATTACH DATABASE './dbv3-index.db' AS DBINDEX
+ATTACH DATABASE './dbv3-index.db' AS DBINDEX;
 ```
 
 3. 결과 헤더 On
@@ -84,4 +84,28 @@ FROM
                           BlkTime.unixtime <= (SELECT STRFTIME('%s', 'DATETIME2')))) AS Outcome;
 ```
 
-##### 
+##### 유용한 데이터베이스
+
+```sql
+-- UTXO 주소
+SELECT DBINDEX.TxID.txid AS txid, DBCORE.TxOut.n AS n, DBINDEX.AddrID.addr AS addr, DBCORE.TxOut.btc AS btc
+FROM DBCORE.TxOut
+INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBCORE.TxOut.addr
+INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBCORE.TxOut.tx
+WHERE NOT EXISTS (SELECT *
+                  FROM DBCORE.TxIn
+                  WHERE DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND
+                        DBCORE.TxIn.pn = DBCORE.TxOut.n);
+GROUP BY txid, n;
+```
+
+```sql
+-- UTXO 트랜잭션 번호, 인덱스
+SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.n AS n
+FROM DBCORE.TxOut
+WHERE NOT EXISTS (SELECT *
+                  FROM DBCORE.TxIn
+                  WHERE DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND
+                        DBCORE.TxIn.pn = DBCORE.TxOut.n);
+GROUP BY tx, n;
+```
