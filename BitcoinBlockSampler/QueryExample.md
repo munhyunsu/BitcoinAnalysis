@@ -12,6 +12,7 @@ sqlite3 ./dbv3-core.db
 2. Index 데이터베이스 연결
 ```sql
 ATTACH DATABASE './dbv3-index.db' AS DBINDEX;
+ATTACH DATABASE './dbv3-core.db' AS DBCORE;
 ```
 
 3. 결과 헤더 On
@@ -108,4 +109,16 @@ WHERE NOT EXISTS (SELECT *
                   WHERE DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND
                         DBCORE.TxIn.pn = DBCORE.TxOut.n);
 GROUP BY tx, n;
+```
+
+##### 클러스터 데이터베이스
+```sql
+SELECT DBINDEX.AddrID.addr
+FROM Cluster
+INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = Cluster.addr
+WHERE Cluster.cluster = (SELECT Cluster.cluster
+                         FROM Cluster
+                         WHERE Cluster.addr = (SELECT DBINDEX.Addr.id 
+                                               FROM DBINDEX.Addr
+                                               WHERE DBINDEX.Addr.addr = 'ADDR'));
 ```
