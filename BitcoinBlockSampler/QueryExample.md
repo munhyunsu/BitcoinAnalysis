@@ -113,12 +113,34 @@ GROUP BY tx, n;
 
 ##### 클러스터 데이터베이스
 ```sql
+-- 같은 클러스터 주소 리스트
 SELECT DBINDEX.AddrID.addr
 FROM Cluster
 INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = Cluster.addr
 WHERE Cluster.cluster = (SELECT Cluster.cluster
                          FROM Cluster
-                         WHERE Cluster.addr = (SELECT DBINDEX.Addr.id 
-                                               FROM DBINDEX.Addr
-                                               WHERE DBINDEX.Addr.addr = 'ADDR'));
+                         WHERE Cluster.addr = (SELECT DBINDEX.AddrID.id 
+                                               FROM DBINDEX.AddrID
+                                               WHERE DBINDEX.AddrID.addr = 'ADDR'));
+```
+
+```sql
+-- 서비스1: 주소 ==> 태그
+SELECT TagID.tag
+FROM Tag
+INNER JOIN TagID ON TagID.id = Tag.tag
+WHERE Tag.addr = (SELECT DBINDEX.AddrID.id
+                  FROM DBINDEX.AddrID
+                  WHERE DBINDEX.AddrID.addr = 'ADDR');
+
+-- 서비스2: 태그 ==> 주소 리스트
+SELECT DBINDEX.AddrID.addr
+FROM Cluster
+INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = Cluster.addr
+WHERE Cluster.cluster IN (SELECT Cluster.cluster
+                          FROM Cluster
+                          WHERE Cluster.addr IN (SELECT Tag.addr 
+                                                 FROM Tag
+                                                 INNER JOIN TagID ON TagID.id = Tag.tag
+                                                 WHERE TagID.tag = 'TAG'));
 ```
