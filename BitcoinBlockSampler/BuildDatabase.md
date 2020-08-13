@@ -195,13 +195,69 @@ CREATE TABLE IF NOT EXISTS TxOut (
     addr INTEGER NOT NULL,
     btc REAL NOT NULL,
     UNIQUE (tx, n, addr));
-```
-
-##### Indexes
-
-```sql
+    
 CREATE INDEX idx_BlkTime_2 ON BlkTime(unixtime);
 CREATE INDEX idx_BlkTx_2 ON BlkTx(tx);
 CREATE INDEX idx_TxIn_3_4 ON TxIn(ptx, pn);
 CREATE INDEX idx_TxOut_3 ON TxOut(addr);
+```
+
+- Level 3: Util Tables (file: util.db)
+
+```sql
+ATTACH DATABASE './dbv3-core.db' AS DBCORE;
+ATTACH DATABASE './dbv3-index.db' AS DBINDEX;
+
+-- UTXO
+CREATE TABLE IF NOT EXISTS UTXO (
+    tx INTEGER NOT NULL,
+    n INTEGER NOT NULL,
+    UNIQUE (tx, n));
+
+INSERT OR IGNORE INTO UTXO (tx, n)
+SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.n AS n
+FROM DBCORE.TxOut
+WHERE NOT EXISTS (SELECT *
+                  FROM DBCORE.TxIn
+                  WHERE DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND
+                        DBCORE.TxIn.pn = DBCORE.TxOut.n);
+GROUP BY tx, n;
+
+-- Graph Edge 
+CREATE TABLE IF NOT EXISTS Edge (
+    tx INTEGER NOT NULL,
+    src INTEGER NOT NULL,
+    dst INTEGER NOT NULL,
+    btc REAL NOT NULL,
+    UNIQUE (tx, src, dst, btc));
+
+INSERT OR IGNORE INTO Edge (tx, src, dst, btc)
+SELECT TXI.tx, TXI.addr, TXO.addr, TXO.btc
+FROM (SELECT DBCORE.TxIn.tx AS tx, DBCORE.TxIn.n AS n, 
+             DBCORE.TxOut.addr AS addr, DBCORE.TxOut.btc AS btc
+      FROM DBCORE.TxIn
+      INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.ptx AND 
+                                 DBCORE.TxOut.n = DBCORE.TxIn.pn) AS TXI
+INNER JOIN (SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.n AS n, 
+                   DBCORE.TxOut.addr AS addr, DBCORE.TxOut.btc AS btc
+            FROM DBCORE.TxOut) AS TXO ON TXO.tx = TXI.tx;
+```
+
+- Level 4: Service Tables (file: cluster.db)
+
+```sql
+CREATE TABLE IF NOT EXISTS Cluster (
+    addr INTEGER PRIMARY KEY,
+    cluster NOT NULL);
+    
+CREATE TABLE IF NOT EXISTS TagID (
+    id INTEGER PRIMARY KEY,
+    tag TEXT UNIQUE);
+    
+CREATE TABLE IF NOT EXISTS Tag (
+    addr INTEGER NOT NULL,
+    tag INTEGER NOT NULL,
+    UNIQUE (addr, tag));
+    
+CREATE INDEX idx_Cluster_2 ON Cluster(cluster);
 ```
