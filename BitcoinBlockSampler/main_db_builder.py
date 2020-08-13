@@ -12,6 +12,7 @@ from json_parser import addr_btc_from_vout
 FLAGS = None
 _ = None
 DEBUG = False
+RESUME = True
 RPCM = None
 INDEX = None
 
@@ -76,12 +77,13 @@ def main():
         print(f'Unparsed arguments {_}')
         
     dbb = DBBuilder(FLAGS.type, FLAGS.output)
-    dbb.cur.execute(f'''PRAGMA journal_mode = OFF;''')
-    dbb.cur.execute(f'''PRAGMA synchronous = OFF;''')
-    dbb.cur.execute(f'''PRAGMA page_size = {FLAGS.pagesize};''')
-    dbb.cur.execute(f'''PRAGMA cache_size = {FLAGS.cachesize};''')
-    dbb.cur.execute(f'''VACUUM;''')
-    dbb.conn.commit()
+    if not RESUME:
+        dbb.cur.execute(f'''PRAGMA journal_mode = OFF;''')
+        dbb.cur.execute(f'''PRAGMA synchronous = OFF;''')
+        dbb.cur.execute(f'''PRAGMA page_size = {FLAGS.pagesize};''')
+        dbb.cur.execute(f'''PRAGMA cache_size = {FLAGS.cachesize};''')
+        dbb.cur.execute(f'''VACUUM;''')
+        dbb.conn.commit()
     rpcm = RPCManager(rpc_user, rpc_password)
     
     if FLAGS.type == 'index':
@@ -185,6 +187,11 @@ def main():
                 pass
         finally:
             try:
+                if not RESUME:
+                    dbb.cur.execute(f'''CREATE INDEX idx_BlkTime_2 ON BlkTime(unixtime);''')
+                    dbb.cur.execute(f'''CREATE INDEX idx_BlkTx_2 ON BlkTx(tx);''')
+                    dbb.cur.execute(f'''CREATE INDEX idx_TxIn_3_4 ON TxIn(ptx, pn);''')
+                    dbb.cur.execute(f'''CREATE INDEX idx_TxOut_3 ON TxOut(addr);''')
                 dbb.commit()
             except sqlite3.OperationalError:
                 pass
@@ -192,13 +199,14 @@ def main():
             print(f'All job completed {start_height} to {end_height} during {time.time()-stime}')
         INDEX.close()
 
-    dbb.cur.execute(f'''PRAGMA page_size = 4096;''')
-    dbb.cur.execute(f'''PRAGMA cache_size = -2000;''')
-    dbb.cur.execute(f'''VACUUM;''')
-    dbb.conn.commit()
-    dbb.cur.execute(f'''PRAGMA journal_mode = WAL;''')
-    dbb.cur.execute(f'''PRAGMA synchronous = NORMAL;''')
-    dbb.conn.commit()
+    if not RESUME:
+        dbb.cur.execute(f'''PRAGMA page_size = 4096;''')
+        dbb.cur.execute(f'''PRAGMA cache_size = -2000;''')
+        dbb.cur.execute(f'''VACUUM;''')
+        dbb.conn.commit()
+        dbb.cur.execute(f'''PRAGMA journal_mode = WAL;''')
+        dbb.cur.execute(f'''PRAGMA synchronous = NORMAL;''')
+        dbb.conn.commit()
     dbb.close()
         
 
@@ -210,15 +218,17 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('--debug', action='store_true',
+                        help='The present debug message')
     parser.add_argument('--type', type=str, required=True,
                         choices=('index', 'core'),
                         help='The type for building database')
     parser.add_argument('--index', type=str,
                         help='The path for index database')
+    parser.add_argument('--resume', action='store_false',
+                        help='The resume or not')
     parser.add_argument('--prefix', type=str, default='dbv3',
                         help='The prefix of output database')
-    parser.add_argument('--debug', action='store_true',
-                        help='The present debug message')
     parser.add_argument('--untrusted', type=int, default=100,
                         help='The block height that untrusted')
     parser.add_argument('--term', type=int, default=10000,
@@ -231,7 +241,6 @@ if __name__ == '__main__':
     parser.add_argument('--cachesize', type=int, default=-1*1024*16,
                         help='The cache size of page (GBx1024×1024×1024÷(64×1024))')
     
-
     FLAGS, _ = parser.parse_known_args()
 
     FLAGS.output = os.path.abspath(
@@ -239,6 +248,9 @@ if __name__ == '__main__':
             f'./{FLAGS.prefix}-{FLAGS.type}.db'))
     if FLAGS.index is not None:
         FLAGS.index = os.path.abspath(os.path.expanduser(FLAGS.index))
+    if FLAGS.core is not None:
+        FLAGS.core = os.path.abspath(os.path.expanduser(FLAGS.core))
     DEBUG = FLAGS.debug
+    RESUME = FLAGS.resume
 
     main()
