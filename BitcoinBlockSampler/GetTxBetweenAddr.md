@@ -35,6 +35,11 @@
 
 1. Prepare the query using parameters
 
+    ##### ATTACH
+    ```sql
+    ATTACH DATABASE 'dbv3-index.db' AS DBINDEX;
+    ```
+
     ##### TxIn
     ```sql
     EXPLAIN QUERY PLAN SELECT TxIn.tx AS tx, TxIn.n AS n, TxOut.addr AS addr, TxOut.btc AS btc
