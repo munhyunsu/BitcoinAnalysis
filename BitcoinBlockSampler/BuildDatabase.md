@@ -205,6 +205,9 @@ CREATE INDEX idx_TxOut_3 ON TxOut(addr);
 - Level 3: Util Tables (file: util.db)
 
 ```sql
+PRAGMA synchronous = NORMAL;
+PRAGMA journal_mode = WAL;
+
 ATTACH DATABASE './dbv3-core.db' AS DBCORE;
 ATTACH DATABASE './dbv3-index.db' AS DBINDEX;
 
