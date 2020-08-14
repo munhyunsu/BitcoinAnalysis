@@ -225,7 +225,7 @@ if __name__ == '__main__':
                         help='The type for building database')
     parser.add_argument('--index', type=str,
                         help='The path for index database')
-    parser.add_argument('--resume', action='store_false',
+    parser.add_argument('--resume', action='store_true',
                         help='The resume or not')
     parser.add_argument('--prefix', type=str, default='dbv3',
                         help='The prefix of output database')
@@ -248,8 +248,6 @@ if __name__ == '__main__':
             f'./{FLAGS.prefix}-{FLAGS.type}.db'))
     if FLAGS.index is not None:
         FLAGS.index = os.path.abspath(os.path.expanduser(FLAGS.index))
-    if FLAGS.core is not None:
-        FLAGS.core = os.path.abspath(os.path.expanduser(FLAGS.core))
     DEBUG = FLAGS.debug
     RESUME = FLAGS.resume
 
