@@ -77,13 +77,13 @@ def main():
         print(f'Unparsed arguments {_}')
         
     dbb = DBBuilder(FLAGS.type, FLAGS.output)
+    dbb.cur.execute(f'''PRAGMA journal_mode = OFF;''')
+    dbb.cur.execute(f'''PRAGMA synchronous = OFF;''')
+    dbb.cur.execute(f'''PRAGMA cache_size = {FLAGS.cachesize};''')
     if not RESUME:
-        dbb.cur.execute(f'''PRAGMA journal_mode = OFF;''')
-        dbb.cur.execute(f'''PRAGMA synchronous = OFF;''')
         dbb.cur.execute(f'''PRAGMA page_size = {FLAGS.pagesize};''')
-        dbb.cur.execute(f'''PRAGMA cache_size = {FLAGS.cachesize};''')
         dbb.cur.execute(f'''VACUUM;''')
-        dbb.conn.commit()
+    dbb.conn.commit()
     rpcm = RPCManager(rpc_user, rpc_password)
     
     if FLAGS.type == 'index':
@@ -103,38 +103,26 @@ def main():
 
         stime = time.time()
         mtime = time.time()
-        try:
-            for sheight, eheight in zip(range(start_height, end_height, term), 
-                                        range(start_height+term, end_height+term, term)):
-                if eheight >= end_height:
-                    eheight = end_height + 1
-                dbb.begin()
-                with multiprocessing.Pool(pool_num) as p:
-                    try:
-                        results = p.imap(get_data_index, range(sheight, eheight))
-                        for blks, txes, addrs in results:
-                            dbb.insertmany('INSERT_BLKID', blks)
-                            dbb.insertmany('INSERT_TXID', txes)
-                            dbb.insertmany('INSERT_ADDRID', addrs)
-                    except KeyboardInterrupt:
-                        print(f'KeyboardInterrupt detected. Terminate child processes.')
-                        p.terminate()
-                        p.join(60)
-                        raise KeyboardInterrupt
-                dbb.commit()
-                if DEBUG:
-                    print(f'Job done from {sheight} to {eheight-1} during {time.time()-stime}')
-        except KeyboardInterrupt:
-            print(f'KeyboardInterrupt detected. Commit transactions.')
-            try:
-                dbb.commit()
-            except sqlite3.OperationalError:
-                pass
-        finally:
-            try:
-                dbb.commit()
-            except sqlite3.OperationalError:
-                pass
+        for sheight, eheight in zip(range(start_height, end_height, term), 
+                                    range(start_height+term, end_height+term, term)):
+            if eheight >= end_height:
+                eheight = end_height + 1
+            dbb.begin()
+            with multiprocessing.Pool(pool_num) as p:
+                try:
+                    results = p.imap(get_data_index, range(sheight, eheight))
+                    for blks, txes, addrs in results:
+                        dbb.insertmany('INSERT_BLKID', blks)
+                        dbb.insertmany('INSERT_TXID', txes)
+                        dbb.insertmany('INSERT_ADDRID', addrs)
+                except KeyboardInterrupt:
+                    print(f'KeyboardInterrupt detected. Terminate child processes.')
+                    p.terminate()
+                    p.join(60)
+                    raise KeyboardInterrupt
+            dbb.commit()
+            if DEBUG:
+                print(f'Job done from {sheight} to {eheight-1} during {time.time()-stime}')
         if DEBUG:
             print(f'All job completed {start_height} to {end_height} during {time.time()-stime}')
     elif FLAGS.type == 'core':
@@ -156,57 +144,46 @@ def main():
 
         stime = time.time()
         mtime = time.time()
-        try:
-            for sheight, eheight in zip(range(start_height, end_height, term), 
-                                        range(start_height+term, end_height+term, term)):
-                if eheight >= end_height:
-                    eheight = end_height + 1
-                dbb.begin()
-                with multiprocessing.Pool(pool_num) as p:
-                    try:
-                        results = p.imap(get_data_core, range(sheight, eheight))
-                        for blktime, blktx, txin, txout in results:
-                            dbb.insertmany('INSERT_BLKTIME', blktime)
-                            dbb.insertmany('INSERT_BLKTX', blktx)
-                            dbb.insertmany('INSERT_TXIN', txin)
-                            dbb.insertmany('INSERT_TXOUT', txout)
-                    except KeyboardInterrupt:
-                        print(f'KeyboardInterrupt detected. Terminate child processes.')
-                        p.terminate()
-                        p.join(60)
-                        raise KeyboardInterrupt
-                dbb.putmeta('ProcessedBlockHeight', eheight-1)
-                dbb.commit()
-                if DEBUG:
-                    print(f'Job done from {sheight} to {eheight-1} during {time.time()-stime}')
-        except KeyboardInterrupt:
-            print(f'KeyboardInterrupt detected. Commit transactions.')
-            try:
-                dbb.commit()
-            except sqlite3.OperationalError:
-                pass
-        finally:
-            try:
-                if not RESUME:
-                    dbb.cur.execute(f'''CREATE INDEX idx_BlkTime_2 ON BlkTime(unixtime);''')
-                    dbb.cur.execute(f'''CREATE INDEX idx_BlkTx_2 ON BlkTx(tx);''')
-                    dbb.cur.execute(f'''CREATE INDEX idx_TxIn_3_4 ON TxIn(ptx, pn);''')
-                    dbb.cur.execute(f'''CREATE INDEX idx_TxOut_3 ON TxOut(addr);''')
-                dbb.commit()
-            except sqlite3.OperationalError:
-                pass
+        for sheight, eheight in zip(range(start_height, end_height, term), 
+                                    range(start_height+term, end_height+term, term)):
+            if eheight >= end_height:
+                eheight = end_height + 1
+            dbb.begin()
+            with multiprocessing.Pool(pool_num) as p:
+                try:
+                    results = p.imap(get_data_core, range(sheight, eheight))
+                    for blktime, blktx, txin, txout in results:
+                        dbb.insertmany('INSERT_BLKTIME', blktime)
+                        dbb.insertmany('INSERT_BLKTX', blktx)
+                        dbb.insertmany('INSERT_TXIN', txin)
+                        dbb.insertmany('INSERT_TXOUT', txout)
+                except KeyboardInterrupt:
+                    print(f'KeyboardInterrupt detected. Terminate child processes.')
+                    p.terminate()
+                    p.join(60)
+                    raise KeyboardInterrupt
+            dbb.putmeta('ProcessedBlockHeight', eheight-1)
+            dbb.commit()
+            if DEBUG:
+                print(f'Job done from {sheight} to {eheight-1} during {time.time()-stime}')
+        if not RESUME:
+            dbb.cur.execute(f'''CREATE INDEX idx_BlkTime_2 ON BlkTime(unixtime);''')
+            dbb.cur.execute(f'''CREATE INDEX idx_BlkTx_2 ON BlkTx(tx);''')
+            dbb.cur.execute(f'''CREATE INDEX idx_TxIn_3_4 ON TxIn(ptx, pn);''')
+            dbb.cur.execute(f'''CREATE INDEX idx_TxOut_3 ON TxOut(addr);''')
+        dbb.commit()
         if DEBUG:
             print(f'All job completed {start_height} to {end_height} during {time.time()-stime}')
         INDEX.close()
 
+    dbb.cur.execute(f'''PRAGMA cache_size = -2000;''')
     if not RESUME:
         dbb.cur.execute(f'''PRAGMA page_size = 4096;''')
-        dbb.cur.execute(f'''PRAGMA cache_size = -2000;''')
         dbb.cur.execute(f'''VACUUM;''')
-        dbb.conn.commit()
-        dbb.cur.execute(f'''PRAGMA journal_mode = WAL;''')
-        dbb.cur.execute(f'''PRAGMA synchronous = NORMAL;''')
-        dbb.conn.commit()
+    dbb.conn.commit()
+    dbb.cur.execute(f'''PRAGMA journal_mode = WAL;''')
+    dbb.cur.execute(f'''PRAGMA synchronous = NORMAL;''')
+    dbb.conn.commit()
     dbb.close()
         
 
@@ -236,9 +213,9 @@ if __name__ == '__main__':
     parser.add_argument('--process', type=int, 
                         default=min(multiprocessing.cpu_count()//2, 16),
                         help='The number of multiprocess')
-    parser.add_argument('--pagesize', type=int, default=1024*64,
+    parser.add_argument('--pagesize', type=int, default=1024*4,
                         help='The page size of database')
-    parser.add_argument('--cachesize', type=int, default=-1*1024*16,
+    parser.add_argument('--cachesize', type=int, default=-1*2000,
                         help='The cache size of page (GBx1024×1024×1024÷(64×1024))')
     
     FLAGS, _ = parser.parse_known_args()
