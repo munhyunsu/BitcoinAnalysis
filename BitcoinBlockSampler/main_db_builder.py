@@ -214,7 +214,7 @@ if __name__ == '__main__':
                         default=min(multiprocessing.cpu_count()//2, 16),
                         help='The number of multiprocess')
     parser.add_argument('--pagesize', type=int, default=1024*4,
-                        help='The page size of database')
+                        help='The page size of database (Max: 1024*64)')
     parser.add_argument('--cachesize', type=int, default=-1*2000,
                         help='The cache size of page (GBx1024×1024×1024÷(64×1024))')
     
