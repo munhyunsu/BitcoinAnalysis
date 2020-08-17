@@ -16,6 +16,8 @@ CONN = None
 CUR = None
 
 def get_clusterid(addr):
+    global FLAGS
+    global DEBUG
     global INDEX
     global CORE
     global CONN
@@ -28,18 +30,30 @@ def get_clusterid(addr):
     if clusterid == -1:
         CUR.execute('''SELECT MAX(cluster)+1 FROM Cluster;''')
         nextclusterid = CUR.fetchone()[0]
-        CUR.execute('BEGIN TRANSACTION')
         queue = collections.deque([addrid])
         visited = set([addrid])
         while queue:
             caid = queue.popleft()
             for c in CORE.selectcur('SELECT_MULTIINPUT', (caid,)):
                 c = c[0]
-                CUR.execute('''UPDATE Cluster SET Cluster = ? WHERE addr = ?''', (nextclusterid, c))
                 if c not in visited:
                     visited.add(c)
                     queue.append(c)
+            if FLAGS.version == 2:
+                for c in CORE.selectcur('SELECT_ONEOUTPUT', (caid,)):
+                    c = c[0]
+                    if c not in visited:
+                        visited.add(c)
+                        queue.append(c)
+                len3 = len(queue)
+            if DEBUG:
+                print(f'Queue remain: {len(queue)}', end='\r')
+        t1 = time.time()
+        CUR.execute('BEGIN TRANSACTION')
+        CUR.executemany('''UPDATE Cluster SET Cluster = ? WHERE addr = ?''', [(nextclusterid, c) for c in visited])    
         CUR.execute('COMMIT TRANSACTION')
+        if DEBUG:
+            print(f'COMMIT during {time.time()-t1}')
         clusterid = nextclusterid
     return clusterid
 
@@ -53,7 +67,6 @@ def get_addrids(clusterid):
     
     for aid in CUR.execute('''SELECT addr FROM Cluster WHERE cluster = ?''', (clusterid,)):
         yield aid[0]
-    
 
 
 class HTTPDaemon(socketserver.TCPServer):
@@ -105,12 +118,13 @@ def main():
         print(f'[{int(time.time()-STIME)}] Initialize Cluster Database')
         conn = sqlite3.connect(FLAGS.cluster)
         cur = conn.cursor()
-        cur.execute('''PRAGMA journal_mode = NORMAL''')
-        cur.execute('''PRAGMA synchronous = WAL''')
+        cur.execute('''PRAGMA journal_mode = OFF''')
+        cur.execute('''PRAGMA synchronous = OFF''')
         cur.execute('''CREATE TABLE IF NOT EXISTS Cluster (
                          addr INTEGER PRIMARY KEY,
                          cluster NOT NULL);''')
         INDEX.cur.execute('''SELECT MAX(id) FROM AddrID;''')
+        conn.commit()
         cur.execute('BEGIN TRANSACTION')
         for i in range(1, INDEX.cur.fetchone()[0]+1):
             cur.execute('''INSERT INTO Cluster (addr, cluster)
@@ -122,7 +136,9 @@ def main():
         print(f'[{int(time.time()-STIME)}] Initialize Cluster Database Complete')
     CONN = conn = sqlite3.connect(FLAGS.cluster)
     CUR = cur = conn.cursor()
-
+    CUR.execute('''PRAGMA journal_mode = NORMAL''')
+    CUR.execute('''PRAGMA synchronous = WAL''')
+    CONN.commit()
     with HTTPDaemon((FLAGS.ip, FLAGS.port), 
                     RESTRequestHandler) as httpd:
         try:
@@ -152,6 +168,9 @@ if __name__ == '__main__':
                         help='The path for core database')
     parser.add_argument('--cluster', type=str, default='./cluster.db',
                         help='The path for cluster database')
+    parser.add_argument('--version', type=int, default=1,
+                        choices=(1, 2),
+                        help='The version of clustering methods')
     parser.add_argument('--ip', type=str, default='',
                         help='Serving ip address')
     parser.add_argument('--port', type=int, default=8989,
