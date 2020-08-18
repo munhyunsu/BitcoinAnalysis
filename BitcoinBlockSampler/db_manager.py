@@ -106,6 +106,19 @@ QUERY['SELECT_MULTIINPUT'] = '''
                       INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n
                       WHERE addr = ?)
     GROUP BY addr;'''
+QUERY['SELECT_ONEOUTPUT'] = '''
+    SELECT TxOut.addr AS addr
+    FROM TxIn
+    INNER JOIN TxOut ON TxOut.tx = TxIn.ptx AND TxOut.n = TxIn.pn
+    WHERE TxIn.tx IN (SELECT TxIn.tx
+                      FROM TxIn
+                      INNER JOIN TxOut ON TxOut.tx = TxIn.tx
+                      WHERE TxIn.tx IN (SELECT TxOut.tx
+                                        FROM TxOut
+                                        WHERE TxOut.addr = ?)
+                      GROUP BY TxIn.tx
+                      HAVING COUNT(DISTINCT TxIn.n) > 1 AND COUNT(DISTINCT TxOut.n) = 1)
+    GROUP BY TxOut.addr;'''
 
 
 class DBBuilder(object):
