@@ -59,6 +59,22 @@ FROM
 ```
 
 ```sql
+SELECT Income.value-Outcome.value AS Balance
+FROM
+(SELECT SUM(btc) AS value
+ FROM TxOut
+ WHERE TxOut.addr = (SELECT DBINDEX.AddrID.id
+                     FROM DBINDEX.AddrID
+                     WHERE DBINDEX.AddrID.addr = 'ADDR')) AS Income,
+(SELECT SUM(btc) AS value
+ FROM TxIn
+ INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n
+ WHERE TxOut.addr = (SELECT DBINDEX.AddrID.id
+                     FROM DBINDEX.AddrID
+                     WHERE DBINDEX.AddrID.addr = 'ADDR')) AS Outcome;
+```
+
+```sql
 -- 특정 시점 손익
 SELECT Income.value-Outcome.value AS Balance
 FROM
@@ -143,4 +159,53 @@ WHERE Cluster.cluster IN (SELECT Cluster.cluster
                                                  FROM Tag
                                                  INNER JOIN TagID ON TagID.id = Tag.tag
                                                  WHERE TagID.tag = 'TAG'));
+```
+
+##### 비트코인 휴리스틱
+```sql
+-- Multi input
+SELECT TxOut.addr AS addr
+FROM TxIn
+INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n
+WHERE txIn.tx IN (SELECT TxIn.tx
+                  FROM TxIn
+                  INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n
+                  WHERE addr = ?)
+GROUP BY addr;
+
+-- One output
+SELECT DBINDEX.AddrID.addr
+FROM DBCORE.TxIn
+INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.ptx AND DBCORE.TxOut.n = DBCORE.TxIn.pn
+INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBCORE.TxOut.addr
+WHERE DBCORE.TxIn.tx IN (
+    SELECT DBCORE.TxIn.tx
+    FROM DBCORE.TxIn
+    INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.tx
+    WHERE DBCORE.TxIn.tx IN (
+        SELECT DBCORE.TxOut.tx
+        FROM DBCORE.TxOut
+        WHERE DBCORE.TxOut.addr = (
+            SELECT DBINDEX.AddrID.id
+            FROM DBINDEX.AddrID
+            WHERE DBINDEX.AddrID.addr = 'ADDRID'
+        )
+    )
+    GROUP BY DBCORE.TxIn.tx
+    HAVING COUNT(DISTINCT DBCORE.TxIn.n) > 1 AND COUNT(DISTINCT DBCORE.TxOut.n) = 1
+)
+GROUP BY DBCORE.TxOut.addr;
+```
+
+##### 그래프 데이터베이스
+```sql
+SELECT TXI.tx AS tx, TXI.addr AS src, TXO.addr AS dst, TXO.btc AS btc
+FROM (SELECT DBCORE.TxIn.tx AS tx, DBCORE.TxIn.n AS n, 
+             DBCORE.TxOut.addr AS addr, DBCORE.TxOut.btc AS btc
+      FROM DBCORE.TxIn
+      INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.ptx AND 
+                                 DBCORE.TxOut.n = DBCORE.TxIn.pn) AS TXI
+INNER JOIN (SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.n AS n, 
+                   DBCORE.TxOut.addr AS addr, DBCORE.TxOut.btc AS btc
+            FROM DBCORE.TxOut) AS TXO ON TXO.tx = TXI.tx;
 ```
