@@ -13,6 +13,9 @@ sqlite3 ./dbv3-core.db
 ```sql
 ATTACH DATABASE './dbv3-index.db' AS DBINDEX;
 ATTACH DATABASE './dbv3-core.db' AS DBCORE;
+
+ATTACH DATABASE './dbv3-util.db' AS DBEDGE;
+ATTACH DATABASE './cluster.db' AS DBCLUSTER;
 ```
 
 3. 결과 헤더 On
@@ -161,12 +164,100 @@ WHERE Cluster.cluster IN (SELECT Cluster.cluster
                                                  WHERE TagID.tag = 'TAG'));
 ```
 
+```sql
+-- Find Edge
+SELECT DBINDEX.TxID.txid
+FROM DBEDGE.Edge
+INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBEDGE.Edge.tx
+WHERE DBEDGE.Edge.src in (
+    SELECT DBCLUSTER.Cluster.addr
+    FROM DBCLUSTER.Cluster
+    WHERE DBCLUSTER.Cluster.cluster = (
+        SELECT DBCLUSTER.Cluster.cluster
+        FROM DBCLUSTER.Cluster
+        WHERE DBCLUSTER.Cluster.addr = (
+            SELECT DBCLUSTER.Tag.addr
+            FROM DBCLUSTER.Tag
+            WHERE DBCLUSTER.Tag.tag = (
+                SELECT DBCLUSTER.TagID.id
+                FROM DBCLUSTER.TagID
+                WHERE DBCLUSTER.TagID.tag = 'upbit.com2'
+            )
+        )
+    )
+)
+AND   DBEDGE.Edge.dst in (
+    SELECT DBCLUSTER.Cluster.addr
+    FROM DBCLUSTER.Cluster
+    WHERE DBCLUSTER.Cluster.cluster = (
+        SELECT DBCLUSTER.Cluster.cluster
+        FROM DBCLUSTER.Cluster
+        WHERE DBCLUSTER.Cluster.addr = (
+            SELECT DBCLUSTER.Tag.addr
+            FROM DBCLUSTER.Tag
+            WHERE DBCLUSTER.Tag.tag = (
+                SELECT DBCLUSTER.TagID.id
+                FROM DBCLUSTER.TagID
+                WHERE DBCLUSTER.TagID.tag = 'upbit.com'
+            )
+        )
+    )
+);
+
+-- Find Node
+SELECT SRC.tx, SRC.src, DST.dst
+FROM (
+    SELECT DBINDEX.TxID.txid AS tx, DBINDEX.AddrID.addr AS src
+    FROM DBEDGE.Edge
+    INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBEDGE.Edge.tx
+    INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBEdge.Edge.src) AS SRC
+INNER JOIN (
+    SELECT DBINDEX.TxID.txid AS tx, DBINDEX.AddrID.addr AS dst
+    FROM DBEDGE.Edge
+    INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBEDGE.Edge.tx
+    INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBEdge.Edge.dst) AS DST
+    ON DST.tx = SRC.tx
+WHERE SRC.src in (
+    SELECT DBCLUSTER.Cluster.addr
+    FROM DBCLUSTER.Cluster
+    WHERE DBCLUSTER.Cluster.cluster = (
+        SELECT DBCLUSTER.Cluster.cluster
+        FROM DBCLUSTER.Cluster
+        WHERE DBCLUSTER.Cluster.addr = (
+            SELECT DBCLUSTER.Tag.addr
+            FROM DBCLUSTER.Tag
+            WHERE DBCLUSTER.Tag.tag = (
+                SELECT DBCLUSTER.TagID.id
+                FROM DBCLUSTER.TagID
+                WHERE DBCLUSTER.TagID.tag = 'upbit.com'
+            )
+        )
+    )
+) AND DST.dst in (
+    SELECT DBCLUSTER.Cluster.addr
+    FROM DBCLUSTER.Cluster
+    WHERE DBCLUSTER.Cluster.cluster = (
+        SELECT DBCLUSTER.Cluster.cluster
+        FROM DBCLUSTER.Cluster
+        WHERE DBCLUSTER.Cluster.addr = (
+            SELECT DBCLUSTER.Tag.addr
+            FROM DBCLUSTER.Tag
+            WHERE DBCLUSTER.Tag.tag = (
+                SELECT DBCLUSTER.TagID.id
+                FROM DBCLUSTER.TagID
+                WHERE DBCLUSTER.TagID.tag = 'upbit.com2'
+            )
+        )
+    )
+);
+```
+
 ##### 비트코인 휴리스틱
 ```sql
 -- Multi input
-SELECT TxOut.addr AS addr
-FROM TxIn
-INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n
+SELECT DBCORE.TxOut.addr AS addr
+FROM DBCORE.TxIn
+INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
 WHERE txIn.tx IN (SELECT TxIn.tx
                   FROM TxIn
                   INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n
@@ -196,6 +287,11 @@ WHERE DBCORE.TxIn.tx IN (
 )
 GROUP BY DBCORE.TxOut.addr;
 ```
+
+```sql
+
+```
+
 
 ##### 그래프 데이터베이스
 ```sql
