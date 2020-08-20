@@ -205,26 +205,11 @@ CREATE INDEX idx_TxOut_3 ON TxOut(addr);
 - Level 3: Util Tables (file: util.db)
 
 ```sql
-PRAGMA synchronous = NORMAL;
-PRAGMA journal_mode = WAL;
+PRAGMA synchronous = OFF;
+PRAGMA journal_mode = OFF;
 
 ATTACH DATABASE './dbv3-core.db' AS DBCORE;
 ATTACH DATABASE './dbv3-index.db' AS DBINDEX;
-
--- UTXO
-CREATE TABLE IF NOT EXISTS UTXO (
-    tx INTEGER NOT NULL,
-    n INTEGER NOT NULL,
-    UNIQUE (tx, n));
-
-INSERT OR IGNORE INTO UTXO (tx, n)
-SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.n AS n
-FROM DBCORE.TxOut
-WHERE NOT EXISTS (SELECT *
-                  FROM DBCORE.TxIn
-                  WHERE DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND
-                        DBCORE.TxIn.pn = DBCORE.TxOut.n);
-GROUP BY tx, n;
 
 -- Graph Edge 
 CREATE TABLE IF NOT EXISTS Edge (
@@ -244,9 +229,16 @@ FROM (SELECT DBCORE.TxIn.tx AS tx, DBCORE.TxIn.n AS n,
 INNER JOIN (SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.n AS n, 
                    DBCORE.TxOut.addr AS addr, DBCORE.TxOut.btc AS btc
             FROM DBCORE.TxOut) AS TXO ON TXO.tx = TXI.tx;
+
+CREATE INDEX idx_Edge_1 ON Edge(tx);
+CREATE INDEX idx_Edge_2 ON Edge(src);
+CREATE INDEX idx_Edge_3 ON Edge(dst);
+
+PRAGMA synchronous = NORMAL;
+PRAGMA journal_mode = WAL;
 ```
 
-- Level 4: Service Tables (file: cluster.db)
+- Level 4: Service Tables (file: service.db)
 
 ```sql
 CREATE TABLE IF NOT EXISTS Cluster (
@@ -261,6 +253,37 @@ CREATE TABLE IF NOT EXISTS Tag (
     addr INTEGER NOT NULL,
     tag INTEGER NOT NULL,
     UNIQUE (addr, tag));
-    
+
 CREATE INDEX idx_Cluster_2 ON Cluster(cluster);
+```
+
+- Level 5: Temp Tables (file: temp.db)
+
+```sql
+PRAGMA synchronous = OFF;
+PRAGMA journal_mode = OFF;
+
+ATTACH DATABASE './dbv3-core.db' AS DBCORE;
+ATTACH DATABASE './dbv3-index.db' AS DBINDEX;
+
+-- UTXO
+DROP TABLE IF EXISTS UTXO;
+
+CREATE TABLE IF NOT EXISTS UTXO (
+    tx INTEGER NOT NULL,
+    n INTEGER NOT NULL,
+    UNIQUE (tx, n));
+
+INSERT OR IGNORE INTO UTXO (tx, n)
+SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.n AS n
+FROM DBCORE.TxOut
+WHERE NOT EXISTS (SELECT *
+                  FROM DBCORE.TxIn
+                  WHERE DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND
+                        DBCORE.TxIn.pn = DBCORE.TxOut.n);
+GROUP BY tx, n;
+
+PRAGMA synchronous = NORMAL;
+PRAGMA journal_mode = WAL;
+
 ```
