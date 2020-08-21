@@ -32,6 +32,19 @@ FROM TxOut
 WHERE TxOut.addr = (SELECT DBINDEX.AddrID.id
                     FROM DBINDEX.AddrID
                     WHERE DBINDEX.AddrID.addr = 'ADDR');
+
+-- 클러스터 입금 횟수 정렬
+CREATE TABLE IF NOT EXISTS Node(
+    addr INTEGER PRIMARY KEY)
+
+.import csv
+
+SELECT Node.addr AS addr, DBINDEX.AddrID.addr AS addr_hash,
+       COUNT(DBCORE.TxOut.tx) AS indegree, SUM(DBCORE.TxOut.btc) AS income
+FROM Node
+INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.addr = Node.addr
+INNER JOIN DBINDEX.AddrID ON Node.addr = DBINDEX.AddrID.id
+ORDER BY indegree DESC
 ```
 
 ```sql
@@ -42,26 +55,28 @@ INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n
 WHERE TxOut.addr = (SELECT DBINDEX.AddrID.id
                     FROM DBINDEX.AddrID
                     WHERE DBINDEX.AddrID.addr = 'ADDR');
+
+-- 클러스터 출금 횟수 정렬
+CREATE TABLE IF NOT EXISTS Node(
+    addr INTEGER PRIMARY KEY)
+
+.import csv
+
+SELECT Node.addr AS addr, DBINDEX.AddrID.addr AS addr_hash,
+       COUNT(TxIn.tx) AS outdegree, SUM(DBCORE.TxOut.btc) AS outcome
+FROM Node
+INNER JOIN (SELECT DBCORE.TxIn.tx AS tx, DBCORE.TxOut.addr AS addr, DBCORE.TxOut.btc AS btc
+            FROM DBCORE.TxIn 
+            INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.ptx AND
+                                       DBCORE.TxOut.n = DBCORE.TxIn.pn
+            ) AS TxIn
+ON TxIn.addr = Node.addr ON DBCORE.TxOut.addr = Node.addr
+INNER JOIN DBINDEX.AddrID ON Node.addr = DBINDEX.AddrID.id
+ORDER BY outdegree DESC
 ```
 
 ```sql
 -- 현 잔액
-SELECT Income.value-Outcome.value AS Balance
-FROM
-(SELECT SUM(btc) AS value
- FROM TxOut
- WHERE TxOut.addr = (SELECT DBINDEX.AddrID.id
-                     FROM DBINDEX.AddrID
-                     WHERE DBINDEX.AddrID.addr = 'ADDR')) AS Income,
-(SELECT SUM(btc) AS value
- FROM TxIn
- INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n
- WHERE TxOut.addr = (SELECT DBINDEX.AddrID.id
-                     FROM DBINDEX.AddrID
-                     WHERE DBINDEX.AddrID.addr = 'ADDR')) AS Outcome;
-```
-
-```sql
 SELECT Income.value-Outcome.value AS Balance
 FROM
 (SELECT SUM(btc) AS value
@@ -205,51 +220,62 @@ AND   DBEDGE.Edge.dst in (
 );
 
 -- Find Node
-SELECT SRC.tx, SRC.src, DST.dst
-FROM (
-    SELECT DBINDEX.TxID.txid AS tx, DBINDEX.AddrID.addr AS src
-    FROM DBEDGE.Edge
-    INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBEDGE.Edge.tx
-    INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBEdge.Edge.src) AS SRC
-INNER JOIN (
-    SELECT DBINDEX.TxID.txid AS tx, DBINDEX.AddrID.addr AS dst
-    FROM DBEDGE.Edge
-    INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBEDGE.Edge.tx
-    INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBEdge.Edge.dst) AS DST
-    ON DST.tx = SRC.tx
-WHERE SRC.src in (
-    SELECT DBCLUSTER.Cluster.addr
-    FROM DBCLUSTER.Cluster
-    WHERE DBCLUSTER.Cluster.cluster = (
-        SELECT DBCLUSTER.Cluster.cluster
-        FROM DBCLUSTER.Cluster
-        WHERE DBCLUSTER.Cluster.addr = (
-            SELECT DBCLUSTER.Tag.addr
-            FROM DBCLUSTER.Tag
-            WHERE DBCLUSTER.Tag.tag = (
-                SELECT DBCLUSTER.TagID.id
-                FROM DBCLUSTER.TagID
-                WHERE DBCLUSTER.TagID.tag = 'upbit.com'
-            )
-        )
-    )
-) AND DST.dst in (
-    SELECT DBCLUSTER.Cluster.addr
-    FROM DBCLUSTER.Cluster
-    WHERE DBCLUSTER.Cluster.cluster = (
-        SELECT DBCLUSTER.Cluster.cluster
-        FROM DBCLUSTER.Cluster
-        WHERE DBCLUSTER.Cluster.addr = (
-            SELECT DBCLUSTER.Tag.addr
-            FROM DBCLUSTER.Tag
-            WHERE DBCLUSTER.Tag.tag = (
-                SELECT DBCLUSTER.TagID.id
-                FROM DBCLUSTER.TagID
-                WHERE DBCLUSTER.TagID.tag = 'upbit.com2'
-            )
-        )
-    )
-);
+
+SELECT SRC.tx AS tx, DBINDEX.TxID.txid AS tx_hash, SRC.addr AS saddr, SRC.addr_hash AS saddr_hash,
+       DST.addr AS daddr, DST.addr_hash AS daddr_hash, DST.btc AS btc
+FROM
+(SELECT TX.tx, EDGE.addr AS addr, DBINDEX.AddrID.addr AS addr_hash, TX.btc AS btc
+ FROM 
+ (SELECT DBCLUSTER.Cluster.addr AS addr
+  FROM DBCLUSTER.Cluster
+  WHERE DBCLUSTER.Cluster.cluster = (
+      SELECT DBCLUSTER.Cluster.cluster
+      FROM DBCLUSTER.Cluster
+      WHERE DBCLUSTER.Cluster.addr = (
+          SELECT DBCLUSTER.Tag.addr
+          FROM DBCLUSTER.Tag
+          WHERE DBCLUSTER.Tag.tag = (
+              SELECT DBCLUSTER.TagID.id
+              FROM DBCLUSTER.TagID
+              WHERE DBCLUSTER.TagID.tag = 'upbit.com'
+          )
+      )
+  )
+ ) AS EDGE
+ INNER JOIN (
+     SELECT DBCORE.TxIn.tx AS tx, DBCORE.TxOut.addr AS addr, DBCORE.TxOut.btc AS btc
+     FROM DBCORE.TxIn
+     INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+ ) AS TX ON EDGE.addr = TX.addr
+ INNER JOIN DBINDEX.AddrID ON TX.addr = DBINDEX.AddrID.id
+) AS SRC
+INNER JOIN
+(SELECT TX.tx, EDGE.addr AS addr, DBINDEX.AddrID.addr AS addr_hash, TX.btc AS btc
+ FROM 
+ (SELECT DBCLUSTER.Cluster.addr AS addr
+  FROM DBCLUSTER.Cluster
+  WHERE DBCLUSTER.Cluster.cluster = (
+      SELECT DBCLUSTER.Cluster.cluster
+      FROM DBCLUSTER.Cluster
+      WHERE DBCLUSTER.Cluster.addr = (
+          SELECT DBCLUSTER.Tag.addr
+          FROM DBCLUSTER.Tag
+          WHERE DBCLUSTER.Tag.tag = (
+              SELECT DBCLUSTER.TagID.id
+              FROM DBCLUSTER.TagID
+              WHERE DBCLUSTER.TagID.tag = 'upbit.com2'
+          )
+      )
+  )
+ ) AS EDGE
+ INNER JOIN (
+     SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.addr AS addr, DBCORE.TxOut.btc AS btc
+     FROM DBCORE.TxOut
+ ) AS TX ON EDGE.addr = TX.addr
+ INNER JOIN DBINDEX.AddrID ON TX.addr = DBINDEX.AddrID.id
+) AS DST
+ON SRC.tx = DST.tx
+INNER JOIN DBINDEX.TxID ON SRC.tx = DBINDEX.TxID.txid;
 ```
 
 ##### 비트코인 휴리스틱
@@ -287,11 +313,6 @@ WHERE DBCORE.TxIn.tx IN (
 )
 GROUP BY DBCORE.TxOut.addr;
 ```
-
-```sql
-
-```
-
 
 ##### 그래프 데이터베이스
 ```sql
