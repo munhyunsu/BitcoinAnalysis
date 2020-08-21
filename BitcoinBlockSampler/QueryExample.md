@@ -180,10 +180,13 @@ WHERE Cluster.cluster IN (SELECT Cluster.cluster
 ```
 
 ```sql
--- Find Edge
-SELECT DBINDEX.TxID.txid
+-- Find Edge with Addr
+SELECT DBINDEX.TxID.txid, SRC.addr, DST.addr, DBEDGE.Edge.btc
+--      , DBEDGE.Edge.tx, DBEDGE.Edge.src, DBEDGE.Edge.dst
 FROM DBEDGE.Edge
 INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBEDGE.Edge.tx
+INNER JOIN DBINDEX.AddrID AS SRC ON SRC.id = DBEDGE.Edge.src
+INNER JOIN DBINDEX.AddrID AS DST ON DST.id = DBEDGE.Edge.dst
 WHERE DBEDGE.Edge.src in (
     SELECT DBCLUSTER.Cluster.addr
     FROM DBCLUSTER.Cluster
@@ -196,7 +199,7 @@ WHERE DBEDGE.Edge.src in (
             WHERE DBCLUSTER.Tag.tag = (
                 SELECT DBCLUSTER.TagID.id
                 FROM DBCLUSTER.TagID
-                WHERE DBCLUSTER.TagID.tag = 'upbit.com2'
+                WHERE DBCLUSTER.TagID.tag = 'TAG'
             )
         )
     )
@@ -213,14 +216,13 @@ AND   DBEDGE.Edge.dst in (
             WHERE DBCLUSTER.Tag.tag = (
                 SELECT DBCLUSTER.TagID.id
                 FROM DBCLUSTER.TagID
-                WHERE DBCLUSTER.TagID.tag = 'upbit.com'
+                WHERE DBCLUSTER.TagID.tag = 'TAG'
             )
         )
     )
 );
 
--- Find Node
-
+-- Find Node (without Edge, but slow)
 SELECT SRC.tx AS tx, DBINDEX.TxID.txid AS tx_hash, SRC.addr AS saddr, SRC.addr_hash AS saddr_hash,
        DST.addr AS daddr, DST.addr_hash AS daddr_hash, DST.btc AS btc
 FROM
@@ -237,7 +239,7 @@ FROM
           WHERE DBCLUSTER.Tag.tag = (
               SELECT DBCLUSTER.TagID.id
               FROM DBCLUSTER.TagID
-              WHERE DBCLUSTER.TagID.tag = 'upbit.com'
+              WHERE DBCLUSTER.TagID.tag = 'TAG'
           )
       )
   )
@@ -263,7 +265,7 @@ INNER JOIN
           WHERE DBCLUSTER.Tag.tag = (
               SELECT DBCLUSTER.TagID.id
               FROM DBCLUSTER.TagID
-              WHERE DBCLUSTER.TagID.tag = 'upbit.com2'
+              WHERE DBCLUSTER.TagID.tag = 'TAG'
           )
       )
   )
@@ -312,6 +314,17 @@ WHERE DBCORE.TxIn.tx IN (
     HAVING COUNT(DISTINCT DBCORE.TxIn.n) > 1 AND COUNT(DISTINCT DBCORE.TxOut.n) = 1
 )
 GROUP BY DBCORE.TxOut.addr;
+
+
+-- First appeared block and unixtime
+SELECT DBCORE.BlkTx.blk AS blk, MIN(DBCORE.BlkTime.unixtime) AS unixtime
+FROM DBCORE.BlkTx
+INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTime.blk = DBCORE.BlkTx.blk
+WHERE DBCORE.BlkTx.tx IN (
+    SELECT DBCORE.TxOut.tx
+    FROM DBCORE.TxOut
+    WHERE DBCORE.TxOut.addr = 'ADDR'
+);
 ```
 
 ##### 그래프 데이터베이스
