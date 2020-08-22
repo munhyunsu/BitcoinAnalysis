@@ -182,7 +182,7 @@ WHERE Cluster.cluster IN (SELECT Cluster.cluster
 ```sql
 -- Find Edge with Addr
 SELECT DBINDEX.TxID.txid, SRC.addr, DST.addr, DBEDGE.Edge.btc
---      , DBEDGE.Edge.tx, DBEDGE.Edge.src, DBEDGE.Edge.dst
+     , DBEDGE.Edge.tx, DBEDGE.Edge.src, DBEDGE.Edge.dst
 FROM DBEDGE.Edge
 INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBEDGE.Edge.tx
 INNER JOIN DBINDEX.AddrID AS SRC ON SRC.id = DBEDGE.Edge.src
@@ -223,61 +223,55 @@ AND   DBEDGE.Edge.dst in (
 );
 
 -- Find Node (without Edge, but slow)
-SELECT SRC.tx AS tx, DBINDEX.TxID.txid AS tx_hash, SRC.addr AS saddr, SRC.addr_hash AS saddr_hash,
-       DST.addr AS daddr, DST.addr_hash AS daddr_hash, DST.btc AS btc
-FROM
-(SELECT TX.tx, EDGE.addr AS addr, DBINDEX.AddrID.addr AS addr_hash, TX.btc AS btc
- FROM 
- (SELECT DBCLUSTER.Cluster.addr AS addr
-  FROM DBCLUSTER.Cluster
-  WHERE DBCLUSTER.Cluster.cluster = (
-      SELECT DBCLUSTER.Cluster.cluster
-      FROM DBCLUSTER.Cluster
-      WHERE DBCLUSTER.Cluster.addr = (
-          SELECT DBCLUSTER.Tag.addr
-          FROM DBCLUSTER.Tag
-          WHERE DBCLUSTER.Tag.tag = (
-              SELECT DBCLUSTER.TagID.id
-              FROM DBCLUSTER.TagID
-              WHERE DBCLUSTER.TagID.tag = 'TAG'
-          )
-      )
-  )
- ) AS EDGE
- INNER JOIN (
-     SELECT DBCORE.TxIn.tx AS tx, DBCORE.TxOut.addr AS addr, DBCORE.TxOut.btc AS btc
-     FROM DBCORE.TxIn
-     INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
- ) AS TX ON EDGE.addr = TX.addr
- INNER JOIN DBINDEX.AddrID ON TX.addr = DBINDEX.AddrID.id
-) AS SRC
-INNER JOIN
-(SELECT TX.tx, EDGE.addr AS addr, DBINDEX.AddrID.addr AS addr_hash, TX.btc AS btc
- FROM 
- (SELECT DBCLUSTER.Cluster.addr AS addr
-  FROM DBCLUSTER.Cluster
-  WHERE DBCLUSTER.Cluster.cluster = (
-      SELECT DBCLUSTER.Cluster.cluster
-      FROM DBCLUSTER.Cluster
-      WHERE DBCLUSTER.Cluster.addr = (
-          SELECT DBCLUSTER.Tag.addr
-          FROM DBCLUSTER.Tag
-          WHERE DBCLUSTER.Tag.tag = (
-              SELECT DBCLUSTER.TagID.id
-              FROM DBCLUSTER.TagID
-              WHERE DBCLUSTER.TagID.tag = 'TAG'
-          )
-      )
-  )
- ) AS EDGE
- INNER JOIN (
-     SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.addr AS addr, DBCORE.TxOut.btc AS btc
-     FROM DBCORE.TxOut
- ) AS TX ON EDGE.addr = TX.addr
- INNER JOIN DBINDEX.AddrID ON TX.addr = DBINDEX.AddrID.id
-) AS DST
-ON SRC.tx = DST.tx
-INNER JOIN DBINDEX.TxID ON SRC.tx = DBINDEX.TxID.txid;
+SELECT DBINDEX.TxID.txid, SRC.addr, DST.addr, Edge.btc
+     , Edge.tx, Edge.src, Edge.dst
+FROM (SELECT TXI.tx AS tx, TXI.addr AS src, TXO.addr AS dst, TXO.btc AS btc
+      FROM (SELECT DBCORE.TxIn.tx AS tx, DBCORE.TxIn.n AS n, 
+                   DBCORE.TxOut.addr AS addr, DBCORE.TxOut.btc AS btc
+            FROM DBCORE.TxIn
+      INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.ptx AND 
+                                 DBCORE.TxOut.n = DBCORE.TxIn.pn) AS TXI
+      INNER JOIN (SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.n AS n, 
+                         DBCORE.TxOut.addr AS addr, DBCORE.TxOut.btc AS btc
+                  FROM DBCORE.TxOut) AS TXO ON TXO.tx = TXI.tx
+) AS Edge
+INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = Edge.tx
+INNER JOIN DBINDEX.AddrID AS SRC ON SRC.id = Edge.src
+INNER JOIN DBINDEX.AddrID AS DST ON DST.id = Edge.dst
+WHERE Edge.src in (
+    SELECT DBCLUSTER.Cluster.addr
+    FROM DBCLUSTER.Cluster
+    WHERE DBCLUSTER.Cluster.cluster = (
+        SELECT DBCLUSTER.Cluster.cluster
+        FROM DBCLUSTER.Cluster
+        WHERE DBCLUSTER.Cluster.addr = (
+            SELECT DBCLUSTER.Tag.addr
+            FROM DBCLUSTER.Tag
+            WHERE DBCLUSTER.Tag.tag = (
+                SELECT DBCLUSTER.TagID.id
+                FROM DBCLUSTER.TagID
+                WHERE DBCLUSTER.TagID.tag = 'TAG'
+            )
+        )
+    )
+)
+AND   Edge.dst in (
+    SELECT DBCLUSTER.Cluster.addr
+    FROM DBCLUSTER.Cluster
+    WHERE DBCLUSTER.Cluster.cluster = (
+        SELECT DBCLUSTER.Cluster.cluster
+        FROM DBCLUSTER.Cluster
+        WHERE DBCLUSTER.Cluster.addr = (
+            SELECT DBCLUSTER.Tag.addr
+            FROM DBCLUSTER.Tag
+            WHERE DBCLUSTER.Tag.tag = (
+                SELECT DBCLUSTER.TagID.id
+                FROM DBCLUSTER.TagID
+                WHERE DBCLUSTER.TagID.tag = 'TAG'
+            )
+        )
+    )
+);
 ```
 
 ##### 비트코인 휴리스틱
