@@ -91,7 +91,8 @@ def main():
         start_height = dbb.select('SELECT_MAX_BLKID')
         if start_height is None:
             start_height = 0
-        start_height = max(start_height - FLAGS.untrusted, 0)
+        else:
+            start_height = int(start_height)
         best_block_hash = rpcm.call('getbestblockhash')
         best_block = rpcm.call('getblock', best_block_hash)
         end_height = best_block['height'] - FLAGS.untrusted
@@ -137,7 +138,6 @@ def main():
             start_height = 0
         else:
             start_height = int(start_height)
-        start_height = max(start_height - FLAGS.untrusted, 0)
         end_height = INDEX.select('SELECT_MAX_BLKID')
         print(f'Start from {start_height} to {end_height}')
         pool_num = FLAGS.process
