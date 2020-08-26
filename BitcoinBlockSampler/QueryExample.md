@@ -333,3 +333,14 @@ INNER JOIN (SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.n AS n,
                    DBCORE.TxOut.addr AS addr, DBCORE.TxOut.btc AS btc
             FROM DBCORE.TxOut) AS TXO ON TXO.tx = TXI.tx;
 ```
+
+##### 잔액 
+```sql
+-- using UTXO
+SELECT DBCORE.TxOut.addr AS addr_id, DBINDEX.AddrID.addr AS addr, 
+       SUM(DBCORE.TxOut.btc) AS btc, COUNT(DBCORE.TxOut.btc) AS cnt
+FROM DBUTXO.UTXO
+INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBUTXO.UTXO.tx AND DBCORE.TxOut.n = DBUTXO.UTXO.n
+INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBCORE.TxOut.addr
+GROUP BY DBCORE.TxOut.addr;
+```
