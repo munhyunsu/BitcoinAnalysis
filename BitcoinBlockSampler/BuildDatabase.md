@@ -236,7 +236,28 @@ CREATE INDEX idx_Edge_3 ON Edge(dst);
 
 PRAGMA synchronous = NORMAL;
 PRAGMA journal_mode = WAL;
+
+-- resume
+INSERT OR IGNORE INTO Edge (tx, src, dst, btc)
+SELECT TXI.tx, TXI.addr, TXO.addr, TXO.btc
+FROM (SELECT DBCORE.TxIn.tx AS tx, DBCORE.TxIn.n AS n, 
+             DBCORE.TxOut.addr AS addr, DBCORE.TxOut.btc AS btc
+      FROM DBCORE.TxIn
+      INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.ptx AND 
+                                 DBCORE.TxOut.n = DBCORE.TxIn.pn
+      WHERE DBCORE.TxIn.tx IN (SELECT DBCORE.BlkTx.tx
+                               FROM DBCORE.BlkTx
+                               WHERE DBCORE.BlkTx.blk > 'BLKHEIGHT')) AS TXI
+INNER JOIN (SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.n AS n, 
+                   DBCORE.TxOut.addr AS addr, DBCORE.TxOut.btc AS btc
+            FROM DBCORE.TxOut
+            WHERE DBCORE.TxOut.tx IN (SELECT DBCORE.BlkTx.tx
+                                      FROM DBCORE.BlkTx
+                                      WHERE DBCORE.BlkTx.blk > 'BLKHEIGHT')
+           ) AS TXO ON TXO.tx = TXI.tx;
 ```
+
+
 
 - Level 4: Service Tables (file: service.db)
 
@@ -244,6 +265,9 @@ PRAGMA journal_mode = WAL;
 CREATE TABLE IF NOT EXISTS Cluster (
     addr INTEGER PRIMARY KEY,
     cluster NOT NULL);
+    
+INSERT INTO Cluster (addr, cluster)
+    SELECT DBINDEX.TxOut.id, -1 FROM DBINDEX.TxOut ORDER BY DBINDEX.TxOut.id ASC;
     
 CREATE TABLE IF NOT EXISTS TagID (
     id INTEGER PRIMARY KEY,
