@@ -20,17 +20,19 @@ def initialize_cluster():
     global DEBUG
     global INDEX
     global CORE
+    if DEBUG:
+        print(f'[{int(time.time()-STIME)}] Initialize Cluster Database')
     conn = sqlite3.connect(FLAGS.cluster)
     cur = conn.cursor()
     cur.execute('''PRAGMA journal_mode = OFF''')
     cur.execute('''PRAGMA synchronous = OFF''')
     cur.execute('''CREATE TABLE IF NOT EXISTS Cluster (
                      addr INTEGER PRIMARY KEY,
-                     cluster NOT NULL);
-                   CREATE TABLE IF NOT EXISTS TagID (
+                     cluster NOT NULL);''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS TagID (
                      id INTEGER PRIMARY KEY,
-                     tag TEXT UNIQUE);
-                   CREATE TABLE IF NOT EXISTS Tag (
+                     tag TEXT UNIQUE);''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS Tag (
                      addr INTEGER NOT NULL,
                      tag INTEGER NOT NULL,
                      UNIQUE (addr, tag));''')
@@ -110,11 +112,7 @@ def main():
     CORE = db_core = DBReader(FLAGS.core)
 
     if not os.path.exists(FLAGS.cluster):
-        if DEBUG:
-            print(f'[{int(time.time()-STIME)}] Initialize Cluster Database')
         initialize_cluster()
-        if DEBUG:
-            print(f'[{int(time.time()-STIME)}] Initialize Cluster Database Complete')
     CONN = conn = sqlite3.connect(FLAGS.cluster)
     CUR = cur = conn.cursor()
     
@@ -128,24 +126,25 @@ def main():
     
     cnt = 0
     while (FLAGS.loop != 0 and FLAGS.loop > cnt) or (FLAGS.loop == 0 and len(queue) > 0):
-        target = queue.popleft()
         new_queue = collections.deque()
-        if FLAGS.heuristic == 'multiinput':
-            get_addrid_multiinput(target, clustered, new_queue)
-        elif FLAGS.heuristic == 'singleoutput':
-            get_addrid_singleoutput(target, clustered, new_queue)
+        while queue:
+            target = queue.popleft()
+            if FLAGS.heuristic == 'multiinput':
+                get_addrid_multiinput(target, clustered, new_queue)
+            elif FLAGS.heuristic == 'singleoutput':
+                get_addrid_singleoutput(target, clustered, new_queue)
         CUR.execute('BEGIN TRANSACTION')
         CUR.executemany('''UPDATE Cluster SET Cluster = ? WHERE addr = ?''',
                            [(cluster_id, new_addr) for new_addr in new_queue])
         CUR.execute('COMMIT TRANSACTION')
         if DEBUG:
-            print(f'[{int(time.time()-STIME)}] Left: {len(queue)}, Finded {len(new_queue)}')
+            print(f'[{int(time.time()-STIME)}] Finded {len(new_queue)}')
         queue.extend(new_queue)
         cnt = cnt + 1
     CUR.execute('''SELECT COUNT(*)
                    FROM Cluster
                    WHERE cluster = ?''', (cluster_id,))
-    print(f'[{int(time.time()-STIME)}] Finded {CUR.fetchone()[0]} Addresses which tagged {FLAGS.tag}')
+    print(f'[{int(time.time()-STIME)}] Clustered {CUR.fetchone()[0]} Addresses which tagged {FLAGS.tag}')
 
     INDEX.close()
     CORE.close()
