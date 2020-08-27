@@ -309,7 +309,6 @@ WHERE DBCORE.TxIn.tx IN (
 )
 GROUP BY DBCORE.TxOut.addr;
 
-
 -- First appeared block and unixtime
 SELECT DBCORE.BlkTx.blk AS blk, MIN(DBCORE.BlkTime.unixtime) AS unixtime
 FROM DBCORE.BlkTx
@@ -319,6 +318,35 @@ WHERE DBCORE.BlkTx.tx IN (
     FROM DBCORE.TxOut
     WHERE DBCORE.TxOut.addr = 'ADDR'
 );
+```
+
+##### 휴리스틱 with 업데이트
+```sql
+UPDATE Cluster SET cluster = (SELECT (CASE WHEN cluster != -1
+                                      THEN cluster
+                                      ELSE (SELECT MAX(cluster)+1 FROM Cluster)
+                                      END) as num
+                              FROM Cluster 
+                              WHERE addr = (SELECT DBINDEX.AddrID.id 
+                                            FROM DBINDEX.AddrID 
+                                            WHERE DBINDEX.AddrID.addr = 'ADDR'))
+WHERE addr in (SELECT DBCORE.TxOut.addr AS addr
+               FROM DBCORE.TxIn
+               INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+               WHERE txIn.tx IN (SELECT TxIn.tx
+                                 FROM TxIn
+                                 INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n
+                                 WHERE addr = (SELECT DBINDEX.AddrID.id 
+                                               FROM DBINDEX.AddrID 
+                                               WHERE DBINDEX.AddrID.addr = 'ADDR'))
+               GROUP BY addr);
+SELECT COUNT(*) 
+FROM Cluster 
+WHERE cluster = (SELECT cluster
+                 FROM Cluster 
+                 WHERE addr = (SELECT DBINDEX.AddrID.id 
+                               FROM DBINDEX.AddrID 
+                               WHERE DBINDEX.AddrID.addr = 'ADDR'));
 ```
 
 ##### 그래프 데이터베이스
@@ -337,6 +365,14 @@ INNER JOIN (SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.n AS n,
 ##### 잔액 
 ```sql
 -- using UTXO
+ATTACH DATABASE './dbv3-core.db' AS DBCORE;
+ATTACH DATABASE './dbv3-index.db' AS DBINDEX;
+ATTACH DATABASE './utxo.db' AS DBUTXO;
+
+.header on
+.mode csv
+.once ./balance.csv
+
 SELECT DBCORE.TxOut.addr AS addr_id, DBINDEX.AddrID.addr AS addr, 
        SUM(DBCORE.TxOut.btc) AS btc, COUNT(DBCORE.TxOut.btc) AS cnt
 FROM DBUTXO.UTXO
