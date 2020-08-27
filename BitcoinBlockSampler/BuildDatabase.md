@@ -284,15 +284,6 @@ CREATE INDEX idx_Cluster_2 ON Cluster(cluster);
 - Level 5: Temp Tables (file: temp.db)
 
 ```sql
-PRAGMA synchronous = OFF;
-PRAGMA journal_mode = OFF;
-
-ATTACH DATABASE './dbv3-core.db' AS DBCORE;
-ATTACH DATABASE './dbv3-index.db' AS DBINDEX;
-
--- UTXO
-DROP TABLE IF EXISTS UTXO;
-
 CREATE TABLE IF NOT EXISTS UTXO (
     tx INTEGER NOT NULL,
     n INTEGER NOT NULL,
@@ -304,10 +295,6 @@ FROM DBCORE.TxOut
 WHERE NOT EXISTS (SELECT *
                   FROM DBCORE.TxIn
                   WHERE DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND
-                        DBCORE.TxIn.pn = DBCORE.TxOut.n);
+                        DBCORE.TxIn.pn = DBCORE.TxOut.n)
 GROUP BY tx, n;
-
-PRAGMA synchronous = NORMAL;
-PRAGMA journal_mode = WAL;
-
 ```
