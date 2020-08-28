@@ -45,6 +45,16 @@ FROM Node
 INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.addr = Node.addr
 INNER JOIN DBINDEX.AddrID ON Node.addr = DBINDEX.AddrID.id
 ORDER BY indegree DESC
+
+-- 입금 횟수 및 총 금액 리스트
+SELECT DBINDEX.AddrID.addr AS addr, COUNT(*) AS Indegree, SUM(DBCORE.TxOut.btc) AS Income
+FROM DBCORE.TxOut
+INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBCORE.TxOut.addr
+WHERE DBCORE.TxOut.addr IN (SELECT DBINDEX.AddrID.id
+                            FROM DBINDEX.AddrID
+                            WHERE DBINDEX.AddrID.addr IN ('ADDR',
+                                                          'ADDR'))
+GROUP BY DBCORE.TxOut.addr;
 ```
 
 ```sql
@@ -73,6 +83,15 @@ INNER JOIN (SELECT DBCORE.TxIn.tx AS tx, DBCORE.TxOut.addr AS addr, DBCORE.TxOut
 ON TxIn.addr = Node.addr ON DBCORE.TxOut.addr = Node.addr
 INNER JOIN DBINDEX.AddrID ON Node.addr = DBINDEX.AddrID.id
 ORDER BY outdegree DESC
+
+SELECT DBINDEX.AddrID.addr AS addr, COUNT(*) AS Outdegree, SUM(btc) AS Outcome
+FROM DBCORE.TxIn
+INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBCORE.TxOut.addr
+WHERE DBCORE.TxOut.addr IN (SELECT DBINDEX.AddrID.id
+                            FROM DBINDEX.AddrID
+                            WHERE DBINDEX.AddrID.addr IN ('ADDR',
+                                                          'ADDR'))
 ```
 
 ```sql
@@ -145,6 +164,52 @@ WHERE NOT EXISTS (SELECT *
 GROUP BY tx, n;
 ```
 
+```sql
+-- 클러스터로 입금된 트랜잭션 리스트
+SELECT DBINDEX.TxID.txid, SRC.addr, DST.addr, DBEDGE.Edge.btc
+     , DBEDGE.Edge.tx, DBEDGE.Edge.src, DBEDGE.Edge.dst, DBCORE.BlkTime.unixtime
+FROM DBEDGE.Edge
+INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBEDGE.Edge.tx
+INNER JOIN DBINDEX.AddrID AS SRC ON SRC.id = DBEDGE.Edge.src
+INNER JOIN DBINDEX.AddrID AS DST ON DST.id = DBEDGE.Edge.dst
+INNER JOIN DBCORE.BlkTx ON DBCORE.BlkTx.tx = DBEDGE.Edge.tx
+INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTime.blk = DBCORE.BlkTx.blk
+WHERE DBEDGE.Edge.src NOT IN (
+    SELECT DBCLUSTER.Cluster.addr
+    FROM DBCLUSTER.Cluster
+    WHERE DBCLUSTER.Cluster.cluster = (
+        SELECT DBCLUSTER.Cluster.cluster
+        FROM DBCLUSTER.Cluster
+        WHERE DBCLUSTER.Cluster.addr IN (
+            SELECT DBCLUSTER.Tag.addr
+            FROM DBCLUSTER.Tag
+            WHERE DBCLUSTER.Tag.tag = (
+                SELECT DBCLUSTER.TagID.id
+                FROM DBCLUSTER.TagID
+                WHERE DBCLUSTER.TagID.tag = 'TAG'
+            )
+        )
+    )
+)
+AND   DBEDGE.Edge.dst in (
+    SELECT DBCLUSTER.Cluster.addr
+    FROM DBCLUSTER.Cluster
+    WHERE DBCLUSTER.Cluster.cluster = (
+        SELECT DBCLUSTER.Cluster.cluster
+        FROM DBCLUSTER.Cluster
+        WHERE DBCLUSTER.Cluster.addr IN (
+            SELECT DBCLUSTER.Tag.addr
+            FROM DBCLUSTER.Tag
+            WHERE DBCLUSTER.Tag.tag = (
+                SELECT DBCLUSTER.TagID.id
+                FROM DBCLUSTER.TagID
+                WHERE DBCLUSTER.TagID.tag = 'TAG'
+            )
+        )
+    )
+);
+```
+
 ##### 클러스터 데이터베이스
 ```sql
 -- 같은 클러스터 주소 리스트
@@ -181,8 +246,8 @@ WHERE Cluster.cluster IN (SELECT Cluster.cluster
 
 ```sql
 -- Find Edge with Addr
-SELECT DBINDEX.TxID.txid, SRC.addr, DST.addr, DBEDGE.Edge.btc
-     , DBEDGE.Edge.tx, DBEDGE.Edge.src, DBEDGE.Edge.dst
+SELECT DBINDEX.TxID.txid AS txid, SRC.addr AS saddr, DST.addr AS daddr , DBEDGE.Edge.btc AS btc
+     , DBEDGE.Edge.tx AS tx, DBEDGE.Edge.src AS saddr_id, DBEDGE.Edge.dst AS daddr_id
 FROM DBEDGE.Edge
 INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBEDGE.Edge.tx
 INNER JOIN DBINDEX.AddrID AS SRC ON SRC.id = DBEDGE.Edge.src
@@ -190,10 +255,10 @@ INNER JOIN DBINDEX.AddrID AS DST ON DST.id = DBEDGE.Edge.dst
 WHERE DBEDGE.Edge.src in (
     SELECT DBCLUSTER.Cluster.addr
     FROM DBCLUSTER.Cluster
-    WHERE DBCLUSTER.Cluster.cluster = (
+    WHERE DBCLUSTER.Cluster.cluster IN (
         SELECT DBCLUSTER.Cluster.cluster
         FROM DBCLUSTER.Cluster
-        WHERE DBCLUSTER.Cluster.addr = (
+        WHERE DBCLUSTER.Cluster.addr IN (
             SELECT DBCLUSTER.Tag.addr
             FROM DBCLUSTER.Tag
             WHERE DBCLUSTER.Tag.tag = (
@@ -207,10 +272,10 @@ WHERE DBEDGE.Edge.src in (
 AND   DBEDGE.Edge.dst in (
     SELECT DBCLUSTER.Cluster.addr
     FROM DBCLUSTER.Cluster
-    WHERE DBCLUSTER.Cluster.cluster = (
+    WHERE DBCLUSTER.Cluster.cluster IN (
         SELECT DBCLUSTER.Cluster.cluster
         FROM DBCLUSTER.Cluster
-        WHERE DBCLUSTER.Cluster.addr = (
+        WHERE DBCLUSTER.Cluster.addr IN (
             SELECT DBCLUSTER.Tag.addr
             FROM DBCLUSTER.Tag
             WHERE DBCLUSTER.Tag.tag = (
@@ -360,23 +425,190 @@ FROM (SELECT DBCORE.TxIn.tx AS tx, DBCORE.TxIn.n AS n,
 INNER JOIN (SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.n AS n, 
                    DBCORE.TxOut.addr AS addr, DBCORE.TxOut.btc AS btc
             FROM DBCORE.TxOut) AS TXO ON TXO.tx = TXI.tx;
+            
+-- Export intra-cluster edge
+SELECT SRC.addr AS saddr, DST.addr AS daddr, SUM(DBEDGE.Edge.btc) AS btc,
+       DBEDGE.Edge.src AS saddr_id, DBEDGE.Edge.dst AS daddr_id, COUNT(DBEDGE.Edge.tx) AS cnt
+FROM DBEDGE.Edge
+INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBEDGE.Edge.tx
+INNER JOIN DBINDEX.AddrID AS SRC ON SRC.id = DBEDGE.Edge.src
+INNER JOIN DBINDEX.AddrID AS DST ON DST.id = DBEDGE.Edge.dst
+WHERE DBEDGE.Edge.src in (
+    SELECT DBCLUSTER.Cluster.addr
+    FROM DBCLUSTER.Cluster
+    WHERE DBCLUSTER.Cluster.cluster IN (
+        SELECT DBCLUSTER.Cluster.cluster
+        FROM DBCLUSTER.Cluster
+        WHERE DBCLUSTER.Cluster.addr IN (
+            SELECT DBCLUSTER.Tag.addr
+            FROM DBCLUSTER.Tag
+            WHERE DBCLUSTER.Tag.tag = (
+                SELECT DBCLUSTER.TagID.id
+                FROM DBCLUSTER.TagID
+                WHERE DBCLUSTER.TagID.tag = 'TAG'
+            )
+        )
+    )
+)
+AND   DBEDGE.Edge.dst in (
+    SELECT DBCLUSTER.Cluster.addr
+    FROM DBCLUSTER.Cluster
+    WHERE DBCLUSTER.Cluster.cluster IN (
+        SELECT DBCLUSTER.Cluster.cluster
+        FROM DBCLUSTER.Cluster
+        WHERE DBCLUSTER.Cluster.addr IN (
+            SELECT DBCLUSTER.Tag.addr
+            FROM DBCLUSTER.Tag
+            WHERE DBCLUSTER.Tag.tag = (
+                SELECT DBCLUSTER.TagID.id
+                FROM DBCLUSTER.TagID
+                WHERE DBCLUSTER.TagID.tag = 'TAG'
+            )
+        )
+    )
+)
+GROUP BY DBEDGE.Edge.src, DBEDGE.Edge.dst;
 ```
 
 ##### 잔액 
 ```sql
--- using UTXO
-ATTACH DATABASE './dbv3-core.db' AS DBCORE;
-ATTACH DATABASE './dbv3-index.db' AS DBINDEX;
-ATTACH DATABASE './utxo.db' AS DBUTXO;
-
-.header on
-.mode csv
-.once ./balance.csv
-
 SELECT DBCORE.TxOut.addr AS addr_id, DBINDEX.AddrID.addr AS addr, 
        SUM(DBCORE.TxOut.btc) AS btc, COUNT(DBCORE.TxOut.btc) AS cnt
 FROM DBUTXO.UTXO
 INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBUTXO.UTXO.tx AND DBCORE.TxOut.n = DBUTXO.UTXO.n
 INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBCORE.TxOut.addr
 GROUP BY DBCORE.TxOut.addr;
+```
+
+##### 클러스터 Intra-analysis
+```sql
+-- Indegree outdegree on cluster (too slow)
+SELECT IND.addr, IND.addr_id, IND.indegree, IND.income, OUTD.outdegree, OUTD.outcome
+FROM (SELECT DBINDEX.AddrID.addr AS addr, DBCLUSTER.Cluster.addr AS addr_id,
+             COUNT(DBCORE.TxOut.tx) AS indegree, SUM(DBCORE.TxOut.btc) AS income
+      FROM DBCLUSTER.Cluster
+      INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.addr = DBCLUSTER.Cluster.addr
+      INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBCLUSTER.Cluster.addr
+      WHERE DBCLUSTER.Cluster.cluster IN (
+          SELECT DBCLUSTER.Cluster.cluster
+          FROM DBCLUSTER.Cluster
+          WHERE DBCLUSTER.Cluster.addr IN (
+              SELECT DBCLUSTER.Tag.addr
+              FROM DBCLUSTER.Tag
+              WHERE DBCLUSTER.Tag.tag = (
+                  SELECT DBCLUSTER.TagID.id
+                  FROM DBCLUSTER.TagID
+                  WHERE DBCLUSTER.TagID.tag = 'TAG')))
+      GROUP BY DBCLUSTER.Cluster.addr) AS IND
+INNER JOIN (SELECT DBINDEX.AddrID.addr AS addr, DBCLUSTER.Cluster.addr AS addr_id,
+                   COUNT(TxIn.tx) AS outdegree, SUM(TxIn.btc) AS outcome
+            FROM DBCLUSTER.Cluster
+            INNER JOIN (SELECT DBCORE.TxIn.tx AS tx, DBCORE.TxOut.addr AS addr, DBCORE.TxOut.btc AS btc
+                        FROM DBCORE.TxIn 
+                        INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.ptx AND
+                                                   DBCORE.TxOut.n = DBCORE.TxIn.pn
+                       ) AS TxIn ON TxIn.addr = DBCLUSTER.Cluster.addr
+            INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBCLUSTER.Cluster.addr
+            WHERE DBCLUSTER.Cluster.cluster IN (
+                SELECT DBCLUSTER.Cluster.cluster
+                FROM DBCLUSTER.Cluster
+                WHERE DBCLUSTER.Cluster.addr IN (
+                    SELECT DBCLUSTER.Tag.addr
+                    FROM DBCLUSTER.Tag
+                    WHERE DBCLUSTER.Tag.tag = (
+                        SELECT DBCLUSTER.TagID.id
+                        FROM DBCLUSTER.TagID
+                        WHERE DBCLUSTER.TagID.tag = 'TAG')))
+            GROUP BY DBCLUSTER.Cluster.addr) AS OUTD ON OUTD.addr_id = IND.addr_id;
+```
+
+#### Graph
+
+```sql
+SELECT DBEDGE.Edge.src AS src, DBEDGE.Edge.dst AS dst, SUM(DBEDGE.Edge.btc) AS btc, COUNT(DBEDGE.Edge.tx) AS cnt
+FROM DBEDGE.Edge
+WHERE DBEDGE.Edge.src IN (SELECT DBCLUSTER.Cluster.addr
+                          FROM DBCLUSTER.Cluster
+                          WHERE DBCLUSTER.Cluster.cluster IN (
+                              SELECT DBCLUSTER.Cluster.cluster
+                              FROM DBCLUSTER.Cluster
+                              WHERE DBCLUSTER.Cluster.addr IN (
+                                  SELECT DBCLUSTER.Tag.addr
+                                  FROM DBCLUSTER.Tag
+                                  WHERE DBCLUSTER.Tag.tag = (
+                                      SELECT DBCLUSTER.TagID.id
+                                      FROM DBCLUSTER.TagID
+                                      WHERE DBCLUSTER.TagID.tag = 'TAG'))))
+OR    DBEDGE.Edge.dst IN (SELECT DBCLUSTER.Cluster.addr
+                          FROM DBCLUSTER.Cluster
+                          WHERE DBCLUSTER.Cluster.cluster IN (
+                              SELECT DBCLUSTER.Cluster.cluster
+                              FROM DBCLUSTER.Cluster
+                              WHERE DBCLUSTER.Cluster.addr IN (
+                                  SELECT DBCLUSTER.Tag.addr
+                                  FROM DBCLUSTER.Tag
+                                  WHERE DBCLUSTER.Tag.tag = (
+                                      SELECT DBCLUSTER.TagID.id
+                                      FROM DBCLUSTER.TagID
+                                      WHERE DBCLUSTER.TagID.tag = 'TAG'))))
+GROUP BY DBEDGE.Edge.src, DBEDGE.Edge.dst;
+
+SELECT SRC.srcid AS srcid, DST.dstid AS dstid, SRC.src AS src, DST.dst AS dst, SUM(DST.btc) AS btc, COUNT(SRC.tx) AS cnt
+FROM (
+    SELECT DBEDGE.Edge.tx, DBEDGE.Edge.src AS srcid, DBINDEX.AddrID.addr AS src
+    FROM DBEDGE.Edge
+    INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBEDGE.Edge.src
+    ) AS SRC
+INNER JOIN (
+    SELECT DBEDGE.Edge.tx, DBEDGE.Edge.dst AS dstid, DBINDEX.AddrID.addr AS dst, DBEDGE.Edge.btc AS btc
+    FROM DBEDGE.Edge
+    INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBEDGE.Edge.dst) AS DST ON DST.tx = SRC.tx
+WHERE SRC.src IN (SELECT DBCLUSTER.Cluster.addr
+                          FROM DBCLUSTER.Cluster
+                          WHERE DBCLUSTER.Cluster.cluster IN (
+                              SELECT DBCLUSTER.Cluster.cluster
+                              FROM DBCLUSTER.Cluster
+                              WHERE DBCLUSTER.Cluster.addr IN (
+                                  SELECT DBCLUSTER.Tag.addr
+                                  FROM DBCLUSTER.Tag
+                                  WHERE DBCLUSTER.Tag.tag = (
+                                      SELECT DBCLUSTER.TagID.id
+                                      FROM DBCLUSTER.TagID
+                                      WHERE DBCLUSTER.TagID.tag = 'TAG'))))
+OR    DST.dst IN (SELECT DBCLUSTER.Cluster.addr
+                          FROM DBCLUSTER.Cluster
+                          WHERE DBCLUSTER.Cluster.cluster IN (
+                              SELECT DBCLUSTER.Cluster.cluster
+                              FROM DBCLUSTER.Cluster
+                              WHERE DBCLUSTER.Cluster.addr IN (
+                                  SELECT DBCLUSTER.Tag.addr
+                                  FROM DBCLUSTER.Tag
+                                  WHERE DBCLUSTER.Tag.tag = (
+                                      SELECT DBCLUSTER.TagID.id
+                                      FROM DBCLUSTER.TagID
+                                      WHERE DBCLUSTER.TagID.tag = 'TAG'))))
+GROUP BY SRC.src, DST.dst;
+
+-- values
+SELECT DBCORE.BlkTime.unixtime AS unixtime, DBINDEX.TxID.txid AS tx, DBCORE.TxOut.btc AS value
+FROM DBCORE.TxOut
+INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBCORE.TxOut.addr
+INNER JOIN DBCORE.BlkTx ON DBCORE.BlkTx.tx = DBCORE.TxOut.tx
+INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBCORE.TxOut.tx
+INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTime.blk = DBCORE.BlkTx.blk
+WHERE DBCORE.TxOut.addr IN (SELECT DBINDEX.AddrID.id
+                            FROM DBINDEX.AddrID
+                            WHERE DBINDEX.AddrID.addr IN ('ADDR'))
+UNION
+SELECT DBCORE.BlkTime.unixtime AS unixtime, DBINDEX.TxID.txid AS tx, -1*DBCORE.TxOut.btc AS value
+FROM DBCORE.TxIn
+INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBCORE.TxOut.addr
+INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBCORE.TxIn.tx
+INNER JOIN DBCORE.BlkTx ON DBCORE.BlkTx.tx = DBCORE.TxIn.tx
+INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTime.blk = DBCORE.BlkTx.blk
+WHERE DBCORE.TxOut.addr IN (SELECT DBINDEX.AddrID.id
+                            FROM DBINDEX.AddrID
+                            WHERE DBINDEX.AddrID.addr IN ('ADDR'));
+
 ```
