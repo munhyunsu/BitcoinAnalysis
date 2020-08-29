@@ -106,7 +106,7 @@ QUERY['SELECT_MULTIINPUT'] = '''
                       INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n
                       WHERE addr = ?)
     GROUP BY addr;'''
-QUERY['SELECT_ONEOUTPUT'] = '''
+QUERY['SELECT_SINGLEOUTPUT'] = '''
     SELECT TxOut.addr AS addr
     FROM TxIn
     INNER JOIN TxOut ON TxOut.tx = TxIn.ptx AND TxOut.n = TxIn.pn
