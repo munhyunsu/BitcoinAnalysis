@@ -13,3 +13,6 @@ data/
 # Binary
 find_community_leiden
 find_community_multilevel
+
+# paper dataset
+icisc2020/
