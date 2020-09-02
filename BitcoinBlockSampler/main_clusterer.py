@@ -83,6 +83,25 @@ def get_next_clusterid(addrid):
                            WHERE addr = ?;''', (addrid,))
     return CUR.fetchone()[0]
 
+def get_samecluster_addrs(addrid):
+    global CONN
+    global CUR
+
+    CUR.execute('''SELECT cluster
+                   FROM Cluster
+                   WHERE addr = ?;''', (addrid,))
+    ccid = CUR.fetchone()[0]
+    if ccid == -1:
+        return list(addrid)
+
+    result = list()
+    CUR.execute('''SELECT DISTINCT addr
+                   FROM Cluster
+                   WHERE cluster = ?;''', (ccid,))
+    for new_addr in CUR:
+        result.append(new_addr[0])
+    return result
+        
 
 def insert_tag(addrid):
     global CONN
@@ -119,7 +138,10 @@ def main():
     addr_id = INDEX.select('SELECT_ADDRID', (FLAGS.seed,))
     cluster_id = get_next_clusterid(addr_id)
     clustered = set()
-    queue = collections.deque([addr_id])
+    if FLAGS.resume:
+        queue = collections.deque(get_samecluster_addrs(addr_id))
+    else:
+        queue = collections.deque([addr_id])
     
     if FLAGS.tag is not None:
         insert_tag(addr_id)
@@ -177,6 +199,8 @@ if __name__ == '__main__':
                         help='The number of lopp')
     parser.add_argument('--tag', type=str,
                         help='The bitcoin address tag')
+    parser.add_argument('--resume', action='store_true',
+                        help='Resume or not')
 
     FLAGS, _ = parser.parse_known_args()
 
