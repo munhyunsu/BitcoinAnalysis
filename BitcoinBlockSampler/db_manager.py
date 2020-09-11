@@ -97,6 +97,12 @@ QUERY['SELECT_META'] = '''
     SELECT value FROM Meta
       WHERE key = ?'''
 
+QUERY['SELECT_SAMECLUSTER'] = '''
+    SELECT addr
+      FROM Cluster
+      WHERE cluster = (SELECT cluster
+                         FROM Cluster
+                         WHERE addr = ?);'''
 QUERY['SELECT_MULTIINPUT'] = '''
     SELECT TxOut.addr AS addr
     FROM TxIn
