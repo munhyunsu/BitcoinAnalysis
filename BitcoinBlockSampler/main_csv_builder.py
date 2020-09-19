@@ -46,7 +46,7 @@ def main():
     blk_writer.writerow(('height', 'blkhash'))
     tx_writer.writerow(('txid',))
     addr_writer.writerow(('addr',))
-    
+
     term = FLAGS.term
     start_height = 0
     best_block_hash = rpcm.call('getbestblockhash')
@@ -110,8 +110,10 @@ if __name__ == '__main__':
     parser.add_argument('--process', type=int, 
                         default=min(multiprocessing.cpu_count()//2, 4),
                         help='The number of multiprocess')
-    parser.add_argument('--basedb', type=str, 
-                        help='The base index database (in core / util type db)')
+    parser.add_argument('--index', type=str, 
+                        help='The base index database')
+    parser.add_argument('--core', type=str, 
+                        help='The base core database')
 
     FLAGS, _ = parser.parse_known_args()
 
