@@ -171,7 +171,7 @@ def main():
             dbb.cur.execute(f'''CREATE INDEX idx_BlkTx_2 ON BlkTx(tx);''')
             dbb.cur.execute(f'''CREATE INDEX idx_TxIn_3_4 ON TxIn(ptx, pn);''')
             dbb.cur.execute(f'''CREATE INDEX idx_TxOut_3 ON TxOut(addr);''')
-            dbb.commit()
+            dbb.cur.commit()
         if DEBUG:
             print(f'All job completed {start_height} to {end_height} during {time.time()-stime}')
         INDEX.close()
@@ -185,7 +185,7 @@ def main():
     dbb.cur.execute(f'''PRAGMA synchronous = NORMAL;''')
     dbb.conn.commit()
     dbb.close()
-        
+
 
 if __name__ == '__main__':
     root_path = os.path.abspath(__file__)
