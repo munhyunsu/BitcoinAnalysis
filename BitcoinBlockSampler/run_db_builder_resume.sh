@@ -4,8 +4,8 @@ CMD='SELECT MAX(id) FROM BlkID;'
 BHEIGHT=`sqlite3 dbv3-index.db "${CMD}"`
 echo "Resume from ${BHEIGHT}"
 
-python3 main_db_builder.py --debug --type index --pagesize 65536 --cachesize 6553600 --resume
-python3 main_db_builder.py --debug --type core --index dbv3-index.db --pagesize 65536 --cachesize 6553600 --resume
+python3 main_db_builder.py --debug --type index --cachesize -6553600 --resume
+python3 main_db_builder.py --debug --type core --index dbv3-index.db --cachesize -6553600 --resume
 
 echo "Update Edge Database"
 CMD="ATTACH DATABASE './dbv3-index.db' AS DBINDEX;
