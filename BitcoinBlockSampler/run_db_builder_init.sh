@@ -8,10 +8,6 @@ CMD="
 PRAGMA synchronous = OFF;
 PRAGMA journal_mode = OFF;
 
-PRAGMA cache_size = -6553600;
-PRAGMA page_size = 65536;
-VACUUM;
-
 ATTACH DATABASE './dbv3-index.db' AS DBINDEX;
 ATTACH DATABASE './dbv3-core.db' AS DBCORE;
 
@@ -37,10 +33,6 @@ INNER JOIN (SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.n AS n,
 CREATE INDEX idx_Edge_1 ON Edge(tx);
 CREATE INDEX idx_Edge_2 ON Edge(src);
 CREATE INDEX idx_Edge_3 ON Edge(dst);
-
-PRAGMA cache_size = -2000;
-PRAGMA page_size = 4096;
-VACUUM;
 
 PRAGMA synchronous = NORMAL;
 PRAGMA journal_mode = WAL;
