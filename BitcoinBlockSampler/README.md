@@ -65,11 +65,11 @@
     ./bitcoin-cli getblockheight 1
   ```
 
-#### BlockIndexDB
+#### Build database
 
-  1. Execute ipynb
-
-    - It create INDEX automatically by UNIQUE column
+```bash
+./run_db_builder_init.sh
+```
 
 #### BlockClustering
   - Crate Bitcoin Address - Transaction Hash Table
