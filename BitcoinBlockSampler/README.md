@@ -71,6 +71,12 @@
 ./run_db_builder_init.sh
 ```
 
+#### Resume database
+
+```bash
+./run_db_builder_resume.sh
+```
+
 #### BlockClustering
   - Crate Bitcoin Address - Transaction Hash Table
 
