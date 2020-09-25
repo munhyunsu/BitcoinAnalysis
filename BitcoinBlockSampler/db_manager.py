@@ -126,6 +126,23 @@ QUERY['SELECT_SINGLEOUTPUT'] = '''
                       HAVING COUNT(DISTINCT TxIn.n) > 1 AND COUNT(DISTINCT TxOut.n) = 1)
     GROUP BY TxOut.addr;'''
 
+QUERY['ADDRESS_TO_ID'] === '''
+    SELECT DBINDEX.AddrID.id
+    FROM DBINDEX.AddrID
+    WHERE DBINDEX.AddrID.addr = ?;'''
+QUERY['ID_TO_ADDRESS'] === '''
+    SELECT DBINDEX.AddrID.addr
+    FROM DBINDEX.AddrID
+    WHERE DBINDEX.AddrID.id = ?;'''
+QUERY['TX_TO_ID'] === '''
+    SELECT DBINDEX.TxID.id
+    FROM DBINDEX.TxID
+    WHERE DBINDEX.TxID.txid = ?;'''
+QUERY['ID_TO_TX'] === '''
+    SELECT DBINDEX.TxID.txid
+    FROM DBINDEX.TxID
+    WHERE DBINDEX.TxID.id = ?;'''
+
 
 class DBBuilder(object):
     def __init__(self, dbtype: str, dbpath: str):
