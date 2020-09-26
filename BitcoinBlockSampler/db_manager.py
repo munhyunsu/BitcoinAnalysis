@@ -143,6 +143,19 @@ QUERY['ID_TO_TX'] === '''
     FROM DBINDEX.TxID
     WHERE DBINDEX.TxID.id = ?;'''
 
+QUERY['COUNT_TX'] = '''
+    SELECT COUNT(DISTINCT tx)
+    FROM (
+    SELECT DBCORE.TxIn.tx
+    FROM DBCORE.TxIn
+    INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.ptx AND
+                               DBCORE.TxOut.n = DBCORE.TxIn.pn
+    WHERE DBCORE.TxOut.addr = ?
+    UNION 
+    SELECT DBCORE.TxOut.tx
+    FROM DBCORE.TxOut
+    WHERE DBCORE.TxOut.addr = ?);'''
+
 
 class DBBuilder(object):
     def __init__(self, dbtype: str, dbpath: str):
