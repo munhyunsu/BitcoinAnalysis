@@ -166,6 +166,16 @@ QUERY['OUTCOME'] = '''
     INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.ptx AND
                                DBCORE.TxOut.n = DBCORE.TxIn.pn
     WHERE DBCORE.TxOut.addr = ?;'''
+QUERY['BALANCE'] = '''
+    SELECT Income.value-Outcome.value AS Balance
+    FROM
+    (SELECT SUM(btc) AS value
+     FROM TxOut
+     WHERE TxOut.addr = ?) AS Income,
+    (SELECT SUM(btc) AS value
+     FROM TxIn
+     INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n
+     WHERE TxOut.addr = ?) AS Outcome;'''
 
 
 class DBBuilder(object):
