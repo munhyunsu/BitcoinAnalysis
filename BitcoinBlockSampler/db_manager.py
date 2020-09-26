@@ -156,6 +156,17 @@ QUERY['COUNT_TX'] = '''
     FROM DBCORE.TxOut
     WHERE DBCORE.TxOut.addr = ?);'''
 
+QUERY['INCOME'] = '''
+    SELECT SUM(DBCORE.TxOut.btc)
+    FROM DBCORE.TxOut
+    WHERE DBCORE.TxOut.addr = ?;'''
+QUERY['OUTCOME'] = '''
+    SELECT SUM(DBCORE.TxOut.btc)
+    FROM DBCORE.TxIn 
+    INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.ptx AND
+                               DBCORE.TxOut.n = DBCORE.TxIn.pn
+    WHERE DBCORE.TxOut.addr = ?;'''
+
 
 class DBBuilder(object):
     def __init__(self, dbtype: str, dbpath: str):
