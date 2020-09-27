@@ -176,6 +176,22 @@ QUERY['BALANCE'] = '''
      FROM TxIn
      INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n
      WHERE TxOut.addr = ?) AS Outcome;'''
+QUERY['DATETIME_RANGE'] = '''
+    SELECT MIN(BlkTime.unixtime), MAX(BlkTime.unixtime)
+    FROM BlkTime
+    INNER JOIN BlkTx ON BlkTx.blk = BlkTime.blk
+    WHERE BlkTx.tx IN
+    (SELECT tx
+     FROM (
+     SELECT DISTINCT TxIn.tx
+     FROM TxIn
+     INNER JOIN TxOut ON TxOut.tx = TxIn.ptx AND
+                         TxOut.n = TxIn.pn
+     WHERE TxOut.addr = ?
+     UNION 
+     SELECT DISTINCT TxOut.tx
+     FROM TxOut
+     WHERE TxOut.addr = ?));'''
 
 
 class DBBuilder(object):
