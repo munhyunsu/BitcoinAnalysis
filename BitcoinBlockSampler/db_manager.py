@@ -169,29 +169,30 @@ QUERY['OUTCOME'] = '''
 QUERY['BALANCE'] = '''
     SELECT Income.value-Outcome.value AS Balance
     FROM
-    (SELECT SUM(btc) AS value
-     FROM TxOut
-     WHERE TxOut.addr = ?) AS Income,
-    (SELECT SUM(btc) AS value
-     FROM TxIn
-     INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n
-     WHERE TxOut.addr = ?) AS Outcome;'''
+    (SELECT SUM(DBCORE.TxOut.btc) AS value
+     FROM DBCORE.TxOut
+     WHERE DBCORE.TxOut.addr = ?) AS Income,
+    (SELECT SUM(DBCORE.TxOut.btc) AS value
+     FROM DBCORE.TxIn
+     INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND 
+                                DBCORE.TxIn.pn = DBCORE.TxOut.n
+     WHERE DBCORE.TxOut.addr = ?) AS Outcome;'''
 QUERY['DATETIME_RANGE'] = '''
-    SELECT MIN(BlkTime.unixtime), MAX(BlkTime.unixtime)
-    FROM BlkTime
-    INNER JOIN BlkTx ON BlkTx.blk = BlkTime.blk
-    WHERE BlkTx.tx IN
-    (SELECT tx
+    SELECT MIN(DBCORE.BlkTime.unixtime), MAX(DBCORE.BlkTime.unixtime)
+    FROM DBCORE.BlkTime
+    INNER JOIN DBCORE.BlkTx ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk
+    WHERE DBCORE.BlkTx.tx IN
+    (SELECT DBCORE.TxIn.tx
      FROM (
-     SELECT DISTINCT TxIn.tx
-     FROM TxIn
-     INNER JOIN TxOut ON TxOut.tx = TxIn.ptx AND
-                         TxOut.n = TxIn.pn
-     WHERE TxOut.addr = ?
+     SELECT DISTINCT DBCORE.TxIn.tx
+     FROM DBCORE.TxIn
+     INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.ptx AND
+                                DBCORE.TxOut.n = DBCORE.TxIn.pn
+     WHERE DBCORE.TxOut.addr = ?
      UNION 
-     SELECT DISTINCT TxOut.tx
-     FROM TxOut
-     WHERE TxOut.addr = ?));'''
+     SELECT DISTINCT DBCORE.TxOut.tx
+     FROM DBCORE.TxOut
+     WHERE DBCORE.TxOut.addr = ?));'''
 
 
 class DBBuilder(object):
