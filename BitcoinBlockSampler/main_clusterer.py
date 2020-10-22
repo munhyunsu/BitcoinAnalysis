@@ -134,6 +134,8 @@ def main():
         initialize_cluster()
     CONN = conn = sqlite3.connect(FLAGS.cluster)
     CUR = cur = conn.cursor()
+    CUR.execute(f'ATTACH DATABASE {FLAGS.index} AS DBINDEX;')
+    CUR.execute(f'ATTACH DATABASE {FLAGS.core} AS DBCORE;')
     
     addr_id = INDEX.select('SELECT_ADDRID', (FLAGS.seed,))
     cluster_id = get_next_clusterid(addr_id)
