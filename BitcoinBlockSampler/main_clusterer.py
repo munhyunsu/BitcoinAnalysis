@@ -55,8 +55,10 @@ def initialize_cluster():
 
 
 def get_addrid_multiinput(addrid, clustered, queue):
+    global CONN
+    global CUR
     global CORE
-    for new_addrid in CORE.selectcur('SELECT_MULTIINPUT', (addrid,)):
+    for new_addrid in CUR.selectcur('SELECT_MULTIINPUT', (addrid,)):
         new_addrid = new_addrid[0]
         if new_addrid not in clustered:
             clustered.add(new_addrid)
@@ -64,8 +66,10 @@ def get_addrid_multiinput(addrid, clustered, queue):
 
 
 def get_addrid_singleoutput(addrid, clustered, queue):
+    global CONN
+    global CUR
     global CORE
-    for new_addrid in CORE.selectcur('SELECT_SINGLEOUTPUT', (addrid,)):
+    for new_addrid in CUR.selectcur('SELECT_SINGLEOUTPUT', (addrid,)):
         new_addrid = new_addrid[0]
         if new_addrid not in clustered:
             clustered.add(new_addrid)
@@ -136,7 +140,6 @@ def main():
     CUR = cur = conn.cursor()
     CUR.execute(f'ATTACH DATABASE "{os.path.basename(FLAGS.index)}" AS DBINDEX;')
     CUR.execute(f'ATTACH DATABASE "{os.path.basename(FLAGS.core)}" AS DBCORE;')
-    CONN.commit()
     
     addr_id = INDEX.select('SELECT_ADDRID', (FLAGS.seed,))
     cluster_id = get_next_clusterid(addr_id)
