@@ -136,6 +136,7 @@ def main():
     CUR = cur = conn.cursor()
     CUR.execute(f'ATTACH DATABASE "{os.path.basename(FLAGS.index)}" AS DBINDEX;')
     CUR.execute(f'ATTACH DATABASE "{os.path.basename(FLAGS.core)}" AS DBCORE;')
+    CONN.commit()
     
     addr_id = INDEX.select('SELECT_ADDRID', (FLAGS.seed,))
     cluster_id = get_next_clusterid(addr_id)
