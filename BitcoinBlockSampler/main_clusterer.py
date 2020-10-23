@@ -58,7 +58,7 @@ def get_addrid_multiinput(addrid, clustered, queue):
     global CONN
     global CUR
     global CORE
-    for new_addrid in CUR.selectcur('SELECT_MULTIINPUT', (addrid,)):
+    for new_addrid in CUR.execute(QUERY['SELECT_MULTIINPUT'], (addrid,)):
         new_addrid = new_addrid[0]
         if new_addrid not in clustered:
             clustered.add(new_addrid)
@@ -69,7 +69,7 @@ def get_addrid_singleoutput(addrid, clustered, queue):
     global CONN
     global CUR
     global CORE
-    for new_addrid in CUR.selectcur('SELECT_SINGLEOUTPUT', (addrid,)):
+    for new_addrid in CUR.execute(QUERY['SELECT_SINGLEOUTPUT'], (addrid,)):
         new_addrid = new_addrid[0]
         if new_addrid not in clustered:
             clustered.add(new_addrid)
