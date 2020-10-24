@@ -54,11 +54,11 @@ def get_subgraph(graph, target):
     return subgraph
 
 
-def calc_variables(df, s):
+def calc_variables(df, target):
     ns = len(target)
-    ms = len(df[df['src'].isin(s) & df['dst'].isin(s)])
-    cs = len(df[(df['src'].isin(s) & ~df['dst'].isin(s)) &
-                (~df['src'].isin(s) & df['dst'].isin(s))])
+    ms = len(df[df['src'].isin(target) & df['dst'].isin(target)])
+    cs = len(df[(df['src'].isin(target) & ~df['dst'].isin(target)) |
+                (~df['src'].isin(target) & df['dst'].isin(target))])
     return ns, ms, cs
 
 
