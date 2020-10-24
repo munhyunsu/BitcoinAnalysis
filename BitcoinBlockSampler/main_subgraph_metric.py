@@ -14,6 +14,7 @@ DEBUG = False
 
 def csv_to_df(path):
     df = pd.read_csv(path)
+    df = df.astype({'src': str, 'dst': str, 'btc': float, 'cnt': int})
     return df
 
 
@@ -22,9 +23,9 @@ def df_to_graph(df):
     edges = list()
     weights = list()
     for index, row in df.iterrows():
-        src = str(int(row['src']))
-        dst = str(int(row['dst']))
-        weight = float(row['btc'])
+        src = row['src']
+        dst = row['dst']
+        weight = row['btc']
         if src not in vertices:
             vertices.add(src)
         if dst not in vertices:
@@ -32,14 +33,15 @@ def df_to_graph(df):
         edges.append((src, dst))
         weights.append(weight)
     graph = igraph.Graph(directed=False)
-    graph.add_vertices(vertices)
-    graph.add_edges([x for x in edges])
-    graph.es['weight'] = weights
+    graph.add_vertices(list(vertices))
+    graph.add_edges(edges)
+    graph.es['weights'] = weights
     return graph
 
 
 def csv_to_target(path):
     df = pd.read_csv(path)
+    df = df.astype({'addr_id': str})
     target = set()
     for addr_id in df['addr_id']:
         target.add(addr_id)
