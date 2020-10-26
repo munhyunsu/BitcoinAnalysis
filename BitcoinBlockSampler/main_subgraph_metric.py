@@ -2,6 +2,7 @@ import os
 import time
 import sqlite3
 import collections
+import statistics
 
 import pandas as pd
 import igraph
@@ -49,7 +50,7 @@ def csv_to_target(path):
 
 
 def get_subgraph(graph, target):
-    vs = graph.select(name_in=target).indices
+    vs = graph.vs.select(name_in=target).indices
     subgraph = graph.subgraph(vs)
     return subgraph
 
@@ -64,12 +65,20 @@ def calc_variables(df, target):
 
 def get_mambership(graph, target):
     membership = list(range(len(graph.vs)))
-    vs = graph.select(name_in=target).indices
+    vs = graph.vs.select(name_in=target).indices
     union = min(vs)
     for idx in vs:
         membership[idx] = union
     return membership
 
+
+def get_triangle_nodes(graph):
+    triangle_nodes = set()
+    for triangle in graph.cliques(min=3, max=3):
+        for node in triangle:
+            triangle_nodes.add(node)
+    return triangle_nodes
+            
 
 def main():
     if DEBUG:
@@ -81,12 +90,16 @@ def main():
         if key not in df.columns.values:
             raise Exception(f'{key} not in df.columns.values')
     
-    graph = df_to_graph(df)
+    if FLAGS.pickle is None:
+        graph = df_to_graph(df)
+        graph.write_pickle(f'/tmp/{os.path.splitext(__file__)[0]}.igraph')
+    else:
+        graph = igraph.Graph.Read_Pickle(FLAGS.pickle)
     n = len(graph.vs)
     m = len(graph.es)
     if DEBUG:
         print(f'n: {n}, m: {m}')
-        
+
     target = csv_to_target(FLAGS.target)
     if DEBUG:
         print(f'target: {len(target)}')
@@ -108,7 +121,7 @@ def main():
     metrics['edges_inside'] = ms
     metrics['average_degree'] = (2*ms)/ns
     metrics['fraction_over_median_degree'] = len([x for x in target if subgraph.vs.select(name=x).degree()[0] > du_median])/ns
-    metrics['triangle_participation_ratio'] = len(subgraph.cliques(min=3, max=3))/ns
+    metrics['triangle_participation_ratio'] = len(get_triangle_nodes(subgraph))/ns
     # External connectivity
     metrics['expansion'] = cs/ns
     metrics['cut_ratio'] = cs/(ns*(n-ns))
@@ -141,11 +154,15 @@ if __name__ == '__main__':
                         help='The path for graph csv')
     parser.add_argument('--target', type=str, required=True,
                         help='The path for subgraph csv')
+    parser.add_argument('--pickle', type=str,
+                        help='The present debug message')
 
     FLAGS, _ = parser.parse_known_args()
 
     FLAGS.graph = os.path.abspath(os.path.expanduser(FLAGS.graph))
     FLAGS.target = os.path.abspath(os.path.expanduser(FLAGS.target))
+    if FLAGS.pickle is not None:
+        FLAGS.pickle = os.path.abspath(os.path.expanduser(FLAGS.pickle))
 
     DEBUG = FLAGS.debug
 
