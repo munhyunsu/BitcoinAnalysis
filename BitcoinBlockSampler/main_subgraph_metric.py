@@ -121,7 +121,8 @@ def main():
     metrics['edges_inside'] = ms
     metrics['average_degree'] = (2*ms)/ns
     metrics['fraction_over_median_degree'] = len([x for x in target if subgraph.vs.select(name=x).degree()[0] > du_median])/ns
-    metrics['triangle_participation_ratio'] = len(get_triangle_nodes(subgraph))/ns
+    if FLAGS.tpr:
+        metrics['triangle_participation_ratio'] = len(get_triangle_nodes(subgraph))/ns
     # External connectivity
     metrics['expansion'] = cs/ns
     metrics['cut_ratio'] = cs/(ns*(n-ns))
@@ -156,6 +157,9 @@ if __name__ == '__main__':
                         help='The path for subgraph csv')
     parser.add_argument('--pickle', type=str,
                         help='The present debug message')
+    parser.add_argument('--enable_tpr', action='store_true',
+                        help='Enable or disable triangle_participation_ratio')
+    
 
     FLAGS, _ = parser.parse_known_args()
 
