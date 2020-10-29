@@ -121,7 +121,7 @@ def main():
     metrics['edges_inside'] = ms
     metrics['average_degree'] = (2*ms)/ns
     metrics['fraction_over_median_degree'] = len([x for x in target if subgraph.vs.select(name=x).degree()[0] > du_median])/ns
-    if FLAGS.tpr:
+    if FLAGS.enable_tpr:
         metrics['triangle_participation_ratio'] = len(get_triangle_nodes(subgraph))/ns
     # External connectivity
     metrics['expansion'] = cs/ns
