@@ -13,8 +13,17 @@ FLAGS = _ = None
 DEBUG = False
 
 
-def csv_to_df(path):
-    df = pd.read_csv(path)
+def create_df(conn, cur, target):
+    Q = '''SELECT Edge.src AS src, Edge.dst AS dst, SUM(Edge.btc) AS btc, COUNT(Edge.tx) AS cnt
+           FROM Edge
+           WHERE Edge.src = ?
+              OR Edge.dst = ?
+           GROUP BY Edge.src, Edge.dst;'''
+    result = list()
+    for addr_id in target:
+        for res in cur.execute(Q, (addr_id, addr_id)):
+            result.append(res)
+    df = pd.DataFrame(result, columns=('src', 'dst', 'btc', 'cnt'))
     df = df.astype({'src': str, 'dst': str, 'btc': float, 'cnt': int})
     return df
 
@@ -79,22 +88,6 @@ def get_triangle_nodes(graph):
             triangle_nodes.add(node)
     return triangle_nodes
 
-
-def create_df(conn, cur, target):
-    Q = '''SELECT Edge.src AS src, Edge.dst AS dst, SUM(Edge.btc) AS btc, COUNT(Edge.tx) AS cnt
-           FROM Edge
-           WHERE Edge.src = ?
-              OR Edge.dst = ?
-           GROUP BY Edge.src, Edge.dst;'''
-    result = list()
-    for addr_id in target:
-        for res in cur.execute(Q, (addr_id, addr_id)):
-            result.append(res)
-    df = pd.DataFrame(result, columns=('src', 'dst', 'btc', 'cnt'))
-    df = df.astype({'src': str, 'dst': str, 'btc': float, 'cnt': int})
-    return df
-            
-    
 
 def main():
     if DEBUG:
