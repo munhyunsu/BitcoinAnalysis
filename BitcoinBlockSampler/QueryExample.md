@@ -612,30 +612,3 @@ WHERE DBCORE.TxOut.addr IN (SELECT DBINDEX.AddrID.id
                             WHERE DBINDEX.AddrID.addr IN ('ADDR'));
 
 ```
-
-#### Export sub graph
-```bash
-SQLITE_TMPDIR=./ sqlite3
-```
-```sql
-ATTACH DATABASE 'dbv3-index.db' AS DBINDEX;
-ATTACH DATABASE 'dbv3-core.db' AS DBCORE;
-ATTACH DATABASE 'dbv3-util.db' AS DBUTIL;
-ATTACH DATABASE 'experiment.db' AS DBEXP;
-```
-```sql
-.header on
-.mode csv
-.once "subgraph.csv"
-SELECT DBUtil.Edge.src AS src, DBUtil.Edge.dst AS dst, SUM(DBUtil.Edge.btc) AS btc, COUNT(DBUtil.Edge.tx) AS cnt
-FROM DBUtil.Edge
-WHERE DBUtil.Edge.src IN (
-    SELECT DBEXP.Cluster.addr
-    FROM DBEXP.Cluster
-    WHERE DBEXP.Cluster.cluster != -1)
-OR DBUtil.Edge.dst IN (
-    SELECT DBEXP.Cluster.addr
-    FROM DBEXP.Cluster
-    WHERE DBEXP.Cluster.cluster != -1)
-GROUP BY DBUtil.Edge.src, DBUtil.Edge.dst;
-```
