@@ -58,37 +58,6 @@ def csv_to_target(path):
     return target
 
 
-def get_subgraph(graph, target):
-    vs = graph.vs.select(name_in=target).indices
-    subgraph = graph.subgraph(vs)
-    return subgraph
-
-
-def calc_variables(df, target):
-    ns = len(target)
-    ms = len(df[df['src'].isin(target) & df['dst'].isin(target)])
-    cs = len(df[(df['src'].isin(target) & ~df['dst'].isin(target)) |
-                (~df['src'].isin(target) & df['dst'].isin(target))])
-    return ns, ms, cs
-
-
-def get_mambership(graph, target):
-    membership = list(range(len(graph.vs)))
-    vs = graph.vs.select(name_in=target).indices
-    union = min(vs)
-    for idx in vs:
-        membership[idx] = union
-    return membership
-
-
-def get_triangle_nodes(graph):
-    triangle_nodes = set()
-    for triangle in graph.cliques(min=3, max=3):
-        for node in triangle:
-            triangle_nodes.add(node)
-    return triangle_nodes
-
-
 def main():
     if DEBUG:
         print(f'Parsed arguments {FLAGS}')
@@ -128,8 +97,6 @@ if __name__ == '__main__':
                         help='The path for Edge table')
     parser.add_argument('--target', type=str, required=True,
                         help='The path for subgraph csv')
-    parser.add_argument('--enable_tpr', action='store_true',
-                        help='Enable or disable triangle_participation_ratio')
     
     FLAGS, _ = parser.parse_known_args()
 
