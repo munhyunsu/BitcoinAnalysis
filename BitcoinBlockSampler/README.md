@@ -95,5 +95,7 @@
   - Bitcoin block sampling and creating Regtest database
 
 ### TODO
-  1. Script to address improvements
-    - More coverage
+1. Script to address improvements
+  - More coverage
+1. Installation script
+
