@@ -1,4 +1,4 @@
-# BitcoinAnalysis
+# A RDBMS-based Bitcoin Analysis
 - Block preprocessing based bitcoin analysis library
 
 # Usage
@@ -11,3 +11,8 @@
 
 # Created by
 - LuHa(munhyunsu@gmail.com)
+- ...
+
+## Papers
+- Hyunsu Mun, Soohyun Kim, and Youngseok Lee. "A RDBMS-based Bitcoin Analysis Method". Dec. 2020.
+
