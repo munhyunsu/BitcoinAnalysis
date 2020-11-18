@@ -3,7 +3,7 @@ import numpy as np
 
 class UnionFind(object):
     def __init__(self):
-        pass
+        self.par = np.ndarray(dtype=np.int32)
 
     def find(self, o):
         pass
