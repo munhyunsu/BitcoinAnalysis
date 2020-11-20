@@ -5,6 +5,9 @@ class UnionFind(object):
     def __init__(self, size=0):
         self.parent = np.full(size+1, range(size+1), dtype=np.int32)
         self.rank = np.full(size+1, 0, dtype=np.int32)
+    
+    def __repr__(self):
+        return f'Parent: {self.parent}\nRank: {self.rank}'
 
     def find(self, o):
         while o != self.parent[o]:
@@ -29,4 +32,14 @@ class UnionFind(object):
 
     
 if __name__ == '__main__':
-    pass
+    uf = UnionFind(10)
+    print(uf)
+    uf.union(2, 4)
+    print(uf)
+    uf.union(7, 10)
+    print(uf)
+    uf.union(2, 10)
+    print(uf)
+    print(uf.find(10))
+    uf.union(2, 9)
+    print(uf)
