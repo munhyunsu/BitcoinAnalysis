@@ -5,6 +5,7 @@ import time
 import pandas as pd
 
 import db_manager
+import data_structure
 
 FLAGS = _ = None
 DEBUG = False
