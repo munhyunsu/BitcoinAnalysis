@@ -25,8 +25,6 @@ def initialize_cluster(conn, cur):
     global STIME
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Initialize Cluster Database')
-    conn = sqlite3.connect(FLAGS.cluster)
-    cur = conn.cursor()
     cur.execute('''PRAGMA journal_mode = OFF''')
     cur.execute('''PRAGMA synchronous = OFF''')
     cur.execute('''CREATE TABLE IF NOT EXISTS Cluster (
