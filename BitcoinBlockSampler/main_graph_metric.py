@@ -126,8 +126,9 @@ def main():
     metrics['internal_density'] = ms/(ns*(ns-1)/2)
     metrics['edges_inside'] = ms
     metrics['average_degree'] = (2*ms)/ns
-    metrics['fraction_over_median_degree'] = len([x for x in target if subgraph.vs.select(name=x).degree()[0] > du_median])/ns
-    if FLAGS.enable_tpr:
+    if FLAGS.enable_middle:
+        metrics['fraction_over_median_degree'] = len([x for x in target if subgraph.vs.select(name=x).degree()[0] > du_median])/ns
+    if FLAGS.enable_high:
         metrics['triangle_participation_ratio'] = len(get_triangle_nodes(subgraph))/ns
     # External connectivity
     metrics['expansion'] = cs/ns
@@ -135,13 +136,18 @@ def main():
     # Combine connectivity
     metrics['conductance'] = cs/(2*ms+cs)
     metrics['normalized_cut'] = cs/(2*ms+cs) + cs/(2*(m-ms)+cs)
-    out_degree_fraction = [(graph.vs.select(name=x).degree()[0]-subgraph.vs.select(name=x).degree()[0])/graph.vs.select(name=x).degree()[0] for x in target]
-    metrics['maximum_out_degree_fraction'] = max(out_degree_fraction)
-    metrics['average_out_degree_fraction'] = sum(out_degree_fraction)/ns
-    metrics['flake_out_degree_fraction'] = len([x for x in target if subgraph.vs.select(name=x).degree()[0] < graph.vs.select(name=x).degree()[0]/2])/ns
+    if FLAGS.enable_middle:
+        out_degree_fraction = [(graph.vs.select(name=x).degree()[0]-subgraph.vs.select(name=x).degree()[0])/graph.vs.select(name=x).degree()[0] for x in target]
+    if FLAGS.enable_middle:
+        metrics['maximum_out_degree_fraction'] = max(out_degree_fraction)
+    if FLAGS.enable_middle:
+        metrics['average_out_degree_fraction'] = sum(out_degree_fraction)/ns
+    if FLAGS.enable_middle:
+        metrics['flake_out_degree_fraction'] = len([x for x in target if subgraph.vs.select(name=x).degree()[0] < graph.vs.select(name=x).degree()[0]/2])/ns
     # Network connectivity
-    membership = get_mambership(graph, target)
-    metrics['modularity'] = graph.modularity(membership)
+    if FLAGS.enable_middle:
+        membership = get_mambership(graph, target)
+        metrics['modularity'] = graph.modularity(membership)
     
     print(metrics)
 
