@@ -161,9 +161,11 @@ if __name__ == '__main__':
                         help='The path for Edge table')
     parser.add_argument('--target', type=str, required=True,
                         help='The path for subgraph csv')
-    parser.add_argument('--enable_tpr', action='store_true',
-                        help='Enable or disable triangle_participation_ratio')
-    
+    parser.add_argument('--enable_middle', action='store_true',
+                        help='Enable or disable middle running time job')
+    parser.add_argument('--enable_high', action='store_true',
+                        help='Enable or disable high running time job')
+
     FLAGS, _ = parser.parse_known_args()
 
     FLAGS.util = os.path.abspath(os.path.expanduser(FLAGS.util))
