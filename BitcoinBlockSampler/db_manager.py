@@ -97,6 +97,34 @@ QUERY['SELECT_META'] = '''
     SELECT value FROM Meta
       WHERE key = ?'''
 
+QUERY['SELECT_TXIN_ADDRS'] = '''
+    SELECT DBCORE.TxOut.addr
+    FROM DBCORE.TxIn
+    INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.ptx AND
+                               DBCORE.TxOut.n = DBCORE.TxIn.pn
+    WHERE DBCORE.TxIn.tx = ?;'''
+QUERY['SELECT_TXOUT_ADDRS'] = '''
+    SELECT DBCORE.TxOut.addr
+    FROM DBCORE.TxOut
+    WHERE DBCORE.TxOut.tx = ?;'''
+QUERY['SELECT_TXTIME'] = '''
+    SELECT DBCORE.BlkTime.unixtime
+    FROM DBCORE.BlkTx
+    INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTime.blk = DBCORE.BlkTx.blk
+    WHERE DBCORE.BlkTx.tx = ?;'''
+QUERY['SELECT_FIRSTTIME'] = '''
+    SELECT MIN(DBCORE.BlkTime.unixtime)
+    FROM DBCORE.TxOut
+    INNER JOIN DBCORE.BlkTx ON DBCORE.BlkTx.tx = DBCORE.TxOut.tx
+    INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTime.blk = DBCORE.BlkTx.blk
+    WHERE DBCORE.TxOut.addr = ?;'''
+QUERY['SELECT_LASTTIME'] = '''
+    SELECT MAX(DBCORE.BlkTime.unixtime)
+    FROM DBCORE.TxOut
+    INNER JOIN DBCORE.BlkTx ON DBCORE.BlkTx.tx = DBCORE.TxOut.tx
+    INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTime.blk = DBCORE.BlkTx.blk
+    WHERE DBCORE.TxOut.addr = ?;'''
+
 QUERY['SELECT_SAMECLUSTER'] = '''
     SELECT addr
       FROM Cluster
