@@ -13,6 +13,7 @@ STIME = None
 
 
 def prepare_conn(dbpath, indexpath, corepath):
+    global DEBUG
     conn = sqlite3.connect(dbpath)
     cur = conn.cursor()
     cur.execute(f'''ATTACH DATABASE '{indexpath}' AS DBINDEX;''')
@@ -23,11 +24,13 @@ def prepare_conn(dbpath, indexpath, corepath):
 
 
 def initialize_cluster(conn, cur):
+    global DEBUG
     global STIME
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Initialize Cluster Database')
-    cur.execute('''PRAGMA journal_mode = OFF''')
-    cur.execute('''PRAGMA synchronous = OFF''')
+    cur.execute('''PRAGMA journal_mode = NORMAL''')
+    cur.execute('''PRAGMA synchronous = WAL''')
+    conn.commit()
     cur.execute('''CREATE TABLE IF NOT EXISTS Cluster (
                      addr INTEGER PRIMARY KEY,
                      cluster NOT NULL);''')
@@ -39,14 +42,13 @@ def initialize_cluster(conn, cur):
                      tag INTEGER NOT NULL,
                      UNIQUE (addr, tag));''')
     cur.execute('''CREATE INDEX IF NOT EXISTS idx_Cluster_2 ON Cluster(cluster);''')
-    cur.execute('''PRAGMA journal_mode = NORMAL''')
-    cur.execute('''PRAGMA synchronous = WAL''')
     conn.commit()
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Initialize Cluster Database Complete')
 
 
 def get_index_status(conn, cur):
+    global DEBUG
     cur.execute('''SELECT COUNT(BlkID.id) AS BlockHeight FROM DBINDEX.BlkID;''')
     block_height = int(cur.fetchone()[0])
     cur.execute('''SELECT COUNT(TxID.id) AS TransactionCounts FROM DBINDEX.TxID;''')
@@ -61,6 +63,7 @@ def get_index_status(conn, cur):
 
 
 def do_clustering(conn, cur, tx_cnt, addr_cnt):
+    global DEBUG
     global STIME
     cluster = data_structure.UnionFind(addr_cnt)
     addrs = list()
@@ -83,14 +86,21 @@ def do_clustering(conn, cur, tx_cnt, addr_cnt):
 
 
 def write_db(conn, cur, cluster, addr_cnt):
+    global DEBUG
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Write db start')
+    cur.execute('''PRAGMA journal_mode = OFF''')
+    cur.execute('''PRAGMA synchronous = OFF''')
+    conn.commit()
     cur.execute('BEGIN TRANSACTION')
     for i in range(1, addr_cnt+1):
         c = cluster.find(i)
         cur.execute('''INSERT OR REPLACE INTO Cluster (addr, cluster)
                        VALUES (?, ?);''', (i, c))
     cur.execute('COMMIT TRANSACTION')
+    cur.execute('''PRAGMA journal_mode = NORMAL''')
+    cur.execute('''PRAGMA synchronous = WAL''')
+    conn.commit()
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Write db done')
 
