@@ -13,7 +13,6 @@ STIME = None
 
 
 def prepare_conn(dbpath, indexpath, corepath):
-    global DEBUG
     conn = sqlite3.connect(dbpath)
     cur = conn.cursor()
     cur.execute(f'''ATTACH DATABASE '{indexpath}' AS DBINDEX;''')
@@ -48,7 +47,6 @@ def initialize_cluster(conn, cur):
 
 
 def get_index_status(conn, cur):
-    global DEBUG
     cur.execute('''SELECT COUNT(BlkID.id) AS BlockHeight FROM DBINDEX.BlkID;''')
     block_height = int(cur.fetchone()[0])
     cur.execute('''SELECT COUNT(TxID.id) AS TransactionCounts FROM DBINDEX.TxID;''')
@@ -87,6 +85,7 @@ def do_clustering(conn, cur, tx_cnt, addr_cnt):
 
 def write_db(conn, cur, cluster, addr_cnt):
     global DEBUG
+    global STIME
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Write db start')
     cur.execute('''PRAGMA journal_mode = OFF''')
