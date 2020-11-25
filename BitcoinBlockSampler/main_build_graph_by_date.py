@@ -8,6 +8,7 @@ CORE = None
 
 
 def main():
+    # Opening
     if DEBUG:
         print(f'Parsed arguments {FLAGS}')
         print(f'Unparsed arguments {_}')
@@ -15,7 +16,14 @@ def main():
     CORE = db_core = DBReader(FLAGS.core)
 
     
-
+    
+    
+    
+    
+    
+    
+    
+    # Closing
     db_core.close()
 
 
