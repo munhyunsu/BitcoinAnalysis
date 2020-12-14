@@ -70,6 +70,16 @@ def main():
         txes.add(result[0])
     print(f'Trainsactions: {len(txes)}')
     
+    # Addresses which appeared in transactions
+    addrs = set()
+    for tx in txes:
+        for result in cur.execute(Q['AddrByTxIn'], (tx,)):
+            addrs.add(result[0])
+        for result in cur.execute(Q['AddrByTxOut'], (tx,)):
+            addrs.add(result[0])
+        print(f'+ {len(addrs)}', end='\r')
+    print(f'Addresses: {len(addrs)}')
+    
     # Closing
     CONN.close()
 
