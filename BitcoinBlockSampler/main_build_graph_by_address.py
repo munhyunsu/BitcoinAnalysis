@@ -80,6 +80,14 @@ def main():
         print(f'+ {len(addrs)}', end='\r')
     print(f'Addresses: {len(addrs)}')
     
+    # Edges
+    raw_data = list()
+    for addr in addrs:
+        for result in cur.execute(Q['EdgeByAddr'], (addr, addr)):
+            raw_data.append(result)
+        print(f'+ {len(raw_data)}', end='\r')
+    print(f'Edges: {len(raw_data)}')
+    
     # Closing
     CONN.close()
 
