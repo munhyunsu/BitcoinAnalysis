@@ -88,6 +88,11 @@ def main():
         print(f'+ {len(raw_data)}', end='\r')
     print(f'Edges: {len(raw_data)}')
     
+    # Dataframe
+    df = pd.DataFrame(raw_data, columns=['src', 'dst', 'btc', 'cnt'])
+    df = df.drop_duplicates()
+    df.to_csv(FLAGS.output, index=False)
+    
     # Closing
     CONN.close()
 
