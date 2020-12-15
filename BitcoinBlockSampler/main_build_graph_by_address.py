@@ -52,41 +52,45 @@ def main():
         print(f'Unparsed arguments {_}')
     CONN = sqlite3.connect(':memory:')
 
-    CUR = conn.cursor()
+    CUR = CONN.cursor()
     CUR.execute(f'''ATTACH DATABASE '{FLAGS.index}' AS DBINDEX;''')
     CUR.execute(f'''ATTACH DATABASE '{FLAGS.core}' AS DBCORE;''')
     CUR.execute(f'''ATTACH DATABASE '{FLAGS.util}' AS DBUTIL;''')
     CONN.commit()
     
     # Address to ID
-    cur.execute(Q['Addr2ID'], (FLAGS.input,))
-    addrid = cur.fetchone()[0]
-    
+    CUR.execute(Q['Addr2ID'], (FLAGS.input,))
+    addrid = CUR.fetchone()[0]
+    print(f'{addrid = }')
+
     # Transactions which beloging target address
     txes = set()
-    for result in cur.execute(Q['TxInByAddr'], (ADDRID,)):
+    for result in CUR.execute(Q['TxInByAddr'], (addrid,)):
         txes.add(result[0])
-    for result in cur.execute(Q['TxOutByAddr'], (ADDRID,)):
+    for result in CUR.execute(Q['TxOutByAddr'], (addrid,)):
         txes.add(result[0])
     print(f'Trainsactions: {len(txes)}')
-    
+
     # Addresses which appeared in transactions
     addrs = set()
     for tx in txes:
-        for result in cur.execute(Q['AddrByTxIn'], (tx,)):
+        for result in CUR.execute(Q['AddrByTxIn'], (tx,)):
             addrs.add(result[0])
-        for result in cur.execute(Q['AddrByTxOut'], (tx,)):
+        for result in CUR.execute(Q['AddrByTxOut'], (tx,)):
             addrs.add(result[0])
         print(f'+ {len(addrs)}', end='\r')
     print(f'Addresses: {len(addrs)}')
-    
+
     # Edges
     raw_data = list()
     for addr in addrs:
-        for result in cur.execute(Q['EdgeByAddr'], (addr, addr)):
+        for result in CUR.execute(Q['EdgeByAddr'], (addr, addr)):
             raw_data.append(result)
         print(f'+ {len(raw_data)}', end='\r')
     print(f'Edges: {len(raw_data)}')
+    
+    # Create output directory
+    os.makedirs(os.path.dirname(FLAGS.output), exist_ok=True)
     
     # Dataframe
     df = pd.DataFrame(raw_data, columns=['src', 'dst', 'btc', 'cnt'])
