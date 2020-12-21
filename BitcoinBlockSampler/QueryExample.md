@@ -13,8 +13,7 @@ sqlite3 ./dbv3-core.db
 ```sql
 ATTACH DATABASE './dbv3-index.db' AS DBINDEX;
 ATTACH DATABASE './dbv3-core.db' AS DBCORE;
-
-ATTACH DATABASE './dbv3-util.db' AS DBEDGE;
+ATTACH DATABASE './dbv3-util.db' AS DBUTIL;
 ATTACH DATABASE './cluster.db' AS DBCLUSTER;
 ```
 
@@ -337,6 +336,99 @@ AND   Edge.dst in (
         )
     )
 );
+
+-- Edge by date
+EXPLAIN QUERY PLAN
+
+
+ATTACH DATABASE './dbv3-index.db' AS DBINDEX;
+ATTACH DATABASE './dbv3-core.db' AS DBCORE;
+ATTACH DATABASE './dbv3-util.db' AS DBUTIL;
+.header on
+.mode csv
+.once '2020-10-03.csv'
+SELECT DBUTIL.Edge.src AS src, DBUTIL.Edge.dst AS dst, 
+       COUNT(DBUTIL.Edge.tx) AS cnt, DBUTIL.Edge.btc AS btc
+FROM DBUTIL.Edge
+INNER JOIN DBCORE.BlkTx ON DBCORE.BlkTx.tx = DBUTIL.Edge.tx
+INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTime.blk = DBCORE.BlkTx.blk
+WHERE DBUTIL.Edge.tx IN (
+    SELECT DBCORE.BlkTx.tx
+    FROM DBCORE.BlkTx
+    INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTime.blk = DBCORE.BlkTx.blk
+    WHERE (
+        SELECT (STRFTIME('%s', '2020-10-03T00:00:00+09:00')) <= DBCORE.BlkTime.unixtime AND
+                DBCORE.BlkTime.unixtime <= (SELECT STRFTIME('%s', '2020-10-03T23:59:59+09:00'))))
+GROUP BY src, dst;
+
+
+
+
+(SELECT SUM(btc) AS value
+ FROM TxOut
+ WHERE TxOut.addr = (SELECT DBINDEX.AddrID.id
+                     FROM DBINDEX.AddrID
+                     WHERE DBINDEX.AddrID.addr = 'ADDR') AND
+       TxOut.tx IN (SELECT BlkTx.tx
+                    FROM BlkTx
+                    INNER JOIN BlkTime ON BlkTime.blk = BlkTx.blk
+                    WHERE (SELECT STRFTIME('%s', 'DATETIME1')) <= BlkTime.unixtime AND
+                           BlkTime.unixtime <= (SELECT STRFTIME('%s', 'DATETIME2')))) AS Income,
+(SELECT SUM(btc) AS value
+ FROM TxIn
+ INNER JOIN TxOut ON TxIn.ptx = TxOut.tx AND TxIn.pn = TxOut.n
+ WHERE TxOut.addr = (SELECT DBINDEX.AddrID.id
+                     FROM DBINDEX.AddrID
+                     WHERE DBINDEX.AddrID.addr = 'ADDR') AND
+       TxIn.tx IN (SELECT BlkTx.tx
+                   FROM BlkTx
+                   INNER JOIN BlkTime ON BlkTime.blk = BlkTx.blk
+                   WHERE (SELECT STRFTIME('%s', 'DATETIME1')) <= BlkTime.unixtime AND
+                          BlkTime.unixtime <= (SELECT STRFTIME('%s', 'DATETIME2')))) AS Outcome;
+
+
+SELECT DBINDEX.TxID.txid AS txid, SRC.addr AS saddr, DST.addr AS daddr , DBEDGE.Edge.btc AS btc
+     , DBEDGE.Edge.tx AS tx, DBEDGE.Edge.src AS saddr_id, DBEDGE.Edge.dst AS daddr_id
+FROM DBEDGE.Edge
+INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBEDGE.Edge.tx
+INNER JOIN DBINDEX.AddrID AS SRC ON SRC.id = DBEDGE.Edge.src
+INNER JOIN DBINDEX.AddrID AS DST ON DST.id = DBEDGE.Edge.dst
+INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTime.blk
+WHERE DBEDGE.Edge.src in (
+    SELECT DBCLUSTER.Cluster.addr
+    FROM DBCLUSTER.Cluster
+    WHERE DBCLUSTER.Cluster.cluster IN (
+        SELECT DBCLUSTER.Cluster.cluster
+        FROM DBCLUSTER.Cluster
+        WHERE DBCLUSTER.Cluster.addr IN (
+            SELECT DBCLUSTER.Tag.addr
+            FROM DBCLUSTER.Tag
+            WHERE DBCLUSTER.Tag.tag = (
+                SELECT DBCLUSTER.TagID.id
+                FROM DBCLUSTER.TagID
+                WHERE DBCLUSTER.TagID.tag = 'TAG'
+            )
+        )
+    )
+)
+AND   DBEDGE.Edge.dst in (
+    SELECT DBCLUSTER.Cluster.addr
+    FROM DBCLUSTER.Cluster
+    WHERE DBCLUSTER.Cluster.cluster IN (
+        SELECT DBCLUSTER.Cluster.cluster
+        FROM DBCLUSTER.Cluster
+        WHERE DBCLUSTER.Cluster.addr IN (
+            SELECT DBCLUSTER.Tag.addr
+            FROM DBCLUSTER.Tag
+            WHERE DBCLUSTER.Tag.tag = (
+                SELECT DBCLUSTER.TagID.id
+                FROM DBCLUSTER.TagID
+                WHERE DBCLUSTER.TagID.tag = 'TAG'
+            )
+        )
+    )
+)
+GROUP BY saddr_id, daddr_id;
 ```
 
 ##### 비트코인 휴리스틱
