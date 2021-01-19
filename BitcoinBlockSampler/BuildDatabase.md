@@ -257,8 +257,6 @@ INNER JOIN (SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.n AS n,
            ) AS TXO ON TXO.tx = TXI.tx;
 ```
 
-
-
 - Level 4: Service Tables (file: service.db)
 
 ```sql
