@@ -1,8 +1,9 @@
 pip
+wheel
 
 #jupyter
 #jupyterlab
-ipykernel
+#ipykernel
 ipympl
 
 # essential
