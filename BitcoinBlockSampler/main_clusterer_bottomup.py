@@ -2,6 +2,7 @@ import os
 import sqlite3
 import time
 
+import numpy as np
 import pandas as pd
 
 import db_manager
@@ -12,8 +13,13 @@ DEBUG = False
 STIME = None
 
 
+def int32_to_int(value : np.int32):
+    return int(value)
+
+
 def prepare_conn(dbpath, indexpath, corepath):
     global DEBUG
+    sqlite3.register_adapter(np.int32, int)
     conn = sqlite3.connect(dbpath)
     cur = conn.cursor()
     cur.execute(f'''ATTACH DATABASE '{indexpath}' AS DBINDEX;''')
