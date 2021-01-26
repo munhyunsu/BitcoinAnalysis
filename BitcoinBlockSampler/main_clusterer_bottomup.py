@@ -13,10 +13,6 @@ DEBUG = False
 STIME = None
 
 
-def int32_to_int(value : np.int32):
-    return int(value)
-
-
 def prepare_conn(dbpath, indexpath, corepath):
     global DEBUG
     sqlite3.register_adapter(np.int32, int)
