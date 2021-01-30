@@ -14,7 +14,7 @@ sqlite3 ./dbv3-core.db
 ATTACH DATABASE './dbv3-index.db' AS DBINDEX;
 ATTACH DATABASE './dbv3-core.db' AS DBCORE;
 ATTACH DATABASE './dbv3-util.db' AS DBUTIL;
-ATTACH DATABASE './cluster.db' AS DBCLUSTER;
+ATTACH DATABASE './dbv3-service.db' AS DBSERVICE;
 ```
 
 3. 결과 헤더 On
