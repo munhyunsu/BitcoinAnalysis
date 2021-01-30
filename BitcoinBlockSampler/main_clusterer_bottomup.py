@@ -115,6 +115,7 @@ def main():
     print(f'[{int(time.time()-STIME)}] Start clusterer')
 
     conn, cur = prepare_conn(FLAGS.service, FLAGS.index, FLAGS.core)
+    # TODO(LuHa): Get highest block from existing service database
     initialize_cluster(conn, cur)
 
     block_height, tx_cnt, addr_cnt, date = get_index_status(conn, cur)
