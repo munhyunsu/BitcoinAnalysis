@@ -25,6 +25,20 @@ def prepare_conn(dbpath, indexpath, corepath):
     return conn, cur
 
 
+def get_highest_height(conn, cur):
+    cur.execute('''SELECT DBCORE.BlkTx.blk
+                   FROM DBCORE.BlkTx
+                   WHERE DBCORE.BlkTx.tx = (
+                     SELECT MIN(DBCORE.TxOut.tx)
+                     FROM DBCORE.TxOut
+                      INNER JOIN DBCORE.BlkTx ON DBCORE.BlkTx.tx = DBCORE.TxOut.tx
+                      WHERE DBCORE.TxOut.addr = (
+                        SELECT MAX(DBSERVICE.Cluster.addr)
+                        FROM DBSERVICE.Cluster));''')
+    height = cur.fetchone()[0]
+    return height
+
+
 def initialize_cluster(conn, cur):
     global DEBUG
     global STIME
