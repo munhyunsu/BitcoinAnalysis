@@ -6,7 +6,7 @@
 ### 사전 작업
 1. Core 데이터베이스 연결
 ```bash
-sqlite3 ./dbv3-core.db
+SQLITE_TMPDIR=./ sqlite3 ./dbv3-core.db
 ```
 
 2. Index 데이터베이스 연결
