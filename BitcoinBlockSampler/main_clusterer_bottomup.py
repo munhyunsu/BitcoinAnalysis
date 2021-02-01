@@ -26,17 +26,7 @@ def prepare_conn(dbpath, indexpath, corepath):
 
 
 def get_highest_height(conn, cur):
-    cur.execute('''SELECT DBCORE.BlkTx.blk
-                   FROM DBCORE.BlkTx
-                   WHERE DBCORE.BlkTx.tx = (
-                     SELECT MIN(DBCORE.TxOut.tx)
-                     FROM DBCORE.TxOut
-                      INNER JOIN DBCORE.BlkTx ON DBCORE.BlkTx.tx = DBCORE.TxOut.tx
-                      WHERE DBCORE.TxOut.addr = (
-                        SELECT MAX(DBSERVICE.Cluster.addr)
-                        FROM DBSERVICE.Cluster));''')
-    height = cur.fetchone()[0]
-    return height
+
 
 
 def initialize_cluster(conn, cur):
@@ -44,8 +34,8 @@ def initialize_cluster(conn, cur):
     global STIME
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Initialize Cluster Database')
-    cur.execute('''PRAGMA journal_mode = NORMAL''')
-    cur.execute('''PRAGMA synchronous = WAL''')
+    cur.execute('''PRAGMA journal_mode = NORMAL;''')
+    cur.execute('''PRAGMA synchronous = WAL;''')
     conn.commit()
     cur.execute('''CREATE TABLE IF NOT EXISTS Cluster (
                      addr INTEGER PRIMARY KEY,
@@ -81,9 +71,21 @@ def get_index_status(conn, cur):
 def do_clustering(conn, cur, tx_cnt, addr_cnt):
     global DEBUG
     global STIME
+
+    try:
+        cur.execute('''SELECT DBCORE.BlkTx.blk FROM DBCORE.BlkTx
+                       WHERE DBCORE.BlkTx.tx = (
+                         SELECT MIN(DBCORE.TxOut.tx) FROM DBCORE.TxOut
+                          WHERE DBCORE.TxOut.addr = (
+                            SELECT MAX(DBSERVICE.Cluster.addr)
+                            FROM DBSERVICE.Cluster));''')
+        height = cur.fetchone()[0]
+    except IndexError:
+        height = 1
+
     cluster = data_structure.UnionFind(addr_cnt)
     addrs = list()
-    for txid in range(1, tx_cnt+1):
+    for txid in range(height, tx_cnt+1):
         t1 = time.time()
         addrs.clear()
         for result in cur.execute(db_manager.QUERY['SELECT_TXIN_ADDRS'], (txid, )):
@@ -129,7 +131,6 @@ def main():
     print(f'[{int(time.time()-STIME)}] Start clusterer')
 
     conn, cur = prepare_conn(FLAGS.service, FLAGS.index, FLAGS.core)
-    # TODO(LuHa): Get highest block from existing service database
     initialize_cluster(conn, cur)
 
     block_height, tx_cnt, addr_cnt, date = get_index_status(conn, cur)
