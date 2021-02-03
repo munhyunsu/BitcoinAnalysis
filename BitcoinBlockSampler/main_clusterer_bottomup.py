@@ -79,12 +79,13 @@ def do_clustering(conn, cur, tx_cnt, addr_cnt):
     except IndexError:
         height = 1
     if DEBUG:
-        print(f'[{int(time.time()-STIME)}] Start from block height {height}')
+        print(f'[{int(time.time()-STIME)}] 클러스터링 시작 높이: {height}')
 
     cluster = data_structure.UnionFind(addr_cnt)
     if height != 1:
         for index, result in enumerate(cur.execute('''SELECT cluster FROM Cluster ORDER BY addr;'''), start=1):
             cluster.parent[index] = result[0]
+        print(f'[{int(time.time()-STIME)}] 기존 클러스터 불러오기 완료')
     
     addrs = list()
     for txid in range(height, tx_cnt+1):
