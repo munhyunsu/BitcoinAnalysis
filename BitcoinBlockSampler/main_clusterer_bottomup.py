@@ -25,10 +25,6 @@ def prepare_conn(dbpath, indexpath, corepath):
     return conn, cur
 
 
-def get_highest_height(conn, cur):
-
-
-
 def initialize_cluster(conn, cur):
     global DEBUG
     global STIME
@@ -82,8 +78,14 @@ def do_clustering(conn, cur, tx_cnt, addr_cnt):
         height = cur.fetchone()[0]
     except IndexError:
         height = 1
+    if DEBUG:
+        print(f'[{int(time.time()-STIME)}] Start from block height {height}')
 
     cluster = data_structure.UnionFind(addr_cnt)
+    if height != 1:
+        for index, result in enumerate(cur.execute('''SELECT cluster FROM Cluster ORDER BY addr;'''), start=1):
+            cluster.parent[index] = result[0]
+    
     addrs = list()
     for txid in range(height, tx_cnt+1):
         t1 = time.time()
