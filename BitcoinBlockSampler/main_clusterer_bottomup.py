@@ -76,7 +76,7 @@ def do_clustering(conn, cur, tx_cnt, addr_cnt):
                             SELECT MAX(Cluster.addr)
                             FROM Cluster));''')
         height = cur.fetchone()[0]
-    except IndexError:
+    except TypeError:
         height = 1
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] 클러스터링 시작 높이: {height}')
