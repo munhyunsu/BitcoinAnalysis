@@ -73,8 +73,8 @@ def do_clustering(conn, cur, tx_cnt, addr_cnt):
                        WHERE DBCORE.BlkTx.tx = (
                          SELECT MIN(DBCORE.TxOut.tx) FROM DBCORE.TxOut
                           WHERE DBCORE.TxOut.addr = (
-                            SELECT MAX(DBSERVICE.Cluster.addr)
-                            FROM DBSERVICE.Cluster));''')
+                            SELECT MAX(Cluster.addr)
+                            FROM Cluster));''')
         height = cur.fetchone()[0]
     except IndexError:
         height = 1
@@ -144,9 +144,9 @@ def main():
                f'주소 개수: {addr_cnt}'))
 
     cluster = do_clustering(conn, cur, tx_cnt, addr_cnt)
-    
+
     write_db(conn, cur, cluster, addr_cnt)
-    
+
     print(f'[{int(time.time()-STIME)}] Terminate clusterer')
 
 
