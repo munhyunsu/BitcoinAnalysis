@@ -29,4 +29,6 @@ INNER JOIN (SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.n AS n,
                                       WHERE DBCORE.BlkTx.blk >= ${BHEIGHT})
            ) AS TXO ON TXO.tx = TXI.tx;"
 sqlite3 dbv3-util.db "${CMD}"
+
+python3 main_clusterer_bottomup.py --debug --index dbv3-index.db --core dbv3-core.db --service dbv3-service.db
 echo "Resume complete"
