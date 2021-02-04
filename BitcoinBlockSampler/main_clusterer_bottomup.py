@@ -69,26 +69,24 @@ def do_clustering(conn, cur, tx_cnt, addr_cnt):
     global STIME
 
     try:
-        cur.execute('''SELECT DBCORE.BlkTx.blk FROM DBCORE.BlkTx
-                       WHERE DBCORE.BlkTx.tx = (
-                         SELECT MIN(DBCORE.TxOut.tx) FROM DBCORE.TxOut
-                          WHERE DBCORE.TxOut.addr = (
-                            SELECT MAX(Cluster.addr)
-                            FROM Cluster));''')
-        height = cur.fetchone()[0]
+        cur.execute('''SELECT MIN(DBCORE.TxOut.tx) FROM DBCORE.TxOut
+                       WHERE DBCORE.TxOut.addr = (
+                         SELECT MAX(Cluster.addr)
+                         FROM Cluster);''')
+        start_tx = cur.fetchone()[0] + 1
     except TypeError:
-        height = 1
+        start_tx = 1
     if DEBUG:
-        print(f'[{int(time.time()-STIME)}] 클러스터링 시작 높이: {height}')
+        print(f'[{int(time.time()-STIME)}] 클러스터링 시작 트랜잭션: {start_tx}')
 
     cluster = data_structure.UnionFind(addr_cnt)
-    if height != 1:
-        for index, result in enumerate(cur.execute('''SELECT cluster FROM Cluster ORDER BY addr;'''), start=1):
+    if start_tx != 1:
+        for index, result in enumerate(cur.execute('''SELECT cluster FROM Cluster ORDER BY addr ASC;'''), start=1):
             cluster.parent[index] = result[0]
         print(f'[{int(time.time()-STIME)}] 기존 클러스터 불러오기 완료')
-    
+
     addrs = list()
-    for txid in range(height, tx_cnt+1):
+    for txid in range(start_tx, tx_cnt+1):
         t1 = time.time()
         addrs.clear()
         for result in cur.execute(db_manager.QUERY['SELECT_TXIN_ADDRS'], (txid, )):
