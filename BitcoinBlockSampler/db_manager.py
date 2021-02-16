@@ -20,6 +20,10 @@ QUERY['CREATE_ADDRID_TABLE'] = '''
     CREATE TABLE IF NOT EXISTS AddrID (
       id INTEGER PRIMARY KEY,
       addr TEXT NOT NULL UNIQUE);'''
+QUERY['CREATE_ADDRTYPEID_TABLE'] = '''
+    CREATE TABLE IF NOT EXISTS AddrTypeID (
+      id INTEGER PRIMARY KEY,
+      addrtype TEXT NOT NULL UNIQUE);'''
 
 QUERY['CREATE_BLKTIME_TABLE'] = '''
     CREATE TABLE IF NOT EXISTS BlkTime (
@@ -60,6 +64,10 @@ QUERY['INSERT_TXID'] = '''
 QUERY['INSERT_ADDRID'] = '''
     INSERT OR IGNORE INTO AddrID (
       addr) VALUES (
+      ?);'''
+QUERY['INSERT_ADDRTYPEID'] = '''
+    INSERT OR IGNORE INTO AddrTypeID (
+      addrtype) VALUES (
       ?);'''
 
 QUERY['INSERT_BLKTIME'] = '''
@@ -250,7 +258,8 @@ class DBBuilder(object):
         for q in ['CREATE_META_TABLE',
                   'CREATE_BLKID_TABLE',
                   'CREATE_TXID_TABLE',
-                  'CREATE_ADDRID_TABLE']:
+                  'CREATE_ADDRID_TABLE',
+                  'CREATE_ADDRTYPEID_TABLE']:
             self.cur.execute(QUERY[q])
         self.commit()
         
