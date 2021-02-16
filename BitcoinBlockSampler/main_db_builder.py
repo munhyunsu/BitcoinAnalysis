@@ -99,9 +99,13 @@ def main():
         if DEBUG:
             print((f'Best Block Heights: {best_block["height"]}, '
                    f'Time: {get_time(best_block["time"]).isoformat()}'))
+
+        dbb.begin()
+        dbb.insertmany('INSERT_ADDRTYPEID', ['P2PKH', 'P2SH', 'Bech32'])
+        dbb.commit()
+
         print(f'Start from {start_height} to {end_height}')
         pool_num = FLAGS.process
-
         stime = time.time()
         mtime = time.time()
         for sheight, eheight in zip(range(start_height, end_height, term), 
