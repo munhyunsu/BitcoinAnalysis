@@ -112,12 +112,16 @@ def write_db(conn, cur, cluster, addr_cnt):
     cur.execute('''PRAGMA journal_mode = OFF''')
     cur.execute('''PRAGMA synchronous = OFF''')
     conn.commit()
+    if DEBUG:
+        print(f'[{int(time.time()-STIME)}] journal_mode OFF, synchronous OFF')
     cur.execute('BEGIN TRANSACTION')
     for i in range(1, addr_cnt+1):
         c = cluster.find(i)
         cur.execute('''INSERT OR REPLACE INTO Cluster (addr, cluster)
                        VALUES (?, ?);''', (i, c))
     cur.execute('COMMIT TRANSACTION')
+    if DEBUG:
+        print(f'[{int(time.time()-STIME)}] journal_mode NORMAL, synchronous WAL')
     cur.execute('''PRAGMA journal_mode = NORMAL''')
     cur.execute('''PRAGMA synchronous = WAL''')
     conn.commit()
