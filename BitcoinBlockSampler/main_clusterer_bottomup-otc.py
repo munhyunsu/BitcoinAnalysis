@@ -113,11 +113,9 @@ def do_clustering(conn, cur, tx_cnt, addr_cnt):
 
     addrs = list()
     for txid in range(start_tx, tx_cnt+1):
-        t1 = time.time()
         addrs.clear()
         for result in cur.execute(db_manager.QUERY['SELECT_TXIN_ADDRS'], (txid, )):
             addrs.append(result[0])
-        t2 = time.time()
         if len(addrs) > 1:
             x = min(addrs)
             for y in addrs:
@@ -144,7 +142,6 @@ def do_clustering(conn, cur, tx_cnt, addr_cnt):
                         can_addr.add(addrid)
                 if len(can_addr) == 1:
                     cluster.union(x, can_addr.pop())
-        t3 = time.time()
         if DEBUG:
             print(f'[{int(time.time()-STIME)}] Processed {txid}', end='\r')
     if DEBUG:
