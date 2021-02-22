@@ -15,7 +15,6 @@ find_community_leiden
 find_community_multilevel
 
 # paper dataset
-icisc2020/
 
 # macro files
 macro_*
