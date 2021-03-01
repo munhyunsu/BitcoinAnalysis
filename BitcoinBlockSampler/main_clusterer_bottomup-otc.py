@@ -127,23 +127,23 @@ def do_clustering(conn, cur, tx_cnt, addr_cnt):
                            FROM DBCORE.BlkTx
                            WHERE DBCORE.BlkTx.tx = ?;''', (txid,))
             cblk = cur.fetchone()[0]
+            can_addrs = set()
             oaddrs = set()
-            for result in cur.execute('''SELECT DBCORE.TxOut.addr
-                                           FROM DBCORE.TxOut
-                                           WHERE DBCORE.TxOut.tx = ?; ''', (txid,)):
-                oaddrs.add(result[0])
-            if len(oaddrs) > 1:
-                can_addr = set()
-                for addrid in oaddrs:
-                    cur.execute('''SELECT MIN(DBCORE.BlkTx.blk)
-                                   FROM DBCORE.TxOut
-                                   INNER JOIN DBCORE.BlkTx ON DBCORE.BlkTx.tx = DBCORE.TxOut.tx
-                                   WHERE DBCORE.TxOut.addr = ?;''', (addrid,))
-                    fblk = cur.fetchone()[0]
-                    if cblk == fblk:
-                        can_addr.add(addrid)
-                if len(can_addr) == 1:
-                    cluster.union(x, can_addr.pop())
+            for row in cur.execute('''SELECT DBCORE.TxOut.addr, MIN(DBCORE.BlkTx.blk)
+                                      FROM DBCORE.TxOut
+                                      INNER JOIN DBCORE.BlkTx ON DBCORE.BlkTx.tx = DBCORE.TxOut.tx
+                                      WHERE DBCORE.TxOut.addr IN (
+                                        SELECT DBCORE.TxOut.addr
+                                        FROM DBCORE.TxOut
+                                        WHERE DBCORE.TxOut.tx = ?)
+                                      GROUP BY DBCORE.TxOut.addr;''', (txid,)):
+                addr = row[0]
+                fblk = row[1]
+                oaddrs.add(addr)
+                if cblk == fblk:
+                    can_addrs.add(addr)
+            if len(can_addrs) == 1:
+                cluster.union(x, can_addrs.pop())
         t3 = time.time()
         if DEBUG:
             print(f'[{int(time.time()-STIME)}] Processed {txid}', end='\r')
