@@ -65,31 +65,6 @@ def get_index_status(conn, cur):
     return block_height, tx_cnt, addr_cnt, date
 
 
-# def warmup_cluster(conn, cur, addr_cnt):
-#     if DEBUG:
-#         print(f'[{int(time.time()-STIME)}] Warmup start {addr_cnt}', end='\r')
-#     cur.execute('''PRAGMA journal_mode = OFF''')
-#     cur.execute('''PRAGMA synchronous = OFF''')
-#     conn.commit()
-#     cur.execute('BEGIN TRANSACTION')
-#     for addrid in range(1, addr_cnt+1):
-#         cur.execute('''SELECT MIN(DBCORE.BlkTx.blk)
-#                        FROM DBCORE.TxOut
-#                        INNER JOIN DBCORE.BlkTx ON DBCORE.BlkTx.tx = DBCORE.TxOut.tx
-#                        WHERE DBCORE.TxOut.addr = ?;''', (addrid,))
-#         firstblk = cur.fetchone()[0]
-#         cur.execute('''INSERT OR IGNORE INTO Cluster (addr, cluster, firstblk)
-#                          VALUES (?, ?, ?);''', (addrid, addrid, firstblk))
-#         if DEBUG:
-#             print(f'[{int(time.time()-STIME)}] Warming {addrid}', end='\r')
-#     cur.execute('COMMIT TRANSACTION')
-#     cur.execute('''PRAGMA journal_mode = NORMAL''')
-#     cur.execute('''PRAGMA synchronous = WAL''')
-#     conn.commit()
-#     if DEBUG:
-#         print(f'[{int(time.time()-STIME)}] Warmup end {addr_cnt}')
-
-
 def do_clustering(conn, cur, tx_cnt, addr_cnt):
     global DEBUG
     global STIME
