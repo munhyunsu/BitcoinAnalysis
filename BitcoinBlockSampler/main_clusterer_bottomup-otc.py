@@ -88,11 +88,9 @@ def do_clustering(conn, cur, tx_cnt, addr_cnt):
 
     addrs = list()
     for txid in range(start_tx, tx_cnt+1):
-        t1 = time.time()
         addrs.clear()
         for result in cur.execute(db_manager.QUERY['SELECT_TXIN_ADDRS'], (txid, )):
             addrs.append(result[0])
-        t2 = time.time()
         if len(addrs) > 1:
             x = min(addrs)
             for y in addrs:
@@ -119,7 +117,6 @@ def do_clustering(conn, cur, tx_cnt, addr_cnt):
                     can_addrs.add(addr)
             if len(can_addrs) == 1:
                 cluster.union(x, can_addrs.pop())
-        t3 = time.time()
         if DEBUG:
             print(f'[{int(time.time()-STIME)}] Processed {txid}', end='\r')
     if DEBUG:
@@ -163,7 +160,6 @@ def main():
         print((f'블록 높이: {block_height} ({date} UTC 마이닝)\n'
                f'트랜잭션 개수: {tx_cnt}\n'
                f'주소 개수: {addr_cnt}'))
-#     warmup_cluster(conn, cur, addr_cnt)
 
     cluster = do_clustering(conn, cur, tx_cnt, addr_cnt)
 
