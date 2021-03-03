@@ -96,6 +96,9 @@ def do_clustering(conn, cur, tx_cnt, addr_cnt):
             for y in addrs:
                 cluster.union(x, y)
             # OTC
+            ## Need to improve performance
+            ### method 1. Multi processing
+            ### method 2. pre-processing target address (tx, n) :: build DB
             cur.execute('''SELECT DBCORE.BlkTx.blk
                            FROM DBCORE.BlkTx
                            WHERE DBCORE.BlkTx.tx = ?;''', (txid,))
