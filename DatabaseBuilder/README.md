@@ -26,19 +26,19 @@
 
     - Edit file
     
-      - add at line 72
+      - add at line 75
 
       ```bash
         server=1
       ```
     
-      - add at line 99: result from _BitcoinCoreRPCAuth.ipynb_
+      - add at line 102: result from _BitcoinCoreRPCAuth.ipynb_
 
       ```bash
         rpcauth=...
       ```
 
-      - add at line 151
+      - add at line 153
 
       ```bash
         txindex=1
