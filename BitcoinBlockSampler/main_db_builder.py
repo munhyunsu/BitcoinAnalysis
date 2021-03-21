@@ -101,7 +101,7 @@ def main():
                    f'Time: {get_time(best_block["time"]).isoformat()}'))
 
         dbb.begin()
-        dbb.insertmany('INSERT_ADDRTYPEID', [('P2PKH'), ('P2SH'), ('Bech32')])
+        dbb.insertmany('INSERT_ADDRTYPEID', [('P2PKH',), ('P2SH',), ('Bech32',)])
         dbb.commit()
 
         print(f'Start from {start_height} to {end_height}')
