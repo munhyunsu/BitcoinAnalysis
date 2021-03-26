@@ -6,7 +6,7 @@
 ### 사전 작업
 1. Core 데이터베이스 연결
 ```bash
-SQLITE_TMPDIR=./ sqlite3 ./dbv3-core.db
+SQLITE_TMPDIR=./ sqlite3
 ```
 
 2. Index 데이터베이스 연결
@@ -203,6 +203,51 @@ AND   DBEDGE.Edge.dst in (
                 SELECT DBCLUSTER.TagID.id
                 FROM DBCLUSTER.TagID
                 WHERE DBCLUSTER.TagID.tag = 'TAG'
+            )
+        )
+    )
+);
+```
+
+```sql
+SELECT DBINDEX.TxID.txid, SRC.addr, DST.addr, DBUTIL.Edge.btc
+     , DBUTIL.Edge.tx, DBUTIL.Edge.src, DBUTIL.Edge.dst, DBCORE.BlkTime.unixtime
+FROM DBUTIL.Edge
+INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBUTIL.Edge.tx
+INNER JOIN DBINDEX.AddrID AS SRC ON SRC.id = DBUTIL.Edge.src
+INNER JOIN DBINDEX.AddrID AS DST ON DST.id = DBUTIL.Edge.dst
+INNER JOIN DBCORE.BlkTx ON DBCORE.BlkTx.tx = DBUTIL.Edge.tx
+INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTime.blk = DBCORE.BlkTx.blk
+WHERE DBUTIL.Edge.src IN (
+    SELECT DBSERVICE.Cluster.addr
+    FROM DBSERVICE.Cluster
+    WHERE DBSERVICE.Cluster.cluster = (
+        SELECT DBSERVICE.Cluster.cluster
+        FROM DBSERVICE.Cluster
+        WHERE DBSERVICE.Cluster.addr IN (
+            SELECT DBSERVICE.Tag.addr
+            FROM DBSERVICE.Tag
+            WHERE DBSERVICE.Tag.tag = (
+                SELECT DBSERVICE.TagID.id
+                FROM DBSERVICE.TagID
+                WHERE DBSERVICE.TagID.tag = 'UPbit.com'
+            )
+        )
+    )
+)
+AND   DBUTIL.Edge.dst in (
+    SELECT DBSERVICE.Cluster.addr
+    FROM DBSERVICE.Cluster
+    WHERE DBSERVICE.Cluster.cluster = (
+        SELECT DBSERVICE.Cluster.cluster
+        FROM DBSERVICE.Cluster
+        WHERE DBSERVICE.Cluster.addr IN (
+            SELECT DBSERVICE.Tag.addr
+            FROM DBSERVICE.Tag
+            WHERE DBSERVICE.Tag.tag = (
+                SELECT DBSERVICE.TagID.id
+                FROM DBSERVICE.TagID
+                WHERE DBSERVICE.TagID.tag = 'UPbit.com'
             )
         )
     )
