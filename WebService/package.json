@@ -1,0 +1,26 @@
+{
+  "name": "210306_bitcoin_service",
+  "version": "1.0.0",
+  "description": "bitcoin classification service test",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon main.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "child_process": "^1.0.2",
+    "connect-timeout": "^1.9.0",
+    "constantinople": "^4.0.1",
+    "express": "^4.17.1",
+    "fs": "0.0.1-security",
+    "jade": "^1.11.0",
+    "nodemon": "^2.0.7",
+    "path": "^0.12.7",
+    "python-shell": "^2.0.3",
+    "sqlite3": "^5.0.2",
+    "uglify-js": "^3.13.0"
+  }
+}
