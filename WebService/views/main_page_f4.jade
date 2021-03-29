@@ -1,0 +1,33 @@
+doctype html
+html
+	head
+		meta(charset='utf-8')
+		link(rel='stylesheet', href='/views/css/page_f4.css')
+		title Address & Transaction Classification
+	body
+		header(id="menu")
+			form(action='/', method='get')
+				input(id="home_button", type="submit", value="F1")
+			form(action='/f4', method='get')
+				input(id="f4_button", type="submit", value="F4")
+
+		article
+			h1 Checking Transaction
+			hr(id="h1_h4line")
+			h4 Checking transaction between bitcoin addresses
+			form(action='/page' method='post')
+				input(id="bitcoin_addr", autocomplete="off", type="text", name="addr", placeholder="Bitcoin Address")
+				input(id="send", type="submit", value="classification")
+
+			img(id="dnlab_logo", src="/views/css/image_file/dnlab_logo.png")
+			div(id="addr_info", class="info")
+				h2 Address Count
+				h3(style="font-size:30px;")= addr
+
+			div(id="tx_info", class="info")
+				h2 Transaction Count
+				h3(style="font-size:30px;")= tx
+
+			div(id="blk_info", class="info")
+				h2 Block Count
+				h3(style="font-size:30px;")= blk

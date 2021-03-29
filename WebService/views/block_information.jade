@@ -1,0 +1,26 @@
+doctype html
+html
+	head
+		meta(charset="utf-8")
+		link(rel="stylesheet", type="text/css", href="/views/css/block_info_style.css")
+
+		title Block Information
+	body
+		h2 "#{blockhash}" 대시보드
+		h4 Created by DNLab
+		h4 Last edited 2021
+
+		form(action='/' method='get')
+			input(id="previous_page", type="submit", value="메인 화면")
+
+		div(class="info_board")
+			h3(id="binfo_title") &nbsp;&nbsp;블록 정보
+			span(id="block_height") &nbsp;&nbsp;#{blockheight}
+			br
+			| &nbsp;&nbsp;&nbsp;# 블록 높이
+			br
+			br
+			span(id="block_timestamp") &nbsp;&nbsp;#{blocktimestamp}
+			br
+			| &nbsp;&nbsp;&nbsp;# 블록 생성 시간
+			br

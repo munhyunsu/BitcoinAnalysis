@@ -1,0 +1,51 @@
+doctype html
+html
+	head
+		meta(charset="utf-8")
+		link(rel="stylesheet", type="text/css", href="/views/css/transaction_classify_style.css")
+
+		title Transaction Classify
+	body
+		h2 "#{tx}" 대시보드
+		h4 Created by DNLab
+		h4 Last edited 2021
+
+		form(action='/' method='get')
+			input(id="previous_page", type="submit", value="메인 화면")
+
+		div(class="info_board", id="basic_info")
+			h3(id="basic_title") &nbsp;&nbsp;트랜잭션 기본 정보
+			span(id="inbtc") &nbsp;&nbsp;&nbsp;#{inbtc} BTC
+			br
+			| &nbsp;&nbsp;&nbsp;&nbsp;# 총 입력
+			br
+			br
+			span(id="outbtc") &nbsp;&nbsp;&nbsp;#{outbtc} BTC
+			br
+			| &nbsp;&nbsp;&nbsp;&nbsp;# 총 출력
+			br
+			br
+			span(id="inc_blk") &nbsp;&nbsp;&nbsp;#{incblock}
+			br
+			| &nbsp;&nbsp;&nbsp;&nbsp;# 포함된 블록 번호
+		div(class="info_board", id="incate_board")
+			h3(id="incate_title") &nbsp;&nbsp;카테고리 분류 (Input)
+			h1(id="incategory") &nbsp;#{incats}
+			span(class="incount") &nbsp;&nbsp;&nbsp;#{incat_count}
+			br
+			| &nbsp;&nbsp;&nbsp;# 같은 사용자가 가진 주소 개수
+			br
+		h1(class="right_arrow_img", id="cate_arrow") 
+		div(class="info_board", id="outcate_board")
+			h3(id="outcate_title") &nbsp;&nbsp;카테고리 분류 (Output)
+			- for(var i = 1; i < outcats.length; i++)
+				h1(class="outcategory") &nbsp;#{outcats[i]}
+		div(class="info_board", id="intag_board")
+			h3(id="intag_title") &nbsp;&nbsp;태그 목록 (Input)
+			- for(var i = 0; i < intags.length; i++)
+				h1(class="intag") &nbsp;#{intags[i]}
+		h1(class="right_arrow_img", id="tag_arrow")
+		div(class="info_board", id="outtag_board")
+			h3(id="outtag_title") &nbsp;&nbsp;태그 목록 (Output)
+			- for(var i = 1; i < outtags.length; i++)
+				h1(class="outtag") &nbsp;#{outtags[i]}

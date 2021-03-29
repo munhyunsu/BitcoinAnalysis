@@ -1,0 +1,129 @@
+body {
+	background-color: #F3E2A9;
+}
+
+#menu {
+	height: 1px;
+}
+
+#home_button, #f4_button {
+	position: relative;
+	right: 200px;
+	bottom: 20px;
+	width: 50px;
+	height: 50px;
+	border: 0;
+	border-top-right-radius: 5px;
+	border-top-left-radius: 5px;
+	background-color: #F2F2F2;
+	font-size: 20px;
+}
+#f4_button {
+	right: 140px;
+	bottom: 70px;
+}
+
+article {
+	background-color: white;
+	width: 1800px;
+	margin: 0 auto;
+	height: 500px;
+	position: relative;
+	top: 180px;
+}
+
+h1 {
+	text-align: center;
+	font-size: 50px;
+	position: relative;
+	top: 120px;
+}
+
+#h1_h4line {
+	position: relative;
+	top: 90px;
+	width: 500px;
+	border: 1px solid black;
+}
+
+h4 {
+	text-align: center;
+	position: relative;
+	top: 80px;
+}
+
+form {
+	width: 500px;
+	margin: 0 auto;
+	position: relative;
+	top: 200px;
+}
+
+#select_ml {
+	position: relative;
+	right: 240px;
+	bottom: 70px;
+	height: 40px;
+	width: 196px;
+	font-size: 16px;
+	border: 2px solid black;
+	border-radius: 5px;
+	background: url(./image_file/select_button.png) no-repeat right 8px center;
+	background-size: 18px;
+	appearance: none; -webkit-appearance:none;
+}
+select::-ms-expand { display: none; }
+
+#bitcoin_addr {
+	position: relative;
+	right: 240px;
+	bottom: 46px;
+	height: 50px;
+	width: 900px;
+	border: 2px solid black;
+	border-radius: 5px;
+	font-size: 32px;
+}
+
+#send {
+	position: relative;
+	left: 660px;
+	bottom: 102px;
+	height: 56px;
+	width: 120px;
+	background-color: black;
+	border: 1px solid black;
+	border-radius: 4px;
+	font-size: 16px;
+	color: white;
+}
+
+.info {
+	text-align: center;
+	width: 220px;
+	border: 2px solid black;
+	border-radius: 5px;
+	background-color: white;
+}
+
+#dnlab_logo {
+	position: relative;
+	bottom: 10px;
+}
+
+#addr_info {
+	position: relative;
+	left: 380px;
+}
+
+#tx_info {
+	position: relative;
+	left: 800px;
+	bottom: 144px;
+}
+
+#blk_info {
+	position: relative;
+	left: 1220px;
+	bottom: 287px;
+}

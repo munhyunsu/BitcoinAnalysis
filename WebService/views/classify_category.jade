@@ -1,0 +1,86 @@
+doctype html
+html
+	head
+		meta(charset="utf-8")
+		link(rel="stylesheet", type="text/css", href="/views/css/classification_style.css")
+		script(src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js")
+		script(src="https://cdnjs.cloudflare.com/ajax/libs/paginationjs/2.1.4/pagination.min.js")
+		link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/paginationjs/2.1.4/pagination.css")
+
+		script(src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0")
+
+		title Classification Category
+	body
+		h2 "#{addr}" 대시보드
+		h4 Created by DNLab
+		h4 Last edited 2021
+
+		form(action='/' method='get')
+			input(id="previous_page", type="submit", value="메인 화면")			
+
+		div(class="info_board")
+			h3(id="cate_title") &nbsp;&nbsp;카테고리 분류
+			h1(id="category") &nbsp;#{category}
+			span(id="csize") &nbsp;&nbsp;&nbsp;#{cluster_size}
+			br
+			| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# 같은 사용자 주소 개수
+		div(class="info_board" id="tag_info")
+			h3(id="tag_title") &nbsp;&nbsp;태그 목록
+			h1(id="tag_list") &nbsp;#{tag_list}
+		div(class="info_board" id="addr_info")
+			h3(id="addr_title") &nbsp;&nbsp;주소 기본 정보
+			span(id="str_tx") 
+				a(id="tx_link", href="https://www.blockchain.com/btc/tx/#{tx}") &nbsp;&nbsp;#{tx}
+			br
+			| &nbsp;&nbsp;&nbsp;# 첫 번째 트랜잭션 해시
+			br
+			span(id="tx_count") &nbsp;&nbsp;#{txcount}
+			br
+			| &nbsp;&nbsp;&nbsp;# 트랜잭션 개수
+			br
+			span(id="all_btc") &nbsp;&nbsp;#{btc} BTC
+			br
+			| &nbsp;&nbsp;&nbsp;# 거래했었던 BTC 총 합
+			span(id="bal_value") &nbsp;&nbsp;#{balance} BTC
+			br
+			span(id="balance_str") &nbsp;&nbsp;# 잔액
+		div(class="info_board" id="cluster_addr_list")
+			h3(id="caddrlist_title") &nbsp;&nbsp;같은 사용자 주소 목록
+			div(id="data-container")
+			div(id="pagination")
+
+			script.
+				$(function() {
+					let container = $('#pagination');
+					container.pagination({
+						dataSource: !{JSON.stringify(cluster_addrlist)},
+						callback: function(data, pagination) {
+							var dataHtml = '<ul>';
+
+							$.each(data, function(index, item) {
+								dataHtml += '<li class="cluster_addr">' + item.addr + '</li>';
+							});
+
+							dataHtml += '</ul>';
+
+							$("#data-container").html(dataHtml);
+						}
+					})
+				})
+
+			div(id="addrtype_p2pkh_value", name=cluster_p2pkh, block="none")
+			div(id="addrtype_p2sh_value", name=cluster_p2sh, block="none")
+			div(id="addrtype_bech32_value", name=cluster_bech32, block="none")
+			div(id="chartContainer" style="height: 300px; width: 450px;")
+			div(id="logo_cover")
+			div(id="cite_cover")
+			script(type="text/javascript", src="/views/js/pie_chart.js")
+			script(src="https://canvasjs.com/assets/script/canvasjs.min.js")
+
+		div(id="check_cluster_addr", class="info_board")
+			h3(id="search_title") &nbsp;&nbsp;기관(클러스터)에 포함된 비트코인 주소의 특징 조회
+			br
+			form(action='/page' method='post')
+				input(type="text", name="sel_ml", value=model, style="display:none;")
+				input(type="text", id="ccaddr", name="addr", placeholder="Bitcoin Address...", autocomplete="off")
+				input(id="ccaddr_button", type="submit", value="")

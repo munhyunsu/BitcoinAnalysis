@@ -1,0 +1,182 @@
+.info_board {
+	border: 1px solid #6E6E6E;
+	background-color: #F2F2F2;
+	width: 400px;
+	height: 250px;
+	border-radius: 3px;
+	box-shadow: 2px 2px gray;
+}
+
+#previous_page {
+	position: relative;
+	bottom: 80px;
+	left: 200px;
+	width: 140px;
+	height: 40px;
+	border-radius: 5px;
+	margin-right: -4px;
+	border: 1px solid black;
+	background-color: white;
+	color: black;
+	padding: 5px;
+}
+
+#previous_page:hover {
+	color: white;
+	background-color: black;
+}
+
+#cate_title, #tag_title, #addr_title, #caddrlist_title, #search_title {
+	font-size: 24px;
+}
+
+#cate_title, #tag_title {
+	height: 12px;
+}
+
+#cate_title {
+	color: #5858FA;
+}
+#tag_title {
+	color: #AC58FA;
+}
+#addr_title {
+	color: #FE2EC8;
+}
+#caddrlist_title {
+	color: #04B404;
+}
+#search_title {
+	color: #FE9A2E;
+}
+
+#category, #tag_list {
+	color: #424242;
+	font-size: 30px;
+}
+#category {
+	height: 72px;
+	margin-bottom: 40px;
+}
+
+#tag_info {
+	position: relative;
+	bottom: 253px;
+	left: 450px;
+}
+
+#addr_info {
+	position: relative;
+	bottom: 505px;
+	left: 900px;
+	width: 800px;
+}
+
+#str_tx, #tx_count, #all_btc, #csize, #bal_value {
+	color: #424242;
+	font-size: 20px;
+	font-weight: bold;
+}
+#bal_value {
+	position: relative;
+	left: 60px;
+	bottom: 25px;
+}
+#balance_str {
+	position: relative;
+	left: 230px;
+	bottom: 25px;
+}
+
+#csize {
+	font-size: 30px;
+}
+
+#cluster_addr_list {
+	position: relative;
+	bottom: 450px;
+	width: 1090px;
+	height: 430px;
+}
+
+#pagination {
+	position: relative;
+	left: 40px;
+	z-index: 3;
+}
+
+.cluster_addr {
+	font-size: 24px;
+}
+
+#chartContainer {
+	position: absolute;
+	left: 580px;
+	bottom: 50px;
+	z-index: 1;
+}
+#logo_cover {
+	background-color: #F2F2F2;
+	position: absolute;
+	left: 580px;
+	bottom: 340px;
+	width: 100px;
+	height: 20px;
+	z-index: 2;
+}
+#cite_cover {
+	background-color: #F2F2F2;
+	position: absolute;
+	left: 940px;
+	bottom: 42px;
+	width: 90px;
+	height: 20px;
+	z-index: 2;
+}
+
+#tx_link {
+	text-decoration: none;
+	color: #424242;
+}
+#tx_link:hover {
+	color: #FF4000;
+}
+
+#check_cluster_addr {
+	position: relative;
+	left: 1100px;
+	bottom: 880px;
+	width: 540px;
+	height: 140px;
+}
+
+#ccaddr {
+	position: relative;
+	left: 20px;
+	bottom: 24px;
+	width: 300px;
+	height: 50px;
+	border-top-left-radius: 5px;
+	border-bottom-left-radius: 5px;
+	border: 2px solid black;
+	border-right: 0px;
+	font-size: 26px;
+}
+
+#ccaddr_button {
+	position: absolute;
+	left: 324px;
+	bottom: 7px;
+	border: 2px solid black;
+	border-left: 0px;
+	width: 60px;
+	height: 56px;
+	border-top-right-radius: 5px;
+	border-bottom-right-radius: 5px;
+	background: url(./image_file/search.png) no-repeat center;
+	background-size: 50%;
+	background-color: white;
+}
+#ccaddr_button:hover {
+	background-color: #D8D8D8;
+}

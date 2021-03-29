@@ -1,0 +1,71 @@
+.info_board {
+	border: 1px solid #6E6E6E;
+	background-color: #F2F2F2;
+	width: 350px;
+	border-radius: 3px;
+	box-shadow: 2px 2px gray;
+}
+
+.right_arrow_img {
+	width: 50px;
+	height: 50px;
+	background: url(./image_file/right_arrow.png) no-repeat center;
+	background-size: 50%;
+}
+
+#cate_arrow {
+	position: absolute;
+	top: 650px;
+	left: 354px;
+}
+#tag_arrow {
+	position: absolute;
+	top: 650px;
+	left: 1196px;
+}
+
+#basic_info {
+	width: 1400px;
+	height: 400px;
+}
+
+#incate_board {
+	position: absolute;
+	top: 620px;
+}
+
+#outcate_board {
+	position: absolute;
+	left: 400px;
+	top: 620px;
+}
+
+#intag_board {
+	position: absolute;
+	left: 850px;
+	top: 620px;
+}
+
+#outtag_board {
+	position: absolute;
+	left: 1240px;
+	top: 620px;
+}
+
+#previous_page {
+	position: relative;
+	bottom: 80px;
+	left: 200px;
+	width: 140px;
+	height: 40px;
+	border-radius: 5px;
+	margin-right: -4px;
+	border: 1px solid black;
+	background-color: white;
+	color: black;
+	padding: 5px;
+}
+#previous_page:hover {
+	color: white;
+	background-color: black;
+}
