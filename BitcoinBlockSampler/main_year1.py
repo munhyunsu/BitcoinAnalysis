@@ -68,6 +68,7 @@ def main():
     temp_result = set()
     for addr in next_target:
         for row in cur.execute('''SELECT DBCORE.TxOut.addr
+                                  FROM DBCORE.TxIn
                                   INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.ptx AND DBCORE.TxOut.n = DBCORE.TxIn.pn
                                   WHERE DBCORE.TxIn.tx IN (
                                     SELECT DBCORE.TxIn.tx
