@@ -61,6 +61,8 @@ def main():
                 temp_result.add(row[0])
         next_target = temp_result
         result = result | next_target # Union
+        if DEBUG:
+            print(f'{len(result):+05d}')
         if len(next_target) == 0:
             break
 
@@ -86,6 +88,8 @@ def main():
             temp_result.add(row[0])
     next_target = temp_result
     result = result | next_target # Union
+    if DEBUG:
+        print(f'{len(result):+05d}')
 
     print('address, txcount, btcinsum, btcoutsum, balance, firstdatetime, lastdatetime')
     for addr in result:
@@ -93,7 +97,7 @@ def main():
                        FROM DBINDEX.AddrID
                        WHERE DBINDEX.AddrID.id = ?;''', (addr,))
         address = cur.fetchone()[0]
-        cur.execute('''SELECT COUNT(DISTINCT DBCORE.TxIn.tx)
+        cur.execute('''SELECT COUNT(DISTINCT tx)
                        FROM (
                          SELECT DBCORE.TxIn.tx
                          FROM DBCORE.TxIn
