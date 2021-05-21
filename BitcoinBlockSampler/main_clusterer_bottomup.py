@@ -84,13 +84,13 @@ def do_clustering(conn, cur, tx_cnt, addr_cnt):
     except TypeError:
         start_tx = 1
     if DEBUG:
-        print(f'[{int(time.time()-STIME)}] 클러스터링 시작 트랜잭션: {start_tx}')
+        print(f'[{int(time.time()-STIME)}] Start clustering from transaction {start_tx}')
 
     cluster = data_structure.UnionFind(addr_cnt)
     if start_tx != 1:
         for index, result in enumerate(cur.execute('''SELECT cluster FROM Cluster ORDER BY addr ASC;'''), start=1):
             cluster.parent[index] = result[0]
-        print(f'[{int(time.time()-STIME)}] 기존 클러스터 불러오기 완료')
+        print(f'[{int(time.time()-STIME)}] Existing cluster load complete')
 
     addrs = list()
     for txid in range(start_tx, tx_cnt+1):
@@ -145,7 +145,7 @@ def main():
     block_height, tx_cnt, addr_cnt, date = get_index_status(conn, cur)
     if DEBUG:
         print('Bitcoin database load complete')
-        print((f'Block heights: {block_height} ({date} UTC)\n'
+        print((f'Block heights: {block_height} (Mined at {date} UTC)\n'
                f'# of transactions: {tx_cnt}\n'
                f'# of addresses: {addr_cnt}'))
 
