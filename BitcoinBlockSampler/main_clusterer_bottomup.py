@@ -144,10 +144,10 @@ def main():
 
     block_height, tx_cnt, addr_cnt, date = get_index_status(conn, cur)
     if DEBUG:
-        print('비트코인 데이터베이스 불러오기 완료')
-        print((f'블록 높이: {block_height} ({date} UTC 마이닝)\n'
-               f'트랜잭션 개수: {tx_cnt}\n'
-               f'주소 개수: {addr_cnt}'))
+        print('Bitcoin database load complete')
+        print((f'Block heights: {block_height} ({date} UTC)\n'
+               f'# of transactions: {tx_cnt}\n'
+               f'# of addresses: {addr_cnt}'))
 
     cluster = do_clustering(conn, cur, tx_cnt, addr_cnt)
 
