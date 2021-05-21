@@ -36,13 +36,20 @@ def initialize_cluster(conn, cur):
     cur.execute('''CREATE TABLE IF NOT EXISTS Cluster (
                      addr INTEGER PRIMARY KEY,
                      cluster NOT NULL);''')
-    cur.execute('''CREATE TABLE IF NOT EXISTS TagID (
+    cur.execute('''CREATE TABLE IF NOT EXISTS AddrTagID (
                      id INTEGER PRIMARY KEY,
                      tag TEXT UNIQUE);''')
-    cur.execute('''CREATE TABLE IF NOT EXISTS Tag (
+    cur.execute('''CREATE TABLE IF NOT EXISTS AddrTag (
                      addr INTEGER NOT NULL,
                      tag INTEGER NOT NULL,
                      UNIQUE (addr, tag));''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS TxTagID (
+                     tx INTEGER NOT NULL,
+                     tag TEXT UNIQUE);''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS TxTag (
+                     tx INTEGER NOT NULL,
+                     tag INTEGER NOT NULL,
+                     UNIQUE (tx, tag));''')
     cur.execute('''CREATE INDEX IF NOT EXISTS idx_Cluster_2 ON Cluster(cluster);''')
     conn.commit()
     if DEBUG:
