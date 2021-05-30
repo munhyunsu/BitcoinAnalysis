@@ -10,10 +10,33 @@ DEBUG = False
 STIME = time.time()
 
 
+def prepare_conn(dbpath, indexpath, corepath, servicepath):
+    global STIME
+    global DEBUG
+    sqlite3.register_adapter(np.int32, int)
+    conn = sqlite3.connect(dbpath)
+    cur = conn.cursor()
+    cur.execute(f'''ATTACH DATABASE '{indexpath}' AS DBINDEX;''')
+    cur.execute(f'''ATTACH DATABASE '{corepath}' AS DBCORE;''')
+    cur.execute(f'''ATTACH DATABASE '{servicepath}' AS DBSERVICE;''')
+    conn.commit()
+
+    if DEBUG:
+        print((f'[{int(time.time()-STIME)}] '
+               f'Prepared database connector and cursor'))
+    
+    return conn, cur
+
+
 def main():
     if DEBUG:
         print(f'Parsed arguments {FLAGS}')
         print(f'Unparsed arguments {_}')
+
+    conn, cur = prepare_conn(FLAGS.cache, FLAGS.index, 
+                             FLAGS.core, FLAGS.service)
+
+    conn.close()
 
 
 if __name__ == '__main__':
