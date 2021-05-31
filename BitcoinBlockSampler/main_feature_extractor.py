@@ -27,7 +27,7 @@ def prepare_conn(dbpath, indexpath, corepath, servicepath):
     return conn, cur
 
 
-def initialize_cache(conn, cur):
+def initialize_database(conn, cur):
     global STIME
     global DEBUG
     if DEBUG:
@@ -103,10 +103,7 @@ def main():
 
     conn, cur = prepare_conn(FLAGS.cache, FLAGS.index, 
                              FLAGS.core, FLAGS.service)
-    cur.execute(f'''PRAGMA journal_mode = OFF;''')
-    cur.execute(f'''PRAGMA synchronous = OFF;''')
-    cur.execute(f'''PRAGMA cache_size = {FLAGS.cachesize};''')
-
+    initialize_database(conn, cur)
 
     conn.close()
 
