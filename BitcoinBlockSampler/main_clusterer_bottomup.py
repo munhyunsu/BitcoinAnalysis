@@ -44,7 +44,7 @@ def initialize_cluster(conn, cur):
                      tag INTEGER NOT NULL,
                      UNIQUE (addr, tag));''')
     cur.execute('''CREATE TABLE IF NOT EXISTS TxTagID (
-                     tx INTEGER NOT NULL,
+                     id INTEGER PRIMARY KEY,
                      tag TEXT UNIQUE);''')
     cur.execute('''CREATE TABLE IF NOT EXISTS TxTag (
                      tx INTEGER NOT NULL,
