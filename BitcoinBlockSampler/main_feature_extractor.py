@@ -105,6 +105,8 @@ def main():
                              FLAGS.core, FLAGS.service)
     initialize_database(conn, cur)
 
+    # Multiprocessing
+
     conn.close()
 
 
