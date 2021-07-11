@@ -32,6 +32,8 @@ def create_currency_db(conn, cur):
                    );''')
     cur.commit()
 
+def insert_currency_data(conn, cur, datapath):
+    datetime.datetime.fromisoformat(f'').timestamp()
 
 
 def main():
