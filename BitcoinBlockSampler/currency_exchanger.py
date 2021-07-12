@@ -1,6 +1,7 @@
 import os
 import time
 import sqlite3
+import csv
 
 FLAGS = _ = None
 DEBUG = False
@@ -32,8 +33,12 @@ def create_currency_db(conn, cur):
                    );''')
     cur.commit()
 
-def insert_currency_data(conn, cur, datapath):
-    datetime.datetime.fromisoformat(f'').timestamp()
+def insert_currency_data(conn, cur, csvpath):
+    with open(csvpath, 'r') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            k = datetime.datetime.fromisoformat(f'{row["Timestamp"]}+00:00').timestamp()
+            v = float(row['market-price'])
 
 
 def main():
