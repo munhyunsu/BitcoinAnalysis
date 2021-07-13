@@ -296,3 +296,5 @@ WHERE NOT EXISTS (SELECT *
                         DBCORE.TxIn.pn = DBCORE.TxOut.n)
 GROUP BY tx, n;
 ```
+
+** Util, service, temp database merging was needed **
