@@ -33,12 +33,19 @@ def create_currency_db(conn, cur):
                    );''')
     cur.commit()
 
+
 def insert_currency_data(conn, cur, csvpath):
+    cur.execute('BEGIN TRANSACTION')
     with open(csvpath, 'r') as f:
         reader = csv.DictReader(f)
         for row in reader:
             k = datetime.datetime.fromisoformat(f'{row["Timestamp"]}+00:00').timestamp()
             v = float(row['market-price'])
+            cur.execute('''INSERT OR IGNORE INTO BTC2Dollar (
+                             unixtime, dollar) VALUES (
+                             ?, ?);''', (k, v))
+    cur.execute('COMMIT TRANSACTION')
+    conn.commit()
 
 
 def main():
@@ -48,8 +55,8 @@ def main():
 
     conn, cur = prepare_conn(FLAGS.index, FLAGS.core,
                              FLAGS.util, FLAGS.service)
-
-    
+    create_currency_db(conn, cur)
+    insert_currency_data(conn, cur, FLAGS.data)
 
 
 if __name__ == '__main__':
