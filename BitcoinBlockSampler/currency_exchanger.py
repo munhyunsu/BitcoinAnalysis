@@ -31,7 +31,7 @@ def create_currency_db(conn, cur):
                      unixtime INTEGER PRIMARY KEY,
                      dollar REAL NOT NULL
                    );''')
-    cur.commit()
+    conn.commit()
 
 
 def insert_currency_data(conn, cur, csvpath):
