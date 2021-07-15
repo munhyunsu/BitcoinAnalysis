@@ -2,6 +2,7 @@ import os
 import time
 import sqlite3
 import csv
+import datetime
 
 FLAGS = _ = None
 DEBUG = False
@@ -39,6 +40,7 @@ def insert_currency_data(conn, cur, csvpath):
     with open(csvpath, 'r') as f:
         reader = csv.DictReader(f)
         for row in reader:
+            print(row)
             k = datetime.datetime.fromisoformat(f'{row["Timestamp"]}+00:00').timestamp()
             v = float(row['market-price'])
             cur.execute('''INSERT OR IGNORE INTO BTC2Dollar (
