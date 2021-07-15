@@ -58,6 +58,9 @@ def main():
     create_currency_db(conn, cur)
     insert_currency_data(conn, cur, FLAGS.data)
 
+    for row in cur.execute('''SELECT * FROM BTC2Dollar LIMIT 100;'''):
+        print(row)
+
 
 if __name__ == '__main__':
     root_path = os.path.abspath(__file__)
