@@ -47,7 +47,7 @@ def get_associate_addr(conn, cur, addr):
         c.add(row[0])
     return result, a, b, c
 
-print('ClusterName, Category, RootAddress, Associate, Multiinput, In, Out')
+print('ClusterName,Category,RootAddress,Associate,Multiinput,In,Out')
 with open('data/named_added.csv') as f:
     reader = csv.DictReader(f)
     for row in reader:
@@ -57,4 +57,4 @@ with open('data/named_added.csv') as f:
                        WHERE DBINDEX.AddrID.addr = ?''', (row['RootAddress'],))
         addrid = cur.fetchone()[0]
         r, a, b, c = get_associate_addr(conn, cur, addrid)
-        print(f'{row["ClusterName"]}, {row["Category"]}, {row["RootAddress"]}, {len(r)}, {len(a)}, {len(b)}, {len(c)}')
+        print(f'{row["ClusterName"]},{row["Category"]},{row["RootAddress"]},{len(r)},{len(a)},{len(b)},{len(c)}')
