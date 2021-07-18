@@ -204,3 +204,41 @@ def get_feature(conn, cur, addr):
 
     return result
 
+
+with open('data/20210715-Associate.csv') as f:
+    reader = csv.DictReader(f)
+    count = 0
+    for row in reader:
+        cur.execute('''SELECT DBINDEX.AddrID.id
+                       FROM DBINDEX.AddrID
+                       WHERE DBINDEX.AddrID.addr = ?''', (row['RootAddress'],))
+        addrid = cur.fetchone()[0]
+        addrs = {addrid}
+        for addr in get_associate_addr(conn, cur, addrid):
+            addrs.add(addr)
+        cur.execute('BEGIN TRANSACTION')
+        for addr in addrs:
+            result = get_feature(conn, cur, addr)
+            cur.execute('''INSERT OR IGNORE INTO Feature (
+                             addr, updatetime,
+                             cnttx, cnttxin, cnttxout,
+                             btc, btcin, btcout,
+                             cntuse, cntusein, cntuseout,
+                             age, agein, ageout,
+                             addrtypep2pkh, addrtypep2sh, addrtypebech32, addrtypeother) VALUES (
+                             ?, ?,
+                             ?, ?, ?,
+                             ?, ?, ?,
+                             ?, ?, ?,
+                             ?, ?, ?,
+                             ?, ?, ?, ?);''', (result['addr'], result['updatetime'],
+                                               result['cnttx'], result['cnttxin'], result['cnttxout'],
+                                               result['btc'], result['btcin'], result['btcout'],
+                                               result['cntuse'], result['cntusein'], result['cntuseout'],
+                                               result['age'], result['agein'], result['ageout'],
+                                               result['addrtypep2pkh'], result['addrtypep2sh'], result['addrtypebech32'], result['addrtypeother']))
+        count = count + 1
+        print(f'[{int(time.time()-STIME)}] {count} {row["RootAddress"]} ({addrid})')
+        cur.execute('COMMIT TRANSACTION')
+        conn.commit()
+
