@@ -10,15 +10,15 @@ DEBUG = False
 STIME = time.time()
 
 
-def prepare_conn(dbpath, indexpath, corepath, servicepath):
+def prepare_conn(indexpath, corepath, utilpath, servicepath):
     global STIME
     global DEBUG
     sqlite3.register_adapter(np.int32, int)
-    conn = sqlite3.connect(dbpath)
+    conn = sqlite3.connect(servicepath)
     cur = conn.cursor()
     cur.execute(f'''ATTACH DATABASE '{indexpath}' AS DBINDEX;''')
     cur.execute(f'''ATTACH DATABASE '{corepath}' AS DBCORE;''')
-    cur.execute(f'''ATTACH DATABASE '{servicepath}' AS DBSERVICE;''')
+    cur.execute(f'''ATTACH DATABASE '{utilpath}' AS DBUTIL;''')
     conn.commit()
 
     if DEBUG:
