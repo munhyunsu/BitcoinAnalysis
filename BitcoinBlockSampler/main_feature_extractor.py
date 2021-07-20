@@ -48,8 +48,8 @@ def main():
         print(f'Parsed arguments {FLAGS}')
         print(f'Unparsed arguments {_}')
 
-    conn, cur = prepare_conn(FLAGS.cache, FLAGS.index, 
-                             FLAGS.core, FLAGS.service)
+    conn, cur = prepare_conn(FLAGS.index, FLAGS.core, 
+                             FLAGS.util, FLAGS.service)
     initialize_database(conn, cur)
 
     # Multiprocessing
@@ -72,10 +72,10 @@ if __name__ == '__main__':
                         help='The path for index database')
     parser.add_argument('--core', type=str, required=True,
                         help='The path for core database')
-    parser.add_argument('--service', type=str, required=True,
+    parser.add_argument('--util', type=str, required=True,
                         help='The path for util database')
-    parser.add_argument('--cache', type=str, default='./dbv3-cache.db',
-                        help='The path for cache database')
+    parser.add_argument('--service', type=str, required=True,
+                        help='The path for service database')
     parser.add_argument('--process', type=int,
                         default=min(multiprocessing.cpu_count()//2, 16),
                         help='The number of multiprocess')
@@ -88,8 +88,8 @@ if __name__ == '__main__':
 
     FLAGS.index = os.path.abspath(os.path.expanduser(FLAGS.index))
     FLAGS.core = os.path.abspath(os.path.expanduser(FLAGS.core))
+    FLAGS.util = os.path.abspath(os.path.expanduser(FLAGS.util))
     FLAGS.service = os.path.abspath(os.path.expanduser(FLAGS.service))
-    FLAGS.cache = os.path.abspath(os.path.expanduser(FLAGS.cache))
 
     DEBUG = FLAGS.debug
 
