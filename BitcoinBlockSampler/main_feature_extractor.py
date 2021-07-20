@@ -20,7 +20,6 @@ def prepare_conn(indexpath, corepath, utilpath, servicepath):
     cur.execute(f'''ATTACH DATABASE '{corepath}' AS DBCORE;''')
     cur.execute(f'''ATTACH DATABASE '{utilpath}' AS DBUTIL;''')
     conn.commit()
-
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Prepared database connector and cursor')
     
@@ -35,9 +34,32 @@ def initialize_database(conn, cur):
     cur.execute('''PRAGMA journal_mode = NORMAL;''')
     cur.execute('''PRAGMA synchronous = WAL;''')
     conn.commit()
-    cur.execute('''CREATE TABLE IF NOT EXISTS AddrFeature (
-                   );''')
-    cur.execute('''CREATE INDEX IF NOT EXISTS idx_AddrFeature_2 ON AddrFeature(update);''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS Feature (
+                 addr INTEGER PRIMARY KEY,
+                 updatetime INTEGER NOT NULL,
+                 cnttx INTEGER NOT NULL,
+                 cnttxin INTEGER NOT NULL,
+                 cnttxout INTEGER NOT NULL,
+                 btc REAL NOT NULL,
+                 btcin REAL NOT NULL,
+                 btcout REAL NOT NULL,
+                 dollar REAL NOT NULL,
+                 dollarin REAL NOT NULL,
+                 dollarout REAL NOT NULL,
+                 cntuse INTEGER NOT NULL,
+                 cntusein INTEGER NOT NULL,
+                 cntuseout INTEGER NOT NULL,
+                 age INTEGER NOT NULL,
+                 agein INTEGER NOT NULL,
+                 ageout INTEGER NOT NULL,
+                 addrtypep2pkh INTEGER NOT NULL,
+                 addrtypep2sh INTEGER NOT NULL,
+                 addrtypebech32 INTEGER NOT NULL,
+                 addrtypeother INTEGER NOT NULL
+               );''')
+    conn.commit()
+    cur.execute('''CREATE INDEX IF NOT EXISTS idx_AddrFeature_2 
+                   ON Feature(updatetime);''')
     conn.commit()
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Initialized cache database')
