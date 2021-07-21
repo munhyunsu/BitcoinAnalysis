@@ -58,7 +58,7 @@ def initialize_database(conn, cur):
                  addrtypeother INTEGER NOT NULL
                );''')
     conn.commit()
-    cur.execute('''CREATE INDEX IF NOT EXISTS idx_AddrFeature_2 
+    cur.execute('''CREATE INDEX IF NOT EXISTS idx_Feature_2 
                    ON Feature(updatetime);''')
     conn.commit()
     if DEBUG:
