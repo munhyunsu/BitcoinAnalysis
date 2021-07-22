@@ -234,6 +234,36 @@ def main():
     initialize_database(conn, cur)
 
     # Multiprocessing
+    cur.execute('''SELECT MAX(DBCORE.AddrID.id)
+                   FROM DBCORE.AddrID;''')
+    end_addrid = cur.fetchone()[0] + 1
+    cur.execute('''BEGIN TRANSACTION;''')
+    for addr in range(1, end_addrid):
+        result = get_feature(conn, cur, addr)
+        cur.execute('''INSERT OR IGNORE INTO Feature (
+                       addr, updatetime,
+                       cnttx, cnttxin, cnttxout,
+                       btc, btcin, btcout,
+                       cntuse, cntusein, cntuseout,
+                       age, agein, ageout,
+                       addrtypep2pkh, addrtypep2sh, addrtypebech32, addrtypeother) VALUES (
+                       ?, ?,
+                       ?, ?, ?,
+                       ?, ?, ?,
+                       ?, ?, ?,
+                       ?, ?, ?,
+                       ?, ?, ?, ?);''', (result['addr'], result['updatetime'],
+                                         result['cnttx'], result['cnttxin'], result['cnttxout'],
+                                         result['btc'], result['btcin'], result['btcout'],
+                                         result['cntuse'], result['cntusein'], result['cntuseout'],
+                                         result['age'], result['agein'], result['ageout'],
+                                         result['addrtypep2pkh'], result['addrtypep2sh'], result['addrtypebech32'], result['addrtypeother']))
+        if addr % 100000 == 0:
+            cur.execute('''COMMIT TRANSACTION;''')
+            cur.execute('''BEGIN TRANSACTION;''')
+            conn.commit()
+    cur.execute('''COMMIT TRANSACTION;''')
+    conn.commit()
 
     conn.close()
 
