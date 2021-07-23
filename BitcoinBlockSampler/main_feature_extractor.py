@@ -235,8 +235,8 @@ def main():
     initialize_database(conn, cur)
 
     # Multiprocessing
-    cur.execute('''SELECT MAX(DBCORE.AddrID.id)
-                   FROM DBCORE.AddrID;''')
+    cur.execute('''SELECT MAX(DBINDEX.AddrID.id)
+                   FROM DBINDEX.AddrID;''')
     end_addrid = cur.fetchone()[0] + 1
     cur.execute('''BEGIN TRANSACTION;''')
     for addr in range(1, end_addrid):
