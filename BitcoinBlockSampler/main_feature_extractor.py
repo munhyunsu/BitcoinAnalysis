@@ -262,6 +262,8 @@ def main():
             cur.execute('''COMMIT TRANSACTION;''')
             cur.execute('''BEGIN TRANSACTION;''')
             conn.commit()
+            if DEBUG:
+                print(f'[{int(time.time()-STIME)} {addr} / {end_addrid} ({addr/end_addrid:.2f}) Done')
     cur.execute('''COMMIT TRANSACTION;''')
     conn.commit()
 
