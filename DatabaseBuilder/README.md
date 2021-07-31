@@ -1,7 +1,3 @@
-### Issue
-
-- BUG occured! block height: 60xxxx!
-
 ### Usage
 
   1. Download (bitcoin core)[https://bitcoin.org/en/download] and Block data
@@ -79,23 +75,4 @@
 
 #### BlockClustering
   - Crate Bitcoin Address - Transaction Hash Table
-
-##### TODO
-
-  - Size efficient Address - Transaction Table Needed
-
-    - csv ?
-
-    - TxID / AddressID ?
-
-#### BlockHeightFinder
-  - Bitcoin block height finder by datatime
-
-#### BlockSampleRegtest
-  - Bitcoin block sampling and creating Regtest database
-
-### TODO
-1. Script to address improvements
-  - More coverage
-1. Installation script
 
