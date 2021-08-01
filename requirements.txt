@@ -1,0 +1,12 @@
+pip
+wheel
+
+# data analysis
+numpy
+pandas
+
+# visualization
+matplotlib
+
+# https://github.com/alecalve/python-bitcoin-blockchain-parser.git
+python-bitcoinrpc
