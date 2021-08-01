@@ -1,6 +1,9 @@
 pip
 wheel
 
+# jupyter kernel
+ipympl
+
 # data analysis
 numpy
 pandas
@@ -10,3 +13,8 @@ matplotlib
 
 # https://github.com/alecalve/python-bitcoin-blockchain-parser.git
 python-bitcoinrpc
+
+# machine learning
+scipy
+scikit-learn
+tensorflow
