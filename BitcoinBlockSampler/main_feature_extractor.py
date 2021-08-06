@@ -238,7 +238,10 @@ def main():
     # Multiprocessing
     cur.execute('''SELECT MAX(Feature.addr)
                    FROM Feature;''')
-    start_addrid = cur.fetchone()[0] + 1
+    try:
+        start_addrid = cur.fetchone()[0] + 1
+    except sqlite3.Error:
+        start_addid = 1
     cur.execute('''SELECT MAX(DBINDEX.AddrID.id)
                    FROM DBINDEX.AddrID;''')
     end_addrid = cur.fetchone()[0] + 1
