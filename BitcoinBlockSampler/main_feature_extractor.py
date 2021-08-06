@@ -236,11 +236,16 @@ def main():
     initialize_database(conn, cur)
 
     # Multiprocessing
+    cur.execute('''SELECT MAX(Feature.addr)
+                   FROM Feature;''')
+    start_addrid = cur.fetchone()[0] + 1
     cur.execute('''SELECT MAX(DBINDEX.AddrID.id)
                    FROM DBINDEX.AddrID;''')
     end_addrid = cur.fetchone()[0] + 1
     cur.execute('''BEGIN TRANSACTION;''')
-    for addr in range(1, end_addrid):
+    if DEBUG:
+        print(f'From {start_addrid} To {end_addrid}')
+    for addr in range(start_addrid, end_addrid):
         result = get_feature(conn, cur, addr)
         cur.execute('''INSERT OR IGNORE INTO Feature (
                        addr, updatetime,
