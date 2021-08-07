@@ -1,5 +1,6 @@
 import os
 import time
+import multiprocessing
 
 FLAGS = _ = None
 DEBUG = False
@@ -18,6 +19,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_arguments('--debug', action='store_true',
                          help='The present debug message')
+    parser.add_arguments('--process', type=int,
+                         default=min(multiprocessing.cpu_count()//2, 16),
+                         help='The number of processes')
 
     FLAGS, _ = parser.parse_known_args()
     DEBUG = FLAGS.debug
