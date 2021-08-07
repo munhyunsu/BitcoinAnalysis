@@ -1,5 +1,9 @@
+import os
+import time
+
 FLAGS = _ = None
 DEBUG = False
+STIME = time.time()
 
 
 def main():
