@@ -1,0 +1,3 @@
+pip
+wheel
+python-bitcoinrpc
