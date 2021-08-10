@@ -106,31 +106,31 @@ def get_feature(conn, cur, addr):
                      INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
                                             AND DBCORE.TxIn.pn = DBCORE.TxOut.n
                      WHERE DBCORE.TxOut.Addr = ?) AS B;''', (addr, addr))
-    res = cur.fetchone()
+    res = cur.fetchone()[0]
     if res is None:
         res = 0
     else:
-        res = res[0]
+        res = res
     result['btc'] = res
     cur.execute('''SELECT SUM(DBCORE.TxOut.btc) AS btc
                    FROM DBCORE.TxIn
                    INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
                                           AND DBCORE.TxIn.pn = DBCORE.TxOut.n
                    WHERE DBCORE.TxOut.Addr = ?''', (addr,))
-    res = cur.fetchone()
+    res = cur.fetchone()[0]
     if res is None:
         res = 0
     else:
-        res = res[0]
+        res = res
     result['btcin'] = res
     cur.execute('''SELECT SUM(DBCORE.TxOut.btc) AS btc
                    FROM DBCORE.TxOut
                    WHERE DBCORE.TxOut.Addr = ?''', (addr,))
-    res = cur.fetchone()
+    res = cur.fetchone()[0]
     if res is None:
         res = 0
     else:
-        res = res[0]
+        res = res
     result['btcout'] = res
     # use
     cur.execute('''SELECT COUNT(tx)
@@ -169,11 +169,11 @@ def get_feature(conn, cur, addr):
                      WHERE DBCORE.TxOut.addr = ?) AS T
                    INNER JOIN DBCORE.BlkTx ON T.tx = DBCORE.BlkTx.tx
                    INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk''', (addr, addr))
-    res = cur.fetchone()
+    res = cur.fetchone()[0]
     if res is None:
         res = 0
     else:
-        res = res[0]
+        res = res
     result['age'] = res
     cur.execute('''SELECT MAX(DBCORE.BlkTime.unixtime) - MIN(DBCORE.BlkTime.unixtime)
                    FROM (
@@ -184,11 +184,11 @@ def get_feature(conn, cur, addr):
                      WHERE DBCORE.TxOut.addr = ?) AS T
                    INNER JOIN DBCORE.BlkTx ON T.tx = DBCORE.BlkTx.tx
                    INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk''', (addr,))
-    res = cur.fetchone()
+    res = cur.fetchone()[0]
     if res is None:
         res = 0
     else:
-        res = res[0]
+        res = res
     result['agein'] = res
     cur.execute('''SELECT MAX(DBCORE.BlkTime.unixtime) - MIN(DBCORE.BlkTime.unixtime)
                    FROM (
@@ -197,11 +197,11 @@ def get_feature(conn, cur, addr):
                      WHERE DBCORE.TxOut.addr = ?) AS T
                    INNER JOIN DBCORE.BlkTx ON T.tx = DBCORE.BlkTx.tx
                    INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk''', (addr,))
-    res = cur.fetchone()
+    res = cur.fetchone()[0]
     if res is None:
         res = 0
     else:
-        res = res[0]
+        res = res
     result['ageout'] = res
     # addrtype
     result['addrtypep2pkh'] = 0 # 1
@@ -211,7 +211,7 @@ def get_feature(conn, cur, addr):
     cur.execute('''SELECT DBINDEX.AddrID.addr
                    FROM DBINDEX.AddrID
                    WHERE DBINDEX.AddrID.id = ?''', (addr,))
-    res = cur.fetchone()
+    res = cur.fetchone()[0]
     if res is None:
         pass
     elif res[0].startswith('1'):
