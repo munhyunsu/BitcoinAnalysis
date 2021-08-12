@@ -2,6 +2,10 @@ import os
 import time
 import multiprocessing
 
+import mariadb
+
+import secret
+
 FLAGS = _ = None
 DEBUG = False
 STIME = time.time()
