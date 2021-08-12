@@ -298,3 +298,8 @@ GROUP BY tx, n;
 ```
 
 ** Util, service, temp database merging was needed **
+
+---
+#### MariaDB Hierarchical database design (a.k.a. Version 5)
+
+
