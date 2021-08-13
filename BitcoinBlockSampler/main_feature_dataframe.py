@@ -300,9 +300,10 @@ if __name__ == '__main__':
                         help='The path for util database')
     parser.add_argument('--service', type=str, required=True,
                         help='The path for service database')
-    parser.add_argument('--process', type=int,
-                        default=min(multiprocessing.cpu_count()//2, 16),
-                        help='The number of multiprocess')
+    parser.add_argument('--target', type=str, required=True,
+                        help='The target csv file include "Address" field')
+    parser.add_argument('--output', type=str,
+                        help='The feature dataframe output')
 
     FLAGS, _ = parser.parse_known_args()
 
