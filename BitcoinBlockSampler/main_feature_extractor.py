@@ -275,6 +275,14 @@ def main():
     cur.execute('''COMMIT TRANSACTION;''')
     conn.commit()
 
+    if DEBUG:
+        cur.execute('''SELECT COUNT(DBINDEX.AddrID.id)
+                       FROM DBINDEX.AddrID
+                       WHERE DBINDEX.AddrID.id NOT IN (SELECT Feature.addr
+                                                       FROM Feature);''')
+        miss_addr_cnt = cur.fetchone()[0]
+        print(f'Missing address counts: {miss_addr_cnt}')
+
     conn.close()
 
 
