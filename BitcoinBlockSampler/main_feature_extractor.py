@@ -2,7 +2,6 @@ import os
 import sqlite3
 import time
 import datetime
-import multiprocessing
 
 import numpy as np
 import pandas as pd
@@ -235,7 +234,6 @@ def main():
                              FLAGS.util, FLAGS.service)
     initialize_database(conn, cur)
 
-    # Multiprocessing
     cur.execute('''SELECT MAX(Feature.addr)
                    FROM Feature;''')
     try:
@@ -299,9 +297,6 @@ if __name__ == '__main__':
                         help='The path for util database')
     parser.add_argument('--service', type=str, required=True,
                         help='The path for service database')
-    parser.add_argument('--process', type=int,
-                        default=min(multiprocessing.cpu_count()//2, 16),
-                        help='The number of multiprocess')
 
     FLAGS, _ = parser.parse_known_args()
 
