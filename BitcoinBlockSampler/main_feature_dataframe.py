@@ -65,163 +65,521 @@ def initialize_database(conn, cur):
         print(f'[{int(time.time()-STIME)}] Initialized cache database')
 
 
-def get_feature(conn, cur, addr):
-    result = dict()
-    result['addr'] = addr
-    result['updatetime'] = int(datetime.datetime.now().timestamp())
-    # tx
-    cur.execute('''SELECT COUNT(tx)
-                   FROM (
-                     SELECT DBCORE.TxIn.tx AS tx
-                     FROM DBCORE.TxIn
-                     INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
-                                            AND DBCORE.TxIn.pn = DBCORE.TxOut.n
-                     WHERE DBCORE.TxOut.addr = ?
-                     UNION
-                     SELECT DBCORE.TxOut.tx AS tx
-                     FROM DBCORE.TxOut
-                     WHERE DBCORE.TxOut.addr = ?);''', (addr, addr))
-    result['cnttx'] = cur.fetchone()[0] # Always return
-    cur.execute('''SELECT COUNT(DISTINCT DBCORE.TxIn.tx)
-                   FROM DBCORE.TxIn
-                   INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
-                                          AND DBCORE.TxIn.pn = DBCORE.TxOut.n
-                   WHERE DBCORE.TxOut.addr = ?;''', (addr, ))
-    result['cnttxin'] = cur.fetchone()[0] # Always return
-    cur.execute('''SELECT COUNT(DISTINCT DBCORE.TxOut.tx)
-                   FROM DBCORE.TxOut
-                   WHERE DBCORE.TxOut.addr = ?;''', (addr, ))
-    result['cnttxout'] = cur.fetchone()[0] # Always return
-    # btc
-    cur.execute('''SELECT A.btc + B.btc
-                   FROM (
-                     SELECT SUM(DBCORE.TxOut.btc) AS btc
-                     FROM DBCORE.TxOut
-                     WHERE DBCORE.TxOut.Addr = ?) AS A
-                     , (
-                     SELECT SUM(DBCORE.TxOut.btc) AS btc
-                     FROM DBCORE.TxIn
-                     INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
-                                            AND DBCORE.TxIn.pn = DBCORE.TxOut.n
-                     WHERE DBCORE.TxOut.Addr = ?) AS B;''', (addr, addr))
-    res = cur.fetchone()[0]
-    if res is None:
-        res = 0
-    else:
-        res = res
-    result['btc'] = res
-    cur.execute('''SELECT SUM(DBCORE.TxOut.btc) AS btc
-                   FROM DBCORE.TxIn
-                   INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
-                                          AND DBCORE.TxIn.pn = DBCORE.TxOut.n
-                   WHERE DBCORE.TxOut.Addr = ?''', (addr,))
-    res = cur.fetchone()[0]
-    if res is None:
-        res = 0
-    else:
-        res = res
-    result['btcin'] = res
-    cur.execute('''SELECT SUM(DBCORE.TxOut.btc) AS btc
-                   FROM DBCORE.TxOut
-                   WHERE DBCORE.TxOut.Addr = ?''', (addr,))
-    res = cur.fetchone()[0]
-    if res is None:
-        res = 0
-    else:
-        res = res
-    result['btcout'] = res
-    # use
-    cur.execute('''SELECT COUNT(tx)
-                   FROM (
-                     SELECT DBCORE.TxIn.tx AS tx
-                     FROM DBCORE.TxIn
-                     INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
-                                            AND DBCORE.TxIn.pn = DBCORE.TxOut.n
-                     WHERE DBCORE.TxOut.addr = ?
-                     UNION ALL
-                     SELECT DBCORE.TxOut.tx AS tx
-                     FROM DBCORE.TxOut
-                     WHERE DBCORE.TxOut.addr = ?);''', (addr, addr))
-    result['cntuse'] = cur.fetchone()[0] # Always return
-    cur.execute('''SELECT COUNT(DBCORE.TxIn.tx)
-                   FROM DBCORE.TxIn
-                   INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
-                                          AND DBCORE.TxIn.pn = DBCORE.TxOut.n
-                   WHERE DBCORE.TxOut.addr = ?;''', (addr, ))
-    result['cntusein'] = cur.fetchone()[0] # Always return
-    cur.execute('''SELECT COUNT(DBCORE.TxOut.tx)
-                   FROM DBCORE.TxOut
-                   WHERE DBCORE.TxOut.addr = ?;''', (addr, ))
-    result['cntuseout'] = cur.fetchone()[0] # Always return
-    # age
-    cur.execute('''SELECT MAX(DBCORE.BlkTime.unixtime) - MIN(DBCORE.BlkTime.unixtime)
-                   FROM (
-                     SELECT DBCORE.TxIn.tx AS tx
-                     FROM DBCORE.TxIn
-                     INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
-                                            AND DBCORE.TxIn.pn = DBCORE.TxOut.n
-                     WHERE DBCORE.TxOut.addr = ?
-                     UNION
-                     SELECT DBCORE.TxOut.tx AS tx
-                     FROM DBCORE.TxOut
-                     WHERE DBCORE.TxOut.addr = ?) AS T
-                   INNER JOIN DBCORE.BlkTx ON T.tx = DBCORE.BlkTx.tx
-                   INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk''', (addr, addr))
-    res = cur.fetchone()[0]
-    if res is None:
-        res = 0
-    else:
-        res = res
-    result['age'] = res
-    cur.execute('''SELECT MAX(DBCORE.BlkTime.unixtime) - MIN(DBCORE.BlkTime.unixtime)
-                   FROM (
-                     SELECT DBCORE.TxIn.tx AS tx
-                     FROM DBCORE.TxIn
-                     INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
-                                            AND DBCORE.TxIn.pn = DBCORE.TxOut.n
-                     WHERE DBCORE.TxOut.addr = ?) AS T
-                   INNER JOIN DBCORE.BlkTx ON T.tx = DBCORE.BlkTx.tx
-                   INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk''', (addr,))
-    res = cur.fetchone()[0]
-    if res is None:
-        res = 0
-    else:
-        res = res
-    result['agein'] = res
-    cur.execute('''SELECT MAX(DBCORE.BlkTime.unixtime) - MIN(DBCORE.BlkTime.unixtime)
-                   FROM (
-                     SELECT DBCORE.TxOut.tx AS tx
-                     FROM DBCORE.TxOut
-                     WHERE DBCORE.TxOut.addr = ?) AS T
-                   INNER JOIN DBCORE.BlkTx ON T.tx = DBCORE.BlkTx.tx
-                   INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk''', (addr,))
-    res = cur.fetchone()[0]
-    if res is None:
-        res = 0
-    else:
-        res = res
-    result['ageout'] = res
-    # addrtype
-    result['addrtypep2pkh'] = 0 # 1
-    result['addrtypep2sh'] = 0 # 3
-    result['addrtypebech32'] = 0 #bc1
-    result['addrtypeother'] = 0
-    cur.execute('''SELECT DBINDEX.AddrID.addr
-                   FROM DBINDEX.AddrID
-                   WHERE DBINDEX.AddrID.id = ?''', (addr,))
-    res = cur.fetchone()[0]
-    if res is None:
-        pass
-    elif res[0].startswith('1'):
-        result['addrtypep2pkh'] = 1
-    elif res[0].startswith('3'):
-        result['addrtypep2sh'] = 1
-    elif res[0].startswith('bc1'):
-        result['addrtypebech32'] = 1
-    else:
-        result['addrtypeother'] = 1
+def get_associate_addr(conn, cur, addr):
+    # target
+    result = {addr}
+    a = set()
+    b = set()
+    c = set()
+    # multiinput
+    for row in cur.execute('''SELECT DBSERVICE.Cluster.addr
+                              FROM DBSERVICE.Cluster
+                              WHERE DBSERVICE.Cluster.cluster IN (
+                                SELECT DBSERVICE.Cluster.cluster
+                                FROM DBSERVICE.Cluster
+                                WHERE DBSERVICE.Cluster.addr = ?);''', (addr,)):
+        result.add(row[0])
+        a.add(row[0])
+    for row in cur.execute('''SELECT DBUTIL.Edge.src
+                              FROM DBUTIL.Edge
+                              WHERE DBUTIL.Edge.dst = ?;''', (addr,)):
+        result.add(row[0])
+        b.add(row[0])
+    for row in cur.execute('''SELECT DBUTIL.Edge.dst
+                              FROM DBUTIL.Edge
+                              WHERE DBUTIL.Edge.src = ?;''', (addr,)):
+        result.add(row[0])
+        c.add(row[0])
+    return (result, a, b, c)
 
-    return result
+
+def get_feature_vector(conn, cur, addrid):
+    vector = []
+    a, m, i, o = get_associate_addr(conn, cur, addrid)
+    # target
+    cur.execute('''SELECT cnttx, cnttxin, cnttxout,
+                          btc, btcin, btcout,
+                          cntuse, cntusein, cntuseout,
+                          age, agein, ageout,
+                          addrtypep2pkh, addrtypep2sh,
+                         addrtypebech32, addrtypeother
+                   FROM Feature
+                   WHERE Feature.addr = ?;''', (addrid,))
+    res = cur.fetchone()
+    vector.append(res[0])
+    vector.append(res[1])
+    vector.append(res[2])
+    vector.append(res[3])
+    vector.append(res[4])
+    vector.append(res[5])
+    vector.append(res[6])
+    vector.append(res[7])
+    vector.append(res[8])
+    vector.append(res[9])
+    vector.append(res[10])
+    vector.append(res[11])
+    vector.append(res[12])
+    vector.append(res[13])
+    vector.append(res[14])
+    vector.append(res[15])
+    # mi
+    cur.execute('''DROP TABLE IF EXISTS AddrList;''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS AddrList (
+                     addr INTEGER PRIMARY KEY);''')
+    conn.commit()
+    cur.execute('BEGIN TRANSACTION')
+    for addr in m:
+        cur.execute('''INSERT OR IGNORE INTO AddrList (
+                         addr) VALUES (
+                         ?);''', (addr,))
+    cur.execute('COMMIT TRANSACTION')
+    conn.commit()
+    cur.execute('''SELECT DBSERVICE.Feature.cnttx, DBSERVICE.Feature.cnttxin, DBSERVICE.Feature.cnttxout,
+                          DBSERVICE.Feature.btc, DBSERVICE.Feature.btcin, DBSERVICE.Feature.btcout,
+                          DBSERVICE.Feature.cntuse, DBSERVICE.Feature.cntusein, DBSERVICE.Feature.cntuseout,
+                          DBSERVICE.Feature.age, DBSERVICE.Feature.agein, DBSERVICE.Feature.ageout,
+                          DBSERVICE.Feature.addrtypep2pkh, DBSERVICE.Feature.addrtypep2sh,
+                          DBSERVICE.Feature.addrtypebech32, DBSERVICE.Feature.addrtypeother
+                   FROM AddrList
+                   INNER JOIN DBSERVICE.Feature ON DBSERVICE.Feature.addr = AddrList.addr;''')
+    res = pd.DataFrame(cur.fetchall())
+    if len(res) > 0:
+        vector.append(min(res[0]))
+        vector.append(max(res[0]))
+        vector.append(sum(res[0]))
+        vector.append(statistics.median(res[0]))
+        vector.append(statistics.mean(res[0]))
+        vector.append(moment(res[0], moment=2))
+        vector.append(moment(res[0], moment=3))
+        vector.append(moment(res[0], moment=4))
+        vector.append(min(res[1]))
+        vector.append(max(res[1]))
+        vector.append(sum(res[1]))
+        vector.append(statistics.median(res[1]))
+        vector.append(statistics.mean(res[1]))
+        vector.append(moment(res[1], moment=2))
+        vector.append(moment(res[1], moment=3))
+        vector.append(moment(res[1], moment=4))
+        vector.append(min(res[2]))
+        vector.append(max(res[2]))
+        vector.append(sum(res[2]))
+        vector.append(statistics.median(res[2]))
+        vector.append(statistics.mean(res[2]))
+        vector.append(moment(res[2], moment=2))
+        vector.append(moment(res[2], moment=3))
+        vector.append(moment(res[2], moment=4))
+        vector.append(min(res[3]))
+        vector.append(max(res[3]))
+        vector.append(sum(res[3]))
+        vector.append(statistics.median(res[3]))
+        vector.append(statistics.mean(res[3]))
+        vector.append(moment(res[3], moment=2))
+        vector.append(moment(res[3], moment=3))
+        vector.append(moment(res[3], moment=4))
+        vector.append(min(res[4]))
+        vector.append(max(res[4]))
+        vector.append(sum(res[4]))
+        vector.append(statistics.median(res[4]))
+        vector.append(statistics.mean(res[4]))
+        vector.append(moment(res[4], moment=2))
+        vector.append(moment(res[4], moment=3))
+        vector.append(moment(res[4], moment=4))
+        vector.append(min(res[5]))
+        vector.append(max(res[5]))
+        vector.append(sum(res[5]))
+        vector.append(statistics.median(res[5]))
+        vector.append(statistics.mean(res[5]))
+        vector.append(moment(res[5], moment=2))
+        vector.append(moment(res[5], moment=3))
+        vector.append(moment(res[5], moment=4))
+        vector.append(min(res[6]))
+        vector.append(max(res[6]))
+        vector.append(sum(res[6]))
+        vector.append(statistics.median(res[6]))
+        vector.append(statistics.mean(res[6]))
+        vector.append(moment(res[6], moment=2))
+        vector.append(moment(res[6], moment=3))
+        vector.append(moment(res[6], moment=4))
+        vector.append(min(res[7]))
+        vector.append(max(res[7]))
+        vector.append(sum(res[7]))
+        vector.append(statistics.median(res[7]))
+        vector.append(statistics.mean(res[7]))
+        vector.append(moment(res[7], moment=2))
+        vector.append(moment(res[7], moment=3))
+        vector.append(moment(res[7], moment=4))
+        vector.append(min(res[8]))
+        vector.append(max(res[8]))
+        vector.append(sum(res[8]))
+        vector.append(statistics.median(res[8]))
+        vector.append(statistics.mean(res[8]))
+        vector.append(moment(res[8], moment=2))
+        vector.append(moment(res[8], moment=3))
+        vector.append(moment(res[8], moment=4))
+        vector.append(min(res[9]))
+        vector.append(max(res[9]))
+        vector.append(sum(res[9]))
+        vector.append(statistics.median(res[9]))
+        vector.append(statistics.mean(res[9]))
+        vector.append(moment(res[9], moment=2))
+        vector.append(moment(res[9], moment=3))
+        vector.append(moment(res[9], moment=4))
+        vector.append(min(res[10]))
+        vector.append(max(res[10]))
+        vector.append(sum(res[10]))
+        vector.append(statistics.median(res[10]))
+        vector.append(statistics.mean(res[10]))
+        vector.append(moment(res[10], moment=2))
+        vector.append(moment(res[10], moment=3))
+        vector.append(moment(res[10], moment=4))
+        vector.append(min(res[11]))
+        vector.append(max(res[11]))
+        vector.append(sum(res[11]))
+        vector.append(statistics.median(res[11]))
+        vector.append(statistics.mean(res[11]))
+        vector.append(moment(res[11], moment=2))
+        vector.append(moment(res[11], moment=3))
+        vector.append(moment(res[11], moment=4))
+        vector.append(min(res[12]))
+        vector.append(max(res[12]))
+        vector.append(sum(res[12]))
+        vector.append(statistics.median(res[12]))
+        vector.append(statistics.mean(res[12]))
+        vector.append(moment(res[12], moment=2))
+        vector.append(moment(res[12], moment=3))
+        vector.append(moment(res[12], moment=4))
+        vector.append(min(res[13]))
+        vector.append(max(res[13]))
+        vector.append(sum(res[13]))
+        vector.append(statistics.median(res[13]))
+        vector.append(statistics.mean(res[13]))
+        vector.append(moment(res[13], moment=2))
+        vector.append(moment(res[13], moment=3))
+        vector.append(moment(res[13], moment=4))
+        vector.append(min(res[14]))
+        vector.append(max(res[14]))
+        vector.append(sum(res[14]))
+        vector.append(statistics.median(res[14]))
+        vector.append(statistics.mean(res[14]))
+        vector.append(moment(res[14], moment=2))
+        vector.append(moment(res[14], moment=3))
+        vector.append(moment(res[14], moment=4))
+        vector.append(min(res[15]))
+        vector.append(max(res[15]))
+        vector.append(sum(res[15]))
+        vector.append(statistics.median(res[15]))
+        vector.append(statistics.mean(res[15]))
+        vector.append(moment(res[15], moment=2))
+        vector.append(moment(res[15], moment=3))
+        vector.append(moment(res[15], moment=4))
+    else:
+        vector.extend([0]*128)
+    # in
+    cur.execute('''DROP TABLE IF EXISTS AddrList;''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS AddrList (
+                     addr INTEGER PRIMARY KEY);''')
+    conn.commit()
+    cur.execute('BEGIN TRANSACTION')
+    for addr in i:
+        cur.execute('''INSERT OR IGNORE INTO AddrList (
+                         addr) VALUES (
+                         ?);''', (addr,))
+    cur.execute('COMMIT TRANSACTION')
+    conn.commit()
+    cur.execute('''SELECT DBSERVICE.Feature.cnttx, DBSERVICE.Feature.cnttxin, DBSERVICE.Feature.cnttxout,
+                          DBSERVICE.Feature.btc, DBSERVICE.Feature.btcin, DBSERVICE.Feature.btcout,
+                          DBSERVICE.Feature.cntuse, DBSERVICE.Feature.cntusein, DBSERVICE.Feature.cntuseout,
+                          DBSERVICE.Feature.age, DBSERVICE.Feature.agein, DBSERVICE.Feature.ageout,
+                          DBSERVICE.Feature.addrtypep2pkh, DBSERVICE.Feature.addrtypep2sh,
+                          DBSERVICE.Feature.addrtypebech32, DBSERVICE.Feature.addrtypeother
+                   FROM AddrList
+                   INNER JOIN DBSERVICE.Feature ON DBSERVICE.Feature.addr = AddrList.addr;''')
+    res = pd.DataFrame(cur.fetchall())
+    if len(res) > 0:
+        vector.append(min(res[0]))
+        vector.append(max(res[0]))
+        vector.append(sum(res[0]))
+        vector.append(statistics.median(res[0]))
+        vector.append(statistics.mean(res[0]))
+        vector.append(moment(res[0], moment=2))
+        vector.append(moment(res[0], moment=3))
+        vector.append(moment(res[0], moment=4))
+        vector.append(min(res[1]))
+        vector.append(max(res[1]))
+        vector.append(sum(res[1]))
+        vector.append(statistics.median(res[1]))
+        vector.append(statistics.mean(res[1]))
+        vector.append(moment(res[1], moment=2))
+        vector.append(moment(res[1], moment=3))
+        vector.append(moment(res[1], moment=4))
+        vector.append(min(res[2]))
+        vector.append(max(res[2]))
+        vector.append(sum(res[2]))
+        vector.append(statistics.median(res[2]))
+        vector.append(statistics.mean(res[2]))
+        vector.append(moment(res[2], moment=2))
+        vector.append(moment(res[2], moment=3))
+        vector.append(moment(res[2], moment=4))
+        vector.append(min(res[3]))
+        vector.append(max(res[3]))
+        vector.append(sum(res[3]))
+        vector.append(statistics.median(res[3]))
+        vector.append(statistics.mean(res[3]))
+        vector.append(moment(res[3], moment=2))
+        vector.append(moment(res[3], moment=3))
+        vector.append(moment(res[3], moment=4))
+        vector.append(min(res[4]))
+        vector.append(max(res[4]))
+        vector.append(sum(res[4]))
+        vector.append(statistics.median(res[4]))
+        vector.append(statistics.mean(res[4]))
+        vector.append(moment(res[4], moment=2))
+        vector.append(moment(res[4], moment=3))
+        vector.append(moment(res[4], moment=4))
+        vector.append(min(res[5]))
+        vector.append(max(res[5]))
+        vector.append(sum(res[5]))
+        vector.append(statistics.median(res[5]))
+        vector.append(statistics.mean(res[5]))
+        vector.append(moment(res[5], moment=2))
+        vector.append(moment(res[5], moment=3))
+        vector.append(moment(res[5], moment=4))
+        vector.append(min(res[6]))
+        vector.append(max(res[6]))
+        vector.append(sum(res[6]))
+        vector.append(statistics.median(res[6]))
+        vector.append(statistics.mean(res[6]))
+        vector.append(moment(res[6], moment=2))
+        vector.append(moment(res[6], moment=3))
+        vector.append(moment(res[6], moment=4))
+        vector.append(min(res[7]))
+        vector.append(max(res[7]))
+        vector.append(sum(res[7]))
+        vector.append(statistics.median(res[7]))
+        vector.append(statistics.mean(res[7]))
+        vector.append(moment(res[7], moment=2))
+        vector.append(moment(res[7], moment=3))
+        vector.append(moment(res[7], moment=4))
+        vector.append(min(res[8]))
+        vector.append(max(res[8]))
+        vector.append(sum(res[8]))
+        vector.append(statistics.median(res[8]))
+        vector.append(statistics.mean(res[8]))
+        vector.append(moment(res[8], moment=2))
+        vector.append(moment(res[8], moment=3))
+        vector.append(moment(res[8], moment=4))
+        vector.append(min(res[9]))
+        vector.append(max(res[9]))
+        vector.append(sum(res[9]))
+        vector.append(statistics.median(res[9]))
+        vector.append(statistics.mean(res[9]))
+        vector.append(moment(res[9], moment=2))
+        vector.append(moment(res[9], moment=3))
+        vector.append(moment(res[9], moment=4))
+        vector.append(min(res[10]))
+        vector.append(max(res[10]))
+        vector.append(sum(res[10]))
+        vector.append(statistics.median(res[10]))
+        vector.append(statistics.mean(res[10]))
+        vector.append(moment(res[10], moment=2))
+        vector.append(moment(res[10], moment=3))
+        vector.append(moment(res[10], moment=4))
+        vector.append(min(res[11]))
+        vector.append(max(res[11]))
+        vector.append(sum(res[11]))
+        vector.append(statistics.median(res[11]))
+        vector.append(statistics.mean(res[11]))
+        vector.append(moment(res[11], moment=2))
+        vector.append(moment(res[11], moment=3))
+        vector.append(moment(res[11], moment=4))
+        vector.append(min(res[12]))
+        vector.append(max(res[12]))
+        vector.append(sum(res[12]))
+        vector.append(statistics.median(res[12]))
+        vector.append(statistics.mean(res[12]))
+        vector.append(moment(res[12], moment=2))
+        vector.append(moment(res[12], moment=3))
+        vector.append(moment(res[12], moment=4))
+        vector.append(min(res[13]))
+        vector.append(max(res[13]))
+        vector.append(sum(res[13]))
+        vector.append(statistics.median(res[13]))
+        vector.append(statistics.mean(res[13]))
+        vector.append(moment(res[13], moment=2))
+        vector.append(moment(res[13], moment=3))
+        vector.append(moment(res[13], moment=4))
+        vector.append(min(res[14]))
+        vector.append(max(res[14]))
+        vector.append(sum(res[14]))
+        vector.append(statistics.median(res[14]))
+        vector.append(statistics.mean(res[14]))
+        vector.append(moment(res[14], moment=2))
+        vector.append(moment(res[14], moment=3))
+        vector.append(moment(res[14], moment=4))
+        vector.append(min(res[15]))
+        vector.append(max(res[15]))
+        vector.append(sum(res[15]))
+        vector.append(statistics.median(res[15]))
+        vector.append(statistics.mean(res[15]))
+        vector.append(moment(res[15], moment=2))
+        vector.append(moment(res[15], moment=3))
+        vector.append(moment(res[15], moment=4))
+    else:
+        vector.extend([0]*128)
+    # out
+    cur.execute('''DROP TABLE IF EXISTS AddrList;''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS AddrList (
+                     addr INTEGER PRIMARY KEY);''')
+    conn.commit()
+    cur.execute('BEGIN TRANSACTION')
+    for addr in o:
+        cur.execute('''INSERT OR IGNORE INTO AddrList (
+                         addr) VALUES (
+                         ?);''', (addr,))
+    cur.execute('COMMIT TRANSACTION')
+    conn.commit()
+    cur.execute('''SELECT DBSERVICE.Feature.cnttx, DBSERVICE.Feature.cnttxin, DBSERVICE.Feature.cnttxout,
+                          DBSERVICE.Feature.btc, DBSERVICE.Feature.btcin, DBSERVICE.Feature.btcout,
+                          DBSERVICE.Feature.cntuse, DBSERVICE.Feature.cntusein, DBSERVICE.Feature.cntuseout,
+                          DBSERVICE.Feature.age, DBSERVICE.Feature.agein, DBSERVICE.Feature.ageout,
+                          DBSERVICE.Feature.addrtypep2pkh, DBSERVICE.Feature.addrtypep2sh,
+                          DBSERVICE.Feature.addrtypebech32, DBSERVICE.Feature.addrtypeother
+                   FROM AddrList
+                   INNER JOIN DBSERVICE.Feature ON DBSERVICE.Feature.addr = AddrList.addr;''')
+    res = pd.DataFrame(cur.fetchall())
+    if len(res) > 0:
+        vector.append(min(res[0]))
+        vector.append(max(res[0]))
+        vector.append(sum(res[0]))
+        vector.append(statistics.median(res[0]))
+        vector.append(statistics.mean(res[0]))
+        vector.append(moment(res[0], moment=2))
+        vector.append(moment(res[0], moment=3))
+        vector.append(moment(res[0], moment=4))
+        vector.append(min(res[1]))
+        vector.append(max(res[1]))
+        vector.append(sum(res[1]))
+        vector.append(statistics.median(res[1]))
+        vector.append(statistics.mean(res[1]))
+        vector.append(moment(res[1], moment=2))
+        vector.append(moment(res[1], moment=3))
+        vector.append(moment(res[1], moment=4))
+        vector.append(min(res[2]))
+        vector.append(max(res[2]))
+        vector.append(sum(res[2]))
+        vector.append(statistics.median(res[2]))
+        vector.append(statistics.mean(res[2]))
+        vector.append(moment(res[2], moment=2))
+        vector.append(moment(res[2], moment=3))
+        vector.append(moment(res[2], moment=4))
+        vector.append(min(res[3]))
+        vector.append(max(res[3]))
+        vector.append(sum(res[3]))
+        vector.append(statistics.median(res[3]))
+        vector.append(statistics.mean(res[3]))
+        vector.append(moment(res[3], moment=2))
+        vector.append(moment(res[3], moment=3))
+        vector.append(moment(res[3], moment=4))
+        vector.append(min(res[4]))
+        vector.append(max(res[4]))
+        vector.append(sum(res[4]))
+        vector.append(statistics.median(res[4]))
+        vector.append(statistics.mean(res[4]))
+        vector.append(moment(res[4], moment=2))
+        vector.append(moment(res[4], moment=3))
+        vector.append(moment(res[4], moment=4))
+        vector.append(min(res[5]))
+        vector.append(max(res[5]))
+        vector.append(sum(res[5]))
+        vector.append(statistics.median(res[5]))
+        vector.append(statistics.mean(res[5]))
+        vector.append(moment(res[5], moment=2))
+        vector.append(moment(res[5], moment=3))
+        vector.append(moment(res[5], moment=4))
+        vector.append(min(res[6]))
+        vector.append(max(res[6]))
+        vector.append(sum(res[6]))
+        vector.append(statistics.median(res[6]))
+        vector.append(statistics.mean(res[6]))
+        vector.append(moment(res[6], moment=2))
+        vector.append(moment(res[6], moment=3))
+        vector.append(moment(res[6], moment=4))
+        vector.append(min(res[7]))
+        vector.append(max(res[7]))
+        vector.append(sum(res[7]))
+        vector.append(statistics.median(res[7]))
+        vector.append(statistics.mean(res[7]))
+        vector.append(moment(res[7], moment=2))
+        vector.append(moment(res[7], moment=3))
+        vector.append(moment(res[7], moment=4))
+        vector.append(min(res[8]))
+        vector.append(max(res[8]))
+        vector.append(sum(res[8]))
+        vector.append(statistics.median(res[8]))
+        vector.append(statistics.mean(res[8]))
+        vector.append(moment(res[8], moment=2))
+        vector.append(moment(res[8], moment=3))
+        vector.append(moment(res[8], moment=4))
+        vector.append(min(res[9]))
+        vector.append(max(res[9]))
+        vector.append(sum(res[9]))
+        vector.append(statistics.median(res[9]))
+        vector.append(statistics.mean(res[9]))
+        vector.append(moment(res[9], moment=2))
+        vector.append(moment(res[9], moment=3))
+        vector.append(moment(res[9], moment=4))
+        vector.append(min(res[10]))
+        vector.append(max(res[10]))
+        vector.append(sum(res[10]))
+        vector.append(statistics.median(res[10]))
+        vector.append(statistics.mean(res[10]))
+        vector.append(moment(res[10], moment=2))
+        vector.append(moment(res[10], moment=3))
+        vector.append(moment(res[10], moment=4))
+        vector.append(min(res[11]))
+        vector.append(max(res[11]))
+        vector.append(sum(res[11]))
+        vector.append(statistics.median(res[11]))
+        vector.append(statistics.mean(res[11]))
+        vector.append(moment(res[11], moment=2))
+        vector.append(moment(res[11], moment=3))
+        vector.append(moment(res[11], moment=4))
+        vector.append(min(res[12]))
+        vector.append(max(res[12]))
+        vector.append(sum(res[12]))
+        vector.append(statistics.median(res[12]))
+        vector.append(statistics.mean(res[12]))
+        vector.append(moment(res[12], moment=2))
+        vector.append(moment(res[12], moment=3))
+        vector.append(moment(res[12], moment=4))
+        vector.append(min(res[13]))
+        vector.append(max(res[13]))
+        vector.append(sum(res[13]))
+        vector.append(statistics.median(res[13]))
+        vector.append(statistics.mean(res[13]))
+        vector.append(moment(res[13], moment=2))
+        vector.append(moment(res[13], moment=3))
+        vector.append(moment(res[13], moment=4))
+        vector.append(min(res[14]))
+        vector.append(max(res[14]))
+        vector.append(sum(res[14]))
+        vector.append(statistics.median(res[14]))
+        vector.append(statistics.mean(res[14]))
+        vector.append(moment(res[14], moment=2))
+        vector.append(moment(res[14], moment=3))
+        vector.append(moment(res[14], moment=4))
+        vector.append(min(res[15]))
+        vector.append(max(res[15]))
+        vector.append(sum(res[15]))
+        vector.append(statistics.median(res[15]))
+        vector.append(statistics.mean(res[15]))
+        vector.append(moment(res[15], moment=2))
+        vector.append(moment(res[15], moment=3))
+        vector.append(moment(res[15], moment=4))
+    else:
+        vector.extend([0]*128)
+
+    return vector
 
 
 def main():
