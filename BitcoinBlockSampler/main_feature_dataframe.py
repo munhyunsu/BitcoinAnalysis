@@ -681,8 +681,8 @@ def main():
         addrid = cur.fetchone()[0]
         vector = list(row) + get_feature_vector(conn, cur, addrid)
         data.append(vector)
-        if DEBUG and index%1000:
-            print(f'[{int(STIME-time.time())}] {index} / {df_len} ({index/df_len:.2f}) Done')
+        if DEBUG and index%100 == 0:
+            print(f'[{int(time.time()-STIME)}] {index} / {df_len} ({index/df_len:.2f}) Done')
     df_output = pd.DataFrame(data, columns=columns)
     df_output.to_pickle(FLAGS.output)
 
