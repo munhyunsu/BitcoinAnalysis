@@ -704,51 +704,9 @@ def main():
         vector = list(row) + get_feature_vector(conn, cur, addrid)
         data.append(vector)
         if DEBUG and index%1000:
-            print(f'[{int(STIME-time.time())}] {index} / {df_len)')
+            print(f'[{int(STIME-time.time())}] {index} / {df_len} ({index/df_len:.2f}) Done')
     df_output = pd.DataFrame(data, columns=columns)
     df_output.to_pickle(FLAGS.output)
-
-    # Multiprocessing
-    cur.execute('''SELECT MAX(Feature.addr)
-                   FROM Feature;''')
-    try:
-        start_addrid = cur.fetchone()[0] + 1
-    except sqlite3.Error:
-        start_addid = 1
-    cur.execute('''SELECT MAX(DBINDEX.AddrID.id)
-                   FROM DBINDEX.AddrID;''')
-    end_addrid = cur.fetchone()[0] + 1
-    cur.execute('''BEGIN TRANSACTION;''')
-    if DEBUG:
-        print(f'From {start_addrid} To {end_addrid}')
-    for addr in range(start_addrid, end_addrid):
-        result = get_feature(conn, cur, addr)
-        cur.execute('''INSERT OR IGNORE INTO Feature (
-                       addr, updatetime,
-                       cnttx, cnttxin, cnttxout,
-                       btc, btcin, btcout,
-                       cntuse, cntusein, cntuseout,
-                       age, agein, ageout,
-                       addrtypep2pkh, addrtypep2sh, addrtypebech32, addrtypeother) VALUES (
-                       ?, ?,
-                       ?, ?, ?,
-                       ?, ?, ?,
-                       ?, ?, ?,
-                       ?, ?, ?,
-                       ?, ?, ?, ?);''', (result['addr'], result['updatetime'],
-                                         result['cnttx'], result['cnttxin'], result['cnttxout'],
-                                         result['btc'], result['btcin'], result['btcout'],
-                                         result['cntuse'], result['cntusein'], result['cntuseout'],
-                                         result['age'], result['agein'], result['ageout'],
-                                         result['addrtypep2pkh'], result['addrtypep2sh'], result['addrtypebech32'], result['addrtypeother']))
-        if addr % 100000 == 0:
-            cur.execute('''COMMIT TRANSACTION;''')
-            cur.execute('''BEGIN TRANSACTION;''')
-            conn.commit()
-            if DEBUG:
-                print(f'[{int(time.time()-STIME)}] {addr} / {end_addrid} ({addr/end_addrid:.2f}) Done')
-    cur.execute('''COMMIT TRANSACTION;''')
-    conn.commit()
 
     conn.close()
 
