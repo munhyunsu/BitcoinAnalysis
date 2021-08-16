@@ -672,6 +672,7 @@ def main():
     df_len = len(df)
     columns = list(df.columns) + FEATURES
 
+    # TODO(LuHa): More efficient method needed
     data = []
     for index, row in df.iterrows():
         # Must included "Address" header field
