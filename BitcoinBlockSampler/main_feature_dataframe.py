@@ -196,14 +196,14 @@ def get_feature_vector(conn, cur, addrid):
     vector = [addrid]
     total, mi, in1, out1 = get_associate_addr(conn, cur, addrid)
     # target
-    cur.execute('''SELECT cnttx, cnttxin, cnttxout,
-                          btc, btcin, btcout,
-                          cntuse, cntusein, cntuseout,
-                          age, agein, ageout,
-                          addrtypep2pkh, addrtypep2sh,
-                         addrtypebech32, addrtypeother
-                   FROM Feature
-                   WHERE Feature.addr = ?;''', (addrid,))
+    cur.execute('''SELECT DBSERVICE.Feature.cnttx, DBSERVICE.Feature.cnttxin, DBSERVICE.Feature.cnttxout,
+                          DBSERVICE.Feature.btc, DBSERVICE.Feature.btcin, DBSERVICE.Feature.btcout,
+                          DBSERVICE.Feature.cntuse, DBSERVICE.Feature.cntusein, DBSERVICE.Feature.cntuseout,
+                          DBSERVICE.Feature.age, DBSERVICE.Feature.agein, DBSERVICE.Feature.ageout,
+                          DBSERVICE.Feature.addrtypep2pkh, DBSERVICE.Feature.addrtypep2sh,
+                          DBSERVICE.Feature.addrtypebech32, DBSERVICE.Feature.addrtypeother
+                   FROM DBSERVICE.Feature
+                   WHERE DBSERVICE.Feature.addr = ?;''', (addrid,))
     res = cur.fetchone()
     vector.append(res[0])
     vector.append(res[1])
