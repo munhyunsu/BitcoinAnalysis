@@ -741,10 +741,10 @@ if __name__ == '__main__':
     FLAGS.core = os.path.abspath(os.path.expanduser(FLAGS.core))
     FLAGS.util = os.path.abspath(os.path.expanduser(FLAGS.util))
     FLAGS.service = os.path.abspath(os.path.expanduser(FLAGS.service))
-    FLAGS.target = os.path.abspath(os.path.expanduser(FLAGS.target))
+    FLAGS.input = os.path.abspath(os.path.expanduser(FLAGS.input))
     if FLAGS.output is None:
         now = datetime.datetime.now().strftime('%Y-%m-%d')
-        FLAGS.output = f'{os.path.splitext(FLAGS.target)[0]}_{now}.pkl'
+        FLAGS.output = f'{os.path.splitext(FLAGS.input)[0]}_{now}.pkl'
     FLAGS.output = os.path.abspath(os.path.expanduser(FLAGS.output))
 
     DEBUG = FLAGS.debug
