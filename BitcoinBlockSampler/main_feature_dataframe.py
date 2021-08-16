@@ -730,7 +730,7 @@ if __name__ == '__main__':
                         help='The path for util database')
     parser.add_argument('--service', type=str, required=True,
                         help='The path for service database')
-    parser.add_argument('--target', type=str, required=True,
+    parser.add_argument('--input', type=str, required=True,
                         help='The target csv file include "Address" field')
     parser.add_argument('--output', type=str,
                         help='The feature dataframe output')
