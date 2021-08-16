@@ -690,7 +690,7 @@ def main():
                              FLAGS.util, FLAGS.service)
     initialize_database(conn, cur)
 
-    df = pd.reav_csv(FLAGS.input)
+    df = pd.read_csv(FLAGS.input)
     df_len = len(df)
     columns = list(df.columns) + FEATURES
 
