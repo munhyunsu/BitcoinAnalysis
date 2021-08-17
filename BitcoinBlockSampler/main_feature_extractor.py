@@ -275,6 +275,7 @@ def main():
     cur.execute('''COMMIT TRANSACTION;''')
     conn.commit()
 
+    # Sometimes, it miss some addresses
     if DEBUG:
         cur.execute('''SELECT COUNT(DBINDEX.AddrID.id)
                        FROM DBINDEX.AddrID
