@@ -31,7 +31,7 @@ def initialize_database(conn, cur):
     global STIME
     global DEBUG
     if DEBUG:
-        print(f'[{int(time.time()-STIME)}] Initializing cache database')
+        print(f'[{int(time.time()-STIME)}] Initializing feature database')
     cur.execute('''PRAGMA journal_mode = NORMAL;''')
     cur.execute('''PRAGMA synchronous = WAL;''')
     conn.commit()
@@ -60,7 +60,7 @@ def initialize_database(conn, cur):
                    ON Feature(updatetime);''')
     conn.commit()
     if DEBUG:
-        print(f'[{int(time.time()-STIME)}] Initialized cache database')
+        print(f'[{int(time.time()-STIME)}] Initialized feature database')
 
 
 def get_feature(conn, cur, addr):
