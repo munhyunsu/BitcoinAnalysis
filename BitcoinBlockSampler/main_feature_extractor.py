@@ -243,8 +243,6 @@ def main():
     cur.execute('''BEGIN TRANSACTION;''')
     if DEBUG:
         print(f'From {start_addrid} To {end_addrid}')
-    ## TODO(LuHa): Change for to while
-    ##             and manage multi-input addresses
     for addr in range(start_addrid, end_addrid):
         result = get_feature(conn, cur, addr)
         cur.execute('''INSERT OR IGNORE INTO Feature (
