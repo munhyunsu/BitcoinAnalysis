@@ -675,6 +675,8 @@ def main():
     # TODO(LuHa): More efficient method needed
     #             Manage multiinput addresses for improve
     data = []
+    # Change for to while loop
+    # memory efficiency calculation needed
     for index, row in df.iterrows():
         # Must included "Address" header field
         addr = row['Address']
