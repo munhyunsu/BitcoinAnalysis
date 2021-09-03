@@ -676,14 +676,15 @@ def main():
     #             Manage multiinput addresses for improve
     ## Make list of targe address, address_id, and etc.
     targets = set()
-    addrids = [] # for merge df
+    addrid_list = [] # for merge df
     for index, row in df.iterrows():
         addr = row['Address']
         cur.execute('''SELECT DBINDEX.AddrID.id FROM DBINDEX.AddrID
                        WHERE DBINDEX.AddrID.addr = ?;''', (addr,))
         addrid = cur.fetchone()[0]
-        addrids.append(addrid)
+        addrid_list.append(addrid)
         targets.add(addrid)
+    df['AddressID'] = addrid_list
     data = []
     # Change for to while loop
     # memory efficiency calculation needed
