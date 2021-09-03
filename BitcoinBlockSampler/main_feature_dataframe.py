@@ -686,6 +686,11 @@ def main():
         targets.add(addrid)
     df['AddressID'] = addrid_list
     data = []
+    while len(targets) > 0:
+        addrid = targets.pop() # Set has add, pop method
+        vector = [addrid] + get_feature_vector(conn, cur, addrid)
+        data.append(vector)
+    data = []
     # Change for to while loop
     # memory efficiency calculation needed
     for index, row in df.iterrows():
