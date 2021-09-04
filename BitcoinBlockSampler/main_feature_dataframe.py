@@ -670,7 +670,7 @@ def main():
 
     df = pd.read_csv(FLAGS.input)
     df_len = len(df)
-    columns = list(df.columns) + FEATURES
+    columns = FEATURES
 
     # TODO(LuHa): More efficient method needed
     #             Manage multiinput addresses for improve
@@ -686,25 +686,16 @@ def main():
         targets.add(addrid)
     df['AddressID'] = addrid_list
     data = []
-    while len(targets) > 0:
-        addrid = targets.pop() # Set has add, pop method
-        vector = [addrid] + get_feature_vector(conn, cur, addrid)
-        data.append(vector)
-    data = []
     # Change for to while loop
     # memory efficiency calculation needed
-    for index, row in df.iterrows():
-        # Must included "Address" header field
-        addr = row['Address']
-        cur.execute('''SELECT DBINDEX.AddrID.id FROM DBINDEX.AddrID 
-                       WHERE DBINDEX.AddrID.addr = ?;''', (addr,))
-        addrid = cur.fetchone()[0]
-        vector = list(row) + get_feature_vector(conn, cur, addrid)
+    while len(targets) > 0:
+        addrid = targets.pop() # Set has add, pop method
+        vector = get_feature_vector(conn, cur, addrid)
         data.append(vector)
         if DEBUG and index%100 == 0:
             print(f'[{int(time.time()-STIME)}] {index} / {df_len} ({index/df_len:.2f}) Done')
-    df_output = pd.DataFrame(data, columns=columns)
-    df_output.to_pickle(FLAGS.output)
+    fdf = pd.DataFrame(data, columns=FEATURES)
+    #df_output.to_pickle(FLAGS.output)
 
     conn.close()
 
