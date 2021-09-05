@@ -171,6 +171,15 @@ def get_associate_addr(conn, cur, addr):
 
 
 def get_feature_vector(conn, cur, addrid):
+    # switch function by addrid type
+    pass
+
+
+def _get_feature_vector_int(conn, cur, addrid):
+    pass
+
+
+def _get_feature_vector_list(conn, cur, addrid):
     vector = [addrid]
     total, mi, in1, out1 = get_associate_addr(conn, cur, addrid)
     # target
