@@ -179,12 +179,7 @@ def get_feature_vector(conn, cur, addrid):
 
 
 def _get_feature_vector_int(conn, cur, addrid):
-    pass
-
-
-def _get_feature_vector_list(conn, cur, addrid):
-    vector = [addrid]
-    total, mi, in1, out1 = get_associate_addr(conn, cur, addrid)
+    vector = []
     # target
     cur.execute('''SELECT DBSERVICE.Feature.cnttx, DBSERVICE.Feature.cnttxin, DBSERVICE.Feature.cnttxout,
                           DBSERVICE.Feature.btc, DBSERVICE.Feature.btcin, DBSERVICE.Feature.btcout,
@@ -211,13 +206,18 @@ def _get_feature_vector_list(conn, cur, addrid):
     vector.append(res[13])
     vector.append(res[14])
     vector.append(res[15])
-    # mi
+
+    return vector
+
+
+def _get_feature_vector_list(conn, cur, addrid):
+    vector = []
     cur.execute('''DROP TABLE IF EXISTS AddrList;''')
     cur.execute('''CREATE TABLE IF NOT EXISTS AddrList (
                      addr INTEGER PRIMARY KEY);''')
     conn.commit()
     cur.execute('BEGIN TRANSACTION')
-    for addr in mi:
+    for addr in addrid:
         cur.execute('''INSERT OR IGNORE INTO AddrList (
                          addr) VALUES (
                          ?);''', (addr,))
@@ -363,6 +363,7 @@ def _get_feature_vector_list(conn, cur, addrid):
         vector.append(moment(res[15], moment=4))
     else:
         vector.extend([0]*128)
+    return vector
     # in
     cur.execute('''DROP TABLE IF EXISTS AddrList;''')
     cur.execute('''CREATE TABLE IF NOT EXISTS AddrList (
