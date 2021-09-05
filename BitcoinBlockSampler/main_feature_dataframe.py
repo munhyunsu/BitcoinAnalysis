@@ -172,7 +172,10 @@ def get_associate_addr(conn, cur, addr):
 
 def get_feature_vector(conn, cur, addrid):
     # switch function by addrid type
-    pass
+    if type(addrid) == int:
+        return _get_feature_vector_int(conn, cur, addrid)
+    elif type(addrid) == list or type(addrid) == set:
+        return _get_feature_vector_list(conn, cur, addrid)
 
 
 def _get_feature_vector_int(conn, cur, addrid):
