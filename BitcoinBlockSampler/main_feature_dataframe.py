@@ -399,14 +399,19 @@ def main():
     while len(targets) > 0:
         addrid = targets.pop() # Set has add, pop method
         total, mi, in1, out1 = get_associate_addr(conn, cur, addrid)
-        target_vector = get_feature_vector(conn, cur, addrid) # target address
+        #target_vector = get_feature_vector(conn, cur, addrid) # target address
         mi_vector = get_feature_vector(conn, cur, mi) # Multi input
         in1_vector = get_feature_vector(conn, cur, in1) # In1
         out1_vector = get_feature_vector(conn, cur, out1) # Out1
-        vector = get_feature_vector(conn, cur, addrid)
-        data.append(vector)
-        if DEBUG and index%100 == 0:
-            print(f'[{int(time.time()-STIME)}] {index} / {df_len} ({index/df_len:.2f}) Done')
+        for df_addr in targets.intersection(mi):
+            vector = [df_addr]
+            vector.extend(get_feature_vector(conn, cur, df_addr))
+            vector.extend(mi_vector)
+            vector.extend(in1_vector)
+            vector.extend(out1_vector)
+            data.append(vector)
+        if DEBUG:
+            print(f'[{int(time.time()-STIME)}] {len(targets)} of {df_len} left!')
     fdf = pd.DataFrame(data, columns=FEATURES)
     #df_output.to_pickle(FLAGS.output)
 
