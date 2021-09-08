@@ -378,7 +378,6 @@ def main():
 
     df = pd.read_csv(FLAGS.input)
     df_len = len(df)
-    columns = FEATURES
 
     targets = set()
     addrid_list = [] # for merge df
