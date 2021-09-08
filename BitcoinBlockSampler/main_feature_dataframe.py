@@ -380,9 +380,6 @@ def main():
     df_len = len(df)
     columns = FEATURES
 
-    # TODO(LuHa): More efficient method needed
-    #             Manage multiinput addresses for improve
-    ## Make list of targe address, address_id, and etc.
     targets = set()
     addrid_list = [] # for merge df
     for index, row in df.iterrows():
@@ -394,8 +391,6 @@ def main():
         targets.add(addrid)
     df['AddressID'] = addrid_list
     data = []
-    # Change for to while loop
-    # memory efficiency calculation needed
     while len(targets) > 0:
         addrid = targets.pop() # Set has add, pop method
         total, mi, in1, out1 = get_associate_addr(conn, cur, addrid)
