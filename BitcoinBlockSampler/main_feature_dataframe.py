@@ -404,6 +404,7 @@ def main():
         in1_vector = get_feature_vector(conn, cur, in1) # In1
         out1_vector = get_feature_vector(conn, cur, out1) # Out1
         for df_addr in targets.intersection(mi):
+            targets.remove(df_addr)
             vector = [df_addr]
             vector.extend(get_feature_vector(conn, cur, df_addr))
             vector.extend(mi_vector)
@@ -413,7 +414,8 @@ def main():
         if DEBUG:
             print(f'[{int(time.time()-STIME)}] {len(targets)} of {df_len} left!')
     fdf = pd.DataFrame(data, columns=FEATURES)
-    #df_output.to_pickle(FLAGS.output)
+    new_df = df.merge(fdf, on='AddressID')
+    new_df.to_pickle(FLAGS.output)
 
     conn.close()
 
