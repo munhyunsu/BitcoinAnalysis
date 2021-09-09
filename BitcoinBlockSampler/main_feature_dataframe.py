@@ -393,7 +393,6 @@ def main():
     while len(targets) > 0:
         addrid = targets.pop() # Set has add, pop method
         total, mi, in1, out1 = get_associate_addr(conn, cur, addrid)
-        #target_vector = get_feature_vector(conn, cur, addrid) # target address
         mi_vector = get_feature_vector(conn, cur, mi) # Multi input
         in1_vector = get_feature_vector(conn, cur, in1) # In1
         out1_vector = get_feature_vector(conn, cur, out1) # Out1
