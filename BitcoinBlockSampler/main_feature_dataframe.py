@@ -369,8 +369,8 @@ def _get_feature_vector_list(conn, cur, addrid):
 
 def main():
     if DEBUG:
-        print(f'Parsed arguments {FLAGS}')
-        print(f'Unparsed arguments {_}')
+        print(f'[{int(time.time()-STIME)}] Parsed arguments {FLAGS}')
+        print(f'[{int(time.time()-STIME)}] Unparsed arguments {_}')
 
     conn, cur = prepare_conn(FLAGS.index, FLAGS.core, 
                              FLAGS.util, FLAGS.service)
