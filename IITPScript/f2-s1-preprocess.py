@@ -4,6 +4,14 @@ import time
 FLAGS = _ = None
 DEBUG = False
 STIME = time.time()
+FEATURES = ['Tx',
+            'TxIn', 'TxInP2PKH', 'TxInP2SH', 'TxInBech32',
+            'TxInm1', 'TxInm2', 'TxInm3', 'TxInm4',
+            'TxInBTC', 'TxInBTCm1', 'TxInBTCm2', 'TxInBTCm3', 'TxInBTCm4',
+            'TxOut', 'TxOutP2PKH', 'TxOutP2SH', 'TxOutBech32',
+            'TxOutm1', 'TxOutm2', 'TxOutm3', 'TxOutm4',
+            'TxOutBTC', 'TxOutBTCm1', 'TxOutBTCm2', 'TxOutBTCm3', 'TxOutBTCm4',
+           ]
 
 
 def prepare_conn(indexpath, corepath, utilpath, servicepath):
@@ -23,6 +31,67 @@ def prepare_conn(indexpath, corepath, utilpath, servicepath):
     return conn, cur
 
 
+def get_feature(conn, cur, tx):
+    vector = [tx]
+    adict = {'P2PKH': 0, 'P2SH': 0, 'Bech32': 0}
+    abtc = []
+    for res in cur.execute('''SELECT DBINDEX.AddrID.addr, DBCORE.TxOut.btc
+                              FROM DBCORE.TxIn
+                              INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.ptx
+                                                     AND DBCORE.TxOut.n = DBCORE.TxIn.pn
+                              INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBCORE.TxOut.addr
+                              WHERE DBCORE.TxIn.tx = ?;''', (tx,)):
+        if result[0].startswith('1'):
+            adict['P2PKH'] += 1
+        elif result[0].startswith('3'):
+            adict['P2SH'] += 1
+        elif result[0].startswith('bc1'):
+            adict['Bech32'] += 1
+        abtc.append(res[1])
+    vector.append(sum(adict.values()))
+    vector.append(adict['P2PKH'])
+    vector.append(adict['P2SH'])
+    vector.append(adict['Bech32'])
+    vector.append(statistics.mean(adict.values()))
+    vector.append(moment(list(adict.values()), moment=2))
+    vector.append(moment(list(adict.values()), moment=3))
+    vector.append(moment(list(adict.values()), moment=4))
+    vector.append(sum(abtc))
+    vector.append(statistics.mean(abtc))
+    vector.append(moment(abtc, moment=2))
+    vector.append(moment(abtc, moment=3))
+    vector.append(moment(abtc, moment=4))
+
+    adict = {'P2PKH': 0, 'P2SH': 0, 'Bech32': 0}
+    abtc = []
+    for res in cur.execute('''SELECT DBINDEX.AddrID.addr, DBCORE.TxOut.btc
+                              FROM DBCORE.TxOut
+                              INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBCORE.TxOut.addr
+                              WHERE DBCORE.TxOut.tx = ?;''', (tx,)):
+        if result[0].startswith('1'):
+            adict['P2PKH'] += 1
+        elif result[0].startswith('3'):
+            adict['P2SH'] += 1
+        elif result[0].startswith('bc1'):
+            adict['Bech32'] += 1
+        abtc.append(res[1])
+    vector.append(sum(adict.values()))
+    vector.append(adict['P2PKH'])
+    vector.append(adict['P2SH'])
+    vector.append(adict['Bech32'])
+    vector.append(statistics.mean(adict.values()))
+    vector.append(moment(list(adict.values()), moment=2))
+    vector.append(moment(list(adict.values()), moment=3))
+    vector.append(moment(list(adict.values()), moment=4))
+    vector.append(sum(abtc))
+    vector.append(statistics.mean(abtc))
+    vector.append(moment(abtc, moment=2))
+    vector.append(moment(abtc, moment=3))
+    vector.append(moment(abtc, moment=4))
+
+    return vector
+
+
 def main():
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Parsed arguments {FLAGS}')
@@ -34,17 +103,32 @@ def main():
     # Tx
     df = pd.read_csv(FLAGS.input)
     df_len = len(df)
-    txs = []
+    columns = list(df.columns) + ['Tx'] + FEATURES
+
     for index, row in df.iterrows():
-        txid = row['txid']
+        txid = row['TxID']
         cur.execute('''SELECT DBINDEX.TxID.id
                        FROM DBINDEX.TxID
                        WHERE DBINDEX.TxID.txid = ?;''', (txid,))
         tx = cur.fetchone()[0]
         txs.append(tx)
-    df['tx'] = txs
+    if DEBUG:
+        print(f'[{int(time.time()-STIME)}] TxID to Tx Done!')
+    df['Tx'] = txs
 
+    data = []
+    for index, row in df.iterrows():
+        tx = row['Tx']
+        vector = [tx] + get_feature(conn, cur, tx)
+        data.append(vector)
+        if DEBUG:
+            print(f'[{int(time.time()-STIME)}] {index} / {df_len} ({index/df_len:.2f}) Done!')
+    fdf = pd.DataFrame(data, columns=FEATURES)
 
+    new_df = df.merge(fdf, on='Tx')
+    new_df.to_pickle(FLAGS.output)
+
+    conn.close()
 
 
 if __name__ == '__main__':
@@ -67,7 +151,7 @@ if __name__ == '__main__':
     parser.add_argument('--service', type=str, required=True,
                         help='The path for service database')
     parser.add_argument('--input', type=str, required=True,
-                        help='The target csv file with "txid", "class" field')
+                        help='The target csv file with "TxID", "Class" field')
     parser.add_argument('--output', type=str,
                         help='The feature dataframe output')
 
