@@ -6,10 +6,45 @@ DEBUG = False
 STIME = time.time()
 
 
+def prepare_conn(indexpath, corepath, utilpath, servicepath):
+    global STIME
+    global DEBUG
+    sqlite3.register_adapter(np.int32, int)
+    conn = sqlite3.connect(':memory:')
+    cur = conn.cursor()
+    cur.execute(f'''ATTACH DATABASE '{indexpath}' AS DBINDEX;''')
+    cur.execute(f'''ATTACH DATABASE '{corepath}' AS DBCORE;''')
+    cur.execute(f'''ATTACH DATABASE '{utilpath}' AS DBUTIL;''')
+    cur.execute(f'''ATTACH DATABASE '{servicepath}' AS DBSERVICE;''')
+    conn.commit()
+    if DEBUG:
+        print(f'[{int(time.time()-STIME)}] Prepared database connector and cursor')
+
+    return conn, cur
+
+
 def main():
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Parsed arguments {FLAGS}')
         print(f'[{int(time.time()-STIME)}] Unparsed arguments {_}')
+
+    conn, cur = prepare_conn(FLAGS.index, FLAGS.core, 
+                             FLAGS.util, FLAGS.service)
+
+    # Tx
+    df = pd.read_csv(FLAGS.input)
+    df_len = len(df)
+    txs = []
+    for index, row in df.iterrows():
+        txid = row['txid']
+        cur.execute('''SELECT DBINDEX.TxID.id
+                       FROM DBINDEX.TxID
+                       WHERE DBINDEX.TxID.txid = ?;''', (txid,))
+        tx = cur.fetchone()[0]
+        txs.append(tx)
+    df['tx'] = txs
+
+
 
 
 if __name__ == '__main__':
@@ -32,7 +67,7 @@ if __name__ == '__main__':
     parser.add_argument('--service', type=str, required=True,
                         help='The path for service database')
     parser.add_argument('--input', type=str, required=True,
-                        help='The target csv file with "tx", "class" field')
+                        help='The target csv file with "txid", "class" field')
     parser.add_argument('--output', type=str,
                         help='The feature dataframe output')
 
