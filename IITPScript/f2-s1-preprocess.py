@@ -129,7 +129,7 @@ def main():
         vector = get_feature(conn, cur, tx)
         data.append(vector)
         if DEBUG:
-            print(f'[{int(time.time()-STIME)}] {index} / {df_len} ({index/df_len:.2f}) Done!', end='\r')
+            print(f'[{int(time.time()-STIME)}] {index} / {df_len} ({index/df_len:.2%}) Done!', end='\r')
     fdf = pd.DataFrame(data, columns=FEATURES)
 
     new_df = df.merge(fdf, on='Tx')
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     FLAGS.service = os.path.abspath(os.path.expanduser(FLAGS.service))
     FLAGS.input = os.path.abspath(os.path.expanduser(FLAGS.input))
     if FLAGS.output is None:
-        FLAGS.output = f'f2-dataset.pkl'
+        FLAGS.output = f'f2-features.pkl'
     FLAGS.output = os.path.abspath(os.path.expanduser(FLAGS.output))
 
     DEBUG = FLAGS.debug
