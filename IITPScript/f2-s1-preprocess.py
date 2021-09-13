@@ -47,11 +47,11 @@ def get_feature(conn, cur, tx):
                                                      AND DBCORE.TxOut.n = DBCORE.TxIn.pn
                               INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBCORE.TxOut.addr
                               WHERE DBCORE.TxIn.tx = ?;''', (tx,)):
-        if result[0].startswith('1'):
+        if res[0].startswith('1'):
             adict['P2PKH'] += 1
-        elif result[0].startswith('3'):
+        elif res[0].startswith('3'):
             adict['P2SH'] += 1
-        elif result[0].startswith('bc1'):
+        elif res[0].startswith('bc1'):
             adict['Bech32'] += 1
         abtc.append(res[1])
     vector.append(sum(adict.values()))
@@ -74,11 +74,11 @@ def get_feature(conn, cur, tx):
                               FROM DBCORE.TxOut
                               INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBCORE.TxOut.addr
                               WHERE DBCORE.TxOut.tx = ?;''', (tx,)):
-        if result[0].startswith('1'):
+        if res[0].startswith('1'):
             adict['P2PKH'] += 1
-        elif result[0].startswith('3'):
+        elif res[0].startswith('3'):
             adict['P2SH'] += 1
-        elif result[0].startswith('bc1'):
+        elif res[0].startswith('bc1'):
             adict['Bech32'] += 1
         abtc.append(res[1])
     vector.append(sum(adict.values()))
