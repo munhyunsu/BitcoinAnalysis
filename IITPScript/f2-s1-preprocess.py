@@ -111,6 +111,7 @@ def main():
     df_len = len(df)
     columns = list(df.columns) + ['Tx'] + FEATURES
 
+    txs = []
     for index, row in df.iterrows():
         txid = row['TxID']
         cur.execute('''SELECT DBINDEX.TxID.id
