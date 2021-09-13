@@ -129,7 +129,7 @@ def main():
         vector = [tx] + get_feature(conn, cur, tx)
         data.append(vector)
         if DEBUG:
-            print(f'[{int(time.time()-STIME)}] {index} / {df_len} ({index/df_len:.2f}) Done!')
+            print(f'[{int(time.time()-STIME)}] {index} / {df_len} ({index/df_len:.2f}) Done!', end='\r')
     fdf = pd.DataFrame(data, columns=FEATURES)
 
     new_df = df.merge(fdf, on='Tx')
