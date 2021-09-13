@@ -88,6 +88,56 @@ def get_feature(conn, cur, tx):
     vector.append(moment(abtc, moment=3))
     vector.append(moment(abtc, moment=4))
 
+    sametime_valid = True
+    addrsin = []
+    addrsout = []
+    if sametime_valid:
+        for res in cur.execute('''SELECT DBCORE.TxOut.addr
+                                  FROM DBCORE.TxIn
+                                  INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
+                                         AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+                                  WHERE DBCORE.TxIn.tx = ?;''', (tx,)):
+            addrsin.append(res[0])
+        for res in cur.execute('''SELECT DBCORE.TxOut.addr
+                                  FROM DBCORE.TxOut
+                                  WHERE DBCORE.TxOut.tx = ?;''', (tx,)):
+            addrsout.append(res[0])
+        if len(addrsin) != 1 or len(addrsout) != 1:
+            sametime_valid = False
+    inaddrtxin = []
+    inaddrtxout = []
+    if sametime_valid:
+        for res in cur.execute('''SELECT DBCORE.TxIn.tx
+                                  FROM DBCORE.TxIn
+                                  INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
+                                         AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+                                  WHERE DBCORE.TxOut.addr = ?;''', (addrsin[0],)):
+            inaddrtxin.append(res[0])
+        for res in cur.execute('''SELECT DBCORE.TxOut.tx
+                                  FROM DBCORE.TxOut
+                                  WHERE DBCORE.TxOut.addr = ?;''', (addrsin[0],)):
+            inaddrtxout.append(res[0])
+        if len(inaddrtxin) != 1 or len(inaddrtxout) != 1:
+            sametime_valid = False
+    if sametime_valid:
+        cur.execute('''SELECT DBCORE.BlkTime.unixtime
+                       FROM DBCORE.BlkTime
+                       INNER JOIN DBCORE.BlkTx ON DBCORE.BlkTime.blk = DBCORE.BlkTx.blk
+                       WHERE DBCORE.BlkTx.tx = ?;''', (tx,))
+        unixtime = cur.fetchone()[0]
+        sametimes = []
+        for res in cur.execute('''SELECT DISTINCT DBCORE.TxOut.tx
+                                  FROM DBCORE.TxOut
+                                  INNER JOIN DBCORE.BlkTx ON DBCORE.TxOut.tx = DBCORE.BlkTx.tx
+                                  INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk
+                                  WHERE DBCORE.TxOut.addr = ?
+                                    AND DBCORE.BlkTime.unixtime = ?;''', (addrsout[0], unixtime)):
+            sametimes.append(res[0])
+        sametime = len(sametimes)
+    else:
+        sametime = 1
+    vector.append(sametime)
+
     return vector
 
 
