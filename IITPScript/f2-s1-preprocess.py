@@ -126,7 +126,7 @@ def main():
     data = []
     for index, row in df.iterrows():
         tx = row['Tx']
-        vector = [tx] + get_feature(conn, cur, tx)
+        vector = get_feature(conn, cur, tx)
         data.append(vector)
         if DEBUG:
             print(f'[{int(time.time()-STIME)}] {index} / {df_len} ({index/df_len:.2f}) Done!', end='\r')
