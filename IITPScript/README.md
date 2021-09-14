@@ -6,33 +6,50 @@
 
 - 데이터베이스 구축
 
-- 특징 데이터베이스 생성
+```
+dbv3-index.db
+dbv3-core.db
+dbv3-util.db
+dbv3-service.db
+```
 
 ### 1. 가상자산 취급 업소 식별
 
-1. 학습 / 검증 데이터 준비 (csv)
+1. 전처리
 
-2. 식별 모델 생성
+```bash
+python3 f1-s1-preprocess.py --index dbv3-index.db --core dbv3-core.db --util dbv3-util.db --service dbv3-service.db --input f1-train.csv
+```
 
-- Input: 학습 csv
+2. 학습
 
-- Output: 식별 모델 (scikit-learn)
+```bash
+python3 f1-s2-train.py --input f2-features.pkl
+```
 
-3. 검증 실험
+3. 예측 테스트
 
-- Input: 식별 모델 (scikit-learn), 검증 데이터
+```bash
+python3 f1-s3-test.py --index dbv3-index.db --core dbv3-core.db --util dbv3-util.db --service dbv3-service.db --model f1-model.pkl --input f1-test.csv
+```
 
-- Output: 식별 결과 (csv)
+### 2. 부정거래 식별
 
-4. 검증 결과 데이터 분석
+1. 전처리
 
-### 2. 부정거래 탐지
+```bash
+python3 f2-s1-preprocess.py --index dbv3-index.db --core dbv3-core.db --util dbv3-util.db --service dbv3-service.db --input f2-train.csv
+```
 
-1. 학습 / 검증 데이터 준비 (csv)
+2. 학습
 
-2. 탐지 모델 생성
+```bash
+python3 f2-s2-train.py --input f2-features.pkl
+```
 
-3. 검증 실험
+3. 예측 테스트
 
-4. 검증 결과 데이터 분석
+```bash
+python3 f2-s3-test.py --index dbv3-index.db --core dbv3-core.db --util dbv3-util.db --service dbv3-service.db --model f2-model.pkl --input f2-test.csv
+```
 
