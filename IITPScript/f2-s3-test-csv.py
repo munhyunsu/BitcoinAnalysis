@@ -170,8 +170,6 @@ def main():
     print(f'Accuracy (Illicit class): {len(df[(df["Class"] == df["Predict"]) & (df["Class"] == "Illicit")])/len(df[df["Class"] == "Illicit"]):.2%}')
     
 
-    conn.close()
-
 
 if __name__ == '__main__':
     root_path = os.path.abspath(__file__)
