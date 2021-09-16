@@ -159,7 +159,7 @@ def main():
         tx = row['TxID']
         vector = row[df.columns[3:]]
         vectors.append(vector)
-        if DEBUG
+        if DEBUG:
             print(f'[{int(time.time()-STIME)}] {index} / {df_len} ({index/df_len:.2%}) Loaded!', end='\r')
     print(f'[{int(time.time()-STIME)}] {index} / {df_len} ({index/df_len:.2%}) Loaded!')
     result = clf.predict(vectors)
