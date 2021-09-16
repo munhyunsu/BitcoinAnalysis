@@ -146,8 +146,6 @@ def main():
         print(f'[{int(time.time()-STIME)}] Parsed arguments {FLAGS}')
         print(f'[{int(time.time()-STIME)}] Unparsed arguments {_}')
 
-    conn, cur = prepare_conn(FLAGS.index, FLAGS.core, 
-                             FLAGS.util, FLAGS.service)
     with open(FLAGS.model, 'rb') as f:
         clf = pickle.load(f)
 
