@@ -195,11 +195,6 @@ if __name__ == '__main__':
 
     FLAGS, _ = parser.parse_known_args()
 
-    FLAGS.index = os.path.abspath(os.path.expanduser(FLAGS.index))
-    FLAGS.core = os.path.abspath(os.path.expanduser(FLAGS.core))
-    FLAGS.util = os.path.abspath(os.path.expanduser(FLAGS.util))
-    FLAGS.service = os.path.abspath(os.path.expanduser(FLAGS.service))
-    FLAGS.model = os.path.abspath(os.path.expanduser(FLAGS.model))
     FLAGS.input = os.path.abspath(os.path.expanduser(FLAGS.input))
     if FLAGS.output is None:
         FLAGS.output = f'f2-result.csv'
