@@ -65,3 +65,15 @@ python3 f2-s3-test.py --index dbv3-index.db --core dbv3-core.db --util dbv3-util
 
 ```bash
 ```
+
+### 2. 부정거래 식별 without database
+
+1. 학습
+
+```bash
+```
+
+2. 예측 테스트
+
+```bash
+```
