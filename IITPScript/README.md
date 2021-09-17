@@ -58,12 +58,14 @@ python3 f2-s3-test.py --index dbv3-index.db --core dbv3-core.db --util dbv3-util
 
 1. 학습
 
-```
+```bash
+python3 f1-s2-train-csv.py --debug --input f1-train.csv 
 ```
 
 2. 예측 테스트
 
 ```bash
+python3 f1-s3-test-csv.py --debug --model f1-model.pkl --input f1-test.csv
 ```
 
 ### 2. 부정거래 식별 without database
