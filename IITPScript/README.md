@@ -53,3 +53,15 @@ python3 f2-s2-train.py --input f2-features.pkl
 python3 f2-s3-test.py --index dbv3-index.db --core dbv3-core.db --util dbv3-util.db --service dbv3-service.db --model f2-model.pkl --input f2-test.csv
 ```
 
+
+### 1. 가상자산 취급 업소 식별 without Database
+
+1. 학습
+
+```
+```
+
+2. 예측 테스트
+
+```bash
+```
