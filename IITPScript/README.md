@@ -79,4 +79,5 @@ python3 f2-s2-train-csv.py --debug --input f2-train.csv
 2. 예측 테스트
 
 ```bash
+python3 f2-s3-test-csv.py --debug --model f2-model.pkl --input f2-test.csv
 ```
