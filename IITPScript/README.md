@@ -73,6 +73,7 @@ python3 f1-s3-test-csv.py --debug --model f1-model.pkl --input f1-test.csv
 1. 학습
 
 ```bash
+python3 f2-s2-train-csv.py --debug --input f2-train.csv
 ```
 
 2. 예측 테스트
