@@ -12,23 +12,6 @@ DEBUG = False
 STIME = time.time()
 
 
-def prepare_conn(indexpath, corepath, utilpath, servicepath):
-    global STIME
-    global DEBUG
-    sqlite3.register_adapter(np.int32, int)
-    conn = sqlite3.connect(':memory:')
-    cur = conn.cursor()
-    cur.execute(f'''ATTACH DATABASE '{indexpath}' AS DBINDEX;''')
-    cur.execute(f'''ATTACH DATABASE '{corepath}' AS DBCORE;''')
-    cur.execute(f'''ATTACH DATABASE '{utilpath}' AS DBUTIL;''')
-    cur.execute(f'''ATTACH DATABASE '{servicepath}' AS DBSERVICE;''')
-    conn.commit()
-    if DEBUG:
-        print(f'[{int(time.time()-STIME)}] Prepared database connector and cursor')
-
-    return conn, cur
-
-
 def get_feature(conn, cur, tx):
     vector = [tx]
     adict = {'P2PKH': 0, 'P2SH': 0, 'Bech32': 0}
