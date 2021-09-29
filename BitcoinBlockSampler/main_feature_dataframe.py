@@ -381,13 +381,21 @@ def main():
 
     targets = set()
     addrid_list = [] # for merge df
+    not_found = []
     for index, row in df.iterrows():
         addr = row['Address']
         cur.execute('''SELECT DBINDEX.AddrID.id FROM DBINDEX.AddrID
                        WHERE DBINDEX.AddrID.addr = ?;''', (addr,))
-        addrid = cur.fetchone()[0]
+        try:
+            addrid = cur.fetchone()[0]
+        except TypeError:
+            if DEBUG:
+                print(f'Not found: {addr} in {row}')
+            not_found.append(index)
+            continue
         addrid_list.append(addrid)
         targets.add(addrid)
+    df.drop(not_found, inplace=True)
     df['AddressID'] = addrid_list
     data = []
     while len(targets) > 0:
