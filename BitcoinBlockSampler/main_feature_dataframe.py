@@ -377,7 +377,6 @@ def main():
     initialize_database(conn, cur)
 
     df = pd.read_csv(FLAGS.input)
-    df_len = len(df)
 
     targets = set()
     addrid_list = [] # for merge df
@@ -399,6 +398,8 @@ def main():
         print(f'Drop not found addresses {len(not_found)}')
     df.drop(not_found, inplace=True)
     df['AddressID'] = addrid_list
+
+    df_len = len(df)
     data = []
     while len(targets) > 0:
         addrid = targets.pop() # Set has add, pop method
