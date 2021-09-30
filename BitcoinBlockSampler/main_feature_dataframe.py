@@ -395,6 +395,8 @@ def main():
             continue
         addrid_list.append(addrid)
         targets.add(addrid)
+    if DEBUG:
+        print(f'Drop not found addresses {len(not_found)}')
     df.drop(not_found, inplace=True)
     df['AddressID'] = addrid_list
     data = []
