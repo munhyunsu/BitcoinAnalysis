@@ -389,7 +389,7 @@ def main():
             addrid = cur.fetchone()[0]
         except TypeError:
             if DEBUG:
-                print(f'Not found: {addr} in {row}')
+                print(f'Not found: {addr} at {index}')
             not_found.append(index)
             continue
         addrid_list.append(addrid)
