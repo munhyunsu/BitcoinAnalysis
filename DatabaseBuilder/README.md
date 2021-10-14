@@ -24,3 +24,9 @@
 python3 -m venv venv
 pip3 install --upgrade -r requirements.txt
 ```
+
+## Create MariaDB account
+
+```bash
+docker run --name some-mariadb -v /my/own/datadir:/var/lib/mysql -e MARIADB_ROOT_PASSWORD=my-secret-pw -d mariadb:tag
+```
