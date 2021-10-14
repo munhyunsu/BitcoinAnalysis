@@ -27,6 +27,16 @@ pip3 install --upgrade -r requirements.txt
 
 ## Create MariaDB account
 
+1. Run database container
+
 ```bash
 docker run --name some-mariadb -v /my/own/datadir:/var/lib/mysql -e MARIADB_ROOT_PASSWORD=my-secret-pw -d mariadb:tag
+```
+
+2. Create remote user
+
+```sql
+CREATE DATABASE DATABASENAME;
+GRANT ALL PRIVILEGES ON DATABASENAME.* TO 'USERNAME'@'%' IDENTIFIED BY 'PASSWORD';
+FLUSH PRIVILEGES;
 ```
