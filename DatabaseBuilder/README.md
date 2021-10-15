@@ -40,3 +40,13 @@ CREATE DATABASE DATABASENAME;
 GRANT ALL PRIVILEGES ON DATABASENAME.* TO 'USERNAME'@'%' IDENTIFIED BY 'PASSWORD';
 FLUSH PRIVILEGES;
 ```
+
+3. Create `secret.py`
+
+```python
+# Contents of secret.py
+db_username = USERNAME
+db_password = PASSWORD
+db_address = ADDRESS
+db_port = PORT"
+```
