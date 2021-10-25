@@ -16,5 +16,5 @@ def addr_btc_from_vout(txid, vout):
             for addr in [f'{txid}{vout["n"]}']:
                 results.append((addr, float(vout['value'])))
     else:
-        raise Exception(f'BUG!! {theight}\n{txid}\n{vout}')
+        raise Exception(f'BUG!! {txid}\n{vout}')
     return results
