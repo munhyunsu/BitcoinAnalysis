@@ -5,6 +5,7 @@ def addr_btc_from_vout(txid, vout):
     results = list()
     if vout['scriptPubKey']['type'] in ('pubkeyhash', 'scripthash', 
                                         'witness_v0_keyhash', 'witness_v0_scripthash',
+                                        'witness_v1_taproot',
                                         'witness_unknown', 'multisig'):
         for addr in vout['scriptPubKey']['addresses']:
             results.append((addr, float(vout['value'])))
