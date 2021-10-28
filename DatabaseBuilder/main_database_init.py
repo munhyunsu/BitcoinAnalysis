@@ -38,19 +38,19 @@ def main():
             print(f'[{int(time.time()-STIME)}] DROP all tables of {secret.dbdatabase}')
     
     cur.execute('''CREATE TABLE blkid (
-                     id INT AUTO_INCREMENT,
+                     id INT NOT NULL,
                      blkhash CHAR(64) NOT NULL,
                      PRIMARY KEY (id),
                      UNIQUE (blkhash)
                    );''')
     cur.execute('''CREATE TABLE txid (
-                     id INT AUTO_INCREMENT,
+                     id INT NOT NULL,
                      txid CHAR(64) NOT NULL,
                      PRIMARY KEY (id),
                      UNIQUE (txid)
                    );''')
     cur.execute('''CREATE TABLE addrid (
-                     id INT AUTO_INCREMENT,
+                     id INT NOT NULL,
                      addr CHAR(64) NOT NULL,
                      PRIMARY KEY (id),
                      UNIQUE (addr)
