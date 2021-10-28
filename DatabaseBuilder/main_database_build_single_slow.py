@@ -131,8 +131,8 @@ def main():
                 cur.execute('''INSERT INTO txin (tx, n, ptx, pn)
                                  VALUES (?, ?, ?, ?);''', (txid, n, ptxid, pn))
 
-        conn.commit()
         if height % 10000 == 1:
+            conn.commit()
             if DEBUG:
                 print(f'[{int(time.time()-STIME)}] Job done {height}')
         else:
