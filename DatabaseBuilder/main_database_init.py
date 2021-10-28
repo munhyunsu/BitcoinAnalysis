@@ -57,11 +57,11 @@ def main():
                    );''')
     cur.execute('''CREATE TABLE blktime (
                      blk INT NOT NULL,
-                     time TIMESTAMP NOT NULL,
+                     miningtime TIMESTAMP NOT NULL,
                      PRIMARY KEY (blk),
                      FOREIGN KEY (blk) REFERENCES blkid (id)
                    );''')
-    cur.execute('''CREATE INDEX idx_unixtime ON blktime (unixtime);''')
+    cur.execute('''CREATE INDEX idx_unixtime ON blktime (miningtime);''')
     cur.execute('''CREATE TABLE blktx (
                      blk INT NOT NULL,
                      tx INT NOT NULL,
