@@ -18,11 +18,11 @@ def main():
         print(f'Parsed arguments {FLAGS}')
         print(f'Unparsed arguments {_}')
 
-    conn, cur = utils.connectdb(user=dbuser,
-                                password=dbpassword,
-                                host=dbhost,
-                                port=dbport,
-                                database=dbdatabase)
+    conn, cur = utils.connectdb(user=secret.dbuser,
+                                password=secret.dbpassword,
+                                host=secret.dbhost,
+                                port=secret.dbport,
+                                database=secret.dbdatabase)
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Connect to database')
 
