@@ -47,7 +47,7 @@ def main():
                      id INT NOT NULL,
                      tx CHAR(64) NOT NULL,
                      PRIMARY KEY (id),
-                     UNIQUE (txid)
+                     UNIQUE (tx)
                    );''')
     cur.execute('''CREATE TABLE addrid (
                      id INT NOT NULL,
@@ -57,7 +57,7 @@ def main():
                    );''')
     cur.execute('''CREATE TABLE blktime (
                      blk INT NOT NULL,
-                     unixtime TIMESTAMP NOT NULL,
+                     time TIMESTAMP NOT NULL,
                      PRIMARY KEY (blk),
                      FOREIGN KEY (blk) REFERENCES blkid (id)
                    );''')
