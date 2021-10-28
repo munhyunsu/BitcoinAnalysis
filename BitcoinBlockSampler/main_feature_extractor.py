@@ -235,7 +235,7 @@ def main():
                    FROM Feature;''')
     try:
         start_addrid = cur.fetchone()[0] + 1
-    except sqlite3.Error:
+    except TypeError:
         start_addid = 1
     cur.execute('''SELECT MAX(DBINDEX.AddrID.id)
                    FROM DBINDEX.AddrID;''')
