@@ -27,15 +27,15 @@ def main():
         print(f'[{int(time.time()-STIME)}] Connect to database')
 
     if FLAGS.reset:
-        cur.execute('''DROP TABLE txin;''')
-        cur.execute('''DROP TABLE txout;''')
-        cur.execute('''DROP TABLE blktx;''')
-        cur.execute('''DROP TABLE blktime;''')
-        cur.execute('''DROP TABLE addrid;''')
-        cur.execute('''DROP TABLE txid;''')
-        cur.execute('''DROP TABLE blkid;''')
+        cur.execute('''DROP TABLE IF EXISTS txin;''')
+        cur.execute('''DROP TABLE IF EXISTS txout;''')
+        cur.execute('''DROP TABLE IF EXISTS blktx;''')
+        cur.execute('''DROP TABLE IF EXISTS blktime;''')
+        cur.execute('''DROP TABLE IF EXISTS addrid;''')
+        cur.execute('''DROP TABLE IF EXISTS txid;''')
+        cur.execute('''DROP TABLE IF EXISTS blkid;''')
         if DEBUG:
-            print(f'[{int(time.time()-STIME)}] DROP all tables of {secret.dbname}')
+            print(f'[{int(time.time()-STIME)}] DROP all tables of {secret.dbdatabase}')
     
     cur.execute('''CREATE TABLE blkid (
                      id INT AUTO_INCREMENT,
@@ -87,7 +87,7 @@ def main():
                      FOREIGN KEY (tx) REFERENCES txid (id),
                      FOREIGN KEY (ptx, pn) REFERENCES txout (tx, n)
                    );''')
-    cunn.commit()
+    conn.commit()
 
     cur.execute('''SHOW TABLES;''')
     res = cur.fetchall()
