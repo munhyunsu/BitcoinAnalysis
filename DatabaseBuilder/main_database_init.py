@@ -98,7 +98,7 @@ if __name__ == '__main__':
     os.chdir(root_dir)
 
     parser = argparse.ArgumentParser()
-    parser.add_arguments('--debug', action='store_true',
+    parser.add_argument('--debug', action='store_true',
                          help='The present debug message')
     parser.add_argument('--reset', action='store_true',
                         help='Clear exists tables before creation')
