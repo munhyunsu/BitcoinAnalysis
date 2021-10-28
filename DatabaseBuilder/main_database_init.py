@@ -82,7 +82,7 @@ def main():
                      n INT NOT NULL,
                      ptx INT NOT NULL,
                      pn INT NOT NULL,
-                     FOREIGN KEY (tx) REFERENCES txid (id),
+                     FOREIGN KEY (tx) REFERENCES txid (id)
                    );''')
     conn.commit()
 
