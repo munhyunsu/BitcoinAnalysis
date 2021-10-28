@@ -32,23 +32,23 @@ def main():
                            timeout=FLAGS.rpctimeout)
 
     cur.execute('''SELECT MAX(id) FROM blkid;''')
-    res = cur.fetchall()
-    if len(res) == 0:
+    next_blkid = cur.fetchall()[0][0]
+    if next_blkid is None:
         next_blkid = 1
     else:
-        next_blkid = res[0][0] + 1
+        next_blkid = next_blkid + 1
     cur.execute('''SELECT MAX(id) FROM txid;''')
-    res = cur.fetchall()
-    if len(res) == 0:
+    next_txid = cur.fetchall()[0][0]
+    if next_txid is None:
         next_txid = 1
     else:
-        next_txid = res[0][0] + 1
+        next_txid = next_txid + 1
     cur.execute('''SELECT MAX(id) FROM addrid;''')
-    res = cur.fetchall()
-    if len(res) == 0:
+    next_addrid = cur.fetchall()[0][0]
+    if next_addrid is None:
         next_addrid = 1
     else:
-        next_addrid = res[0][0] + 1
+        next_addrid = next_addrid + 1
     
     height_start = next_blkid
     bestblockhash = rpc.getbestblockhash()
@@ -58,10 +58,8 @@ def main():
         print(f'[{int(time.time()-STIME)}] Best Block Heights: {bestblock["height"]}')
         print(f'[{int(time.time()-STIME)}] Time: {utils.gettime(bestblock["height"]).isoformat()}')
 
-
-
     print(f'[{int(time.time()-STIME)}] Start from {height_start} to {height_end}')
-    print(f'[{int(time.time()-STIME)}] with starting blkid: {blkid_next}, txid: {txid_next}, addrid: {addrid_next}')
+    print(f'[{int(time.time()-STIME)}] with starting blkid: {next_blkid}, txid: {next_txid}, addrid: {next_addrid}')
 
     for height in range(height_start, height_end+1):
         data_blkid = []
@@ -73,6 +71,7 @@ def main():
         data_txin = []
         
         blockhash = rpc.getblockhash(height)
+        block = rpc.getblock(blockhash, 2)
         if block['height'] != next_blkid:
             print(f'Something is wrong: {block["height"]} != {next_blkid}')
             conn.close()
@@ -80,7 +79,6 @@ def main():
         blkid = next_blkid
         next_blkid = next_blkid + 1
         data_blkid.append((blkid, blockhash))
-        block = rpc.getblock(blockhash, 2)
         blktime = block['time']
         data_blktime.append((blkid, blktime))
         for btx in block['tx']:
@@ -91,7 +89,7 @@ def main():
             if len(res) == 0:
                 txid = next_txid
                 next_txid = next_txid + 1
-                data_txid.append((tx, txid))
+                data_txid.append((txid, tx))
                 data_blktx.append((blkid, txid))
             else:
                 txid = res[0][0]
@@ -104,7 +102,7 @@ def main():
                         if len(res) == 0:
                             addrid = next_addrid
                             next_addrid = next_addrid + 1
-                            data_addrid.append((addr, addrid))
+                            data_addrid.append((addrid, addr))
                         else:
                             addrid = res[0][0]
                         data_txout.append((txid, n, addrid, btc))
@@ -119,11 +117,11 @@ def main():
                                  WHERE tx = ?;''', (ptx,))
                 res = cur.fetchall()
                 if len(res) == 0:
-                    raise Exception(f'ptx not found {tx}:{n}:{vin}')
+                    ptxid = txid
                 else:
                     ptxid = res[0][0]
                 pn = vin['vout']
-                data_txin.append((txid, n, ptx, pn))
+                data_txin.append((txid, n, ptxid, pn))
         
         cur.executemany('''INSERT INTO blkid (id, blkhash)
                              VALUES (?, ?);''', data_blkid)
@@ -132,14 +130,14 @@ def main():
         cur.executemany('''INSERT INTO addrid (id, addr)
                              VALUES (?, ?);''', data_addrid)
         cur.executemany('''INSERT INTO blktime (blk, miningtime)
-                             VALUES (?, ?);''', data_blktime)
+                             VALUES (?, FROM_UNIXTIME(?));''', data_blktime)
         cur.executemany('''INSERT INTO blktx (blk, tx)
                              VALUES (?, ?);''', data_blktx)
         cur.executemany('''INSERT INTO txout (tx, n, addr, btc)
                              VALUES (?, ?, ?, ?);''', data_txout)
         cur.executemany('''INSERT INTO txin (tx, n, ptx, pn)
                              VALUES (?, ?, ?, ?);''', data_txin)
-        cur.commit()
+        conn.commit()
         if DEBUG:
             print(f'[{int(time.time()-STIME)}] Job done {height}')
     
