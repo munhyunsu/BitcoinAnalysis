@@ -79,12 +79,14 @@ FLUSH PRIVILEGES;
 
 ```python
 # Contents of secret.py
-rpc_username = USERNAME
-rpc_password = PASSWORD
-db_username = USERNAME
-db_password = PASSWORD
-db_address = ADDRESS
-db_port = PORT
+rpcuser = USER
+rpcpassword = PASSWORD
+dbrootpassword = PASSWORD
+dbdatabase = DATABASE
+dbuser = USER
+dbpassword = PASSWORD
+dbhost = HOST
+dbport = PORT
 ```
 
 6. Install python3 library and install library
