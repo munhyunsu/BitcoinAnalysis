@@ -29,7 +29,7 @@ def main():
 
     rpc = AuthServiceProxy((f'http://{secret.rpcuser}:{secret.rpcpassword}@'
                             f'{secret.rpchost}:{secret.rpcport}'),
-                           timeout=FLAGS.timeout)
+                           timeout=FLAGS.rpctimeout)
 
     cur.execute('''SELECT MAX(id) FROM blkid;''')
     res = fetchall()
