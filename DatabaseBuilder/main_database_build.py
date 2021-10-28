@@ -157,7 +157,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', action='store_true',
                          help='The present debug message')
-    parser.add_argument('--rpctimeout' type=int, default=60,
+    parser.add_argument('--rpctimeout', type=int, default=60,
                         help='The rpc timeout secounds')
     parser.add_argument('--untrust', type=int, default=100,
                         help='The block height that untrusted')

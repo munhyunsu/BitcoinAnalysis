@@ -45,7 +45,7 @@ def main():
                    );''')
     cur.execute('''CREATE TABLE txid (
                      id INT NOT NULL,
-                     txid CHAR(64) NOT NULL,
+                     tx CHAR(64) NOT NULL,
                      PRIMARY KEY (id),
                      UNIQUE (txid)
                    );''')
@@ -74,7 +74,6 @@ def main():
                      n INT NOT NULL,
                      addr INT NOT NULL,
                      btc DOUBLE NOT NULL,
-                     UNIQUE (tx, n),
                      FOREIGN KEY (tx) REFERENCES txid (id),
                      FOREIGN KEY (addr) REFERENCES addrid (id)
                    );''')
@@ -83,7 +82,6 @@ def main():
                      n INT NOT NULL,
                      ptx INT NOT NULL,
                      pn INT NOT NULL,
-                     UNIQUE (tx, n),
                      FOREIGN KEY (tx) REFERENCES txid (id),
                      FOREIGN KEY (ptx, pn) REFERENCES txout (tx, n)
                    );''')
