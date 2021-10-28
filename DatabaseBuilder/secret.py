@@ -1,8 +1,10 @@
 rpcuser = '' # bitcoind JSON RPC user
 rpcpassword = '' # bitcoind JSON RPC password
+rpchost = '127.0.0.1' # bitcoind JSON RPC host
+rpcport = '8332' # bitcoind JSON RPC port
 dbrootpassword = '' # MariaDB root password
 dbdatabase = '' # Mariadb database name
 dbuser = '' # Mariadb user
 dbpassword = '' # Mariadb password
-dbhost = '' # Mariadb Address
-dbport = int('') # Mariadb Port
+dbhost = '127.0.0.1' # Mariadb Address
+dbport = int('3306') # Mariadb Port
