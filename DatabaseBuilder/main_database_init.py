@@ -85,8 +85,7 @@ def main():
                      pn INT NOT NULL,
                      UNIQUE (tx, n),
                      FOREIGN KEY (tx) REFERENCES txid (id),
-                     FOREIGN KEY (ptx) REFERENCES txout (tx),
-                     FOREIGN KEY (pn) REFERENCES txout (n)
+                     FOREIGN KEY (ptx) REFERENCES txout (tx)
                    );''')
     cunn.commit()
 
