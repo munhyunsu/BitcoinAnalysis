@@ -74,7 +74,7 @@ def main():
                      n INT NOT NULL,
                      addr INT NOT NULL,
                      btc DOUBLE NOT NULL,
-                     UNIQUE (tx, n, addr),
+                     UNIQUE (tx, n),
                      FOREIGN KEY (tx) REFERENCES txid (id),
                      FOREIGN KEY (addr) REFERENCES addrid (id)
                    );''')
