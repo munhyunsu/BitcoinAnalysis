@@ -4,7 +4,7 @@ import time
 import multiprocessing
 
 import mariadb
-import bitcoinrpc
+from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
 import secret
 import utils
@@ -27,9 +27,9 @@ def main():
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Connect to database')
 
-    rpc = bitcoinrpc.authproxy.AuthServiceProxy((f'http://{secret.rpcuser}:{secret.rpcpassword}@'
-                                                 f'{secret.rpchost}:{secret.rpcport}'),
-                                                timeout=FLAGS.timeout)
+    rpc = AuthServiceProxy((f'http://{secret.rpcuser}:{secret.rpcpassword}@'
+                            f'{secret.rpchost}:{secret.rpcport}'),
+                           timeout=FLAGS.timeout)
 
     cur.execute('''SELECT MAX(id) FROM blkid;''')
     res = fetchall()
@@ -131,7 +131,7 @@ def main():
                              VALUES (?, ?);''', data_txid)
         cur.executemany('''INSERT INTO addrid (id, addr)
                              VALUES (?, ?);''', data_addrid)
-        cur.executemany('''INSERT INTO blktime (blk, unixtime)
+        cur.executemany('''INSERT INTO blktime (blk, miningtime)
                              VALUES (?, ?);''', data_blktime)
         cur.executemany('''INSERT INTO blktx (blk, tx)
                              VALUES (?, ?);''', data_blktx)
