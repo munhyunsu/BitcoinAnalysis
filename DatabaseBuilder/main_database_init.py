@@ -27,9 +27,13 @@ def main():
         print(f'[{int(time.time()-STIME)}] Connect to database')
 
     if FLAGS.reset:
-        cur.execute('''DROP TABLE blkid;''')
-        cur.execute('''DROP TABLE txid;''')
+        cur.execute('''DROP TABLE txin;''')
+        cur.execute('''DROP TABLE txout;''')
+        cur.execute('''DROP TABLE blktx;''')
+        cur.execute('''DROP TABLE blktime;''')
         cur.execute('''DROP TABLE addrid;''')
+        cur.execute('''DROP TABLE txid;''')
+        cur.execute('''DROP TABLE blkid;''')
         if DEBUG:
             print(f'[{int(time.time()-STIME)}] DROP all tables of {secret.dbname}')
     
@@ -37,17 +41,20 @@ def main():
                      id INT AUTO_INCREMENT,
                      blkhash CHAR(64) NOT NULL,
                      PRIMARY KEY (id),
-                     UNIQUE (blkhash);''')
+                     UNIQUE (blkhash)
+                   );''')
     cur.execute('''CREATE TABLE txid (
                      id INT AUTO_INCREMENT,
                      txid CHAR(64) NOT NULL,
                      PRIMARY KEY (id),
-                     UNIQUE (txid);''')
+                     UNIQUE (txid)
+                   );''')
     cur.execute('''CREATE TABLE addrid (
                      id INT AUTO_INCREMENT,
                      addr CHAR(64) NOT NULL,
                      PRIMARY KEY (id),
-                     UNIQUE (addr);''')
+                     UNIQUE (addr)
+                   );''')
     cur.execute('''CREATE TABLE blktime (
                      blk INT NOT NULL,
                      unixtime TIMESTAMP NOT NULL,
