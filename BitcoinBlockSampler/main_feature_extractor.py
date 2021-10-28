@@ -236,7 +236,7 @@ def main():
     try:
         start_addrid = cur.fetchone()[0] + 1
     except TypeError:
-        start_addid = 1
+        start_addrid = 1
     cur.execute('''SELECT MAX(DBINDEX.AddrID.id)
                    FROM DBINDEX.AddrID;''')
     end_addrid = cur.fetchone()[0] + 1
