@@ -32,19 +32,19 @@ def main():
                            timeout=FLAGS.rpctimeout)
 
     cur.execute('''SELECT MAX(id) FROM blkid;''')
-    res = fetchall()
+    res = cur.fetchall()
     if len(res) == 0:
         next_blkid = 1
     else:
         next_blkid = res[0][0] + 1
     cur.execute('''SELECT MAX(id) FROM txid;''')
-    res = fetchall()
+    res = cur.fetchall()
     if len(res) == 0:
         next_txid = 1
     else:
         next_txid = res[0][0] + 1
     cur.execute('''SELECT MAX(id) FROM addrid;''')
-    res = fetchall()
+    res = cur.fetchall()
     if len(res) == 0:
         next_addrid = 1
     else:
