@@ -35,7 +35,7 @@ def main():
         cur.execute('''DROP TABLE IF EXISTS txid;''')
         cur.execute('''DROP TABLE IF EXISTS blkid;''')
         if DEBUG:
-            print(f'[{int(time.time()-STIME)}] DROP all tables of {secret.dbname}')
+            print(f'[{int(time.time()-STIME)}] DROP all tables of {secret.dbdatabase}')
     
     cur.execute('''CREATE TABLE blkid (
                      id INT AUTO_INCREMENT,
