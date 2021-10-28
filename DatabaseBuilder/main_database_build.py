@@ -78,9 +78,11 @@ def main():
             sys.exit(0)
         blkid = next_blkid
         next_blkid = next_blkid + 1
-        data_blkid.append((blkid, blockhash))
+        cur.execute('''INSERT INTO blkid (id, blkhash)
+                         VALUES (?, ?);''', (blkid, blockhash))
         blktime = block['time']
-        data_blktime.append((blkid, blktime))
+        cur.execute('''INSERT INTO blktime (blk, miningtime)
+                         VALUES (?, FROM_UNIXTIME(?));''', (blkid, blktime))
         for btx in block['tx']:
             tx = btx['txid']
             cur.execute('''SELECT id FROM txid
@@ -89,8 +91,10 @@ def main():
             if len(res) == 0:
                 txid = next_txid
                 next_txid = next_txid + 1
-                data_txid.append((txid, tx))
-                data_blktx.append((blkid, txid))
+                cur.execute('''INSERT INTO txid (id, tx)
+                                 VALUES (?, ?);''', (txid, tx))
+                cur.execute('''INSERT INTO blktx (blk, tx)
+                                 VALUES (?, ?);''', (blkid, txid))
             else:
                 txid = res[0][0]
             for n, vout in enumerate(btx['vout'], start=0):
@@ -102,15 +106,18 @@ def main():
                         if len(res) == 0:
                             addrid = next_addrid
                             next_addrid = next_addrid + 1
-                            data_addrid.append((addrid, addr))
+                            cur.execute('''INSERT INTO addrid (id, addr)
+                                             VALUES (?, ?);''', (addrid, addr))
                         else:
                             addrid = res[0][0]
-                        data_txout.append((txid, n, addrid, btc))
+                        cur.execute('''INSERT INTO txout (tx, n, addr, btc)
+                                         VALUES (?, ?, ?, ?);''', (txid, n, addrid, btc))
                 except Exception:
                     raise Exception(f'For debug! {tx}:{n}:{vout}')
             for n, vin in enumerate(btx['vin'], start=0):
                 if 'coinbase' in vin:
-                    data_txin.append((txid, n, 0, 0))
+                    cur.execute('''INSERT INTO txin (tx, n, ptx, pn)
+                                     VALUES (?, ?, ?, ?);''', (txid, n, 0, 0))
                     continue
                 ptx = vin['txid']
                 cur.execute('''SELECT id FROM txid
@@ -121,26 +128,18 @@ def main():
                 else:
                     ptxid = res[0][0]
                 pn = vin['vout']
-                data_txin.append((txid, n, ptxid, pn))
-        
-        cur.executemany('''INSERT INTO blkid (id, blkhash)
-                             VALUES (?, ?);''', data_blkid)
-        cur.executemany('''INSERT INTO txid (id, tx)
-                             VALUES (?, ?);''', data_txid)
-        cur.executemany('''INSERT INTO addrid (id, addr)
-                             VALUES (?, ?);''', data_addrid)
-        cur.executemany('''INSERT INTO blktime (blk, miningtime)
-                             VALUES (?, FROM_UNIXTIME(?));''', data_blktime)
-        cur.executemany('''INSERT INTO blktx (blk, tx)
-                             VALUES (?, ?);''', data_blktx)
-        cur.executemany('''INSERT INTO txout (tx, n, addr, btc)
-                             VALUES (?, ?, ?, ?);''', data_txout)
-        cur.executemany('''INSERT INTO txin (tx, n, ptx, pn)
-                             VALUES (?, ?, ?, ?);''', data_txin)
+                cur.execute('''INSERT INTO txin (tx, n, ptx, pn)
+                                 VALUES (?, ?, ?, ?);''', (txid, n, ptxid, pn))
+
         conn.commit()
-        if DEBUG:
-            print(f'[{int(time.time()-STIME)}] Job done {height}')
-    
+        if height % 10000 == 1:
+            if DEBUG:
+                print(f'[{int(time.time()-STIME)}] Job done {height}')
+        else:
+            if DEBUG:
+                print(f'[{int(time.time()-STIME)}] Job done {height}', end='\r')
+                
+    conn.commit()
     print(f'[{int(time.time()-STIME)}] All job completed from {height_start} to {height_end}')
     
     conn.commit()
