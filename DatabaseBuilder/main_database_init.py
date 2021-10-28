@@ -83,7 +83,6 @@ def main():
                      ptx INT NOT NULL,
                      pn INT NOT NULL,
                      FOREIGN KEY (tx) REFERENCES txid (id),
-                     FOREIGN KEY (ptx, pn) REFERENCES txout (tx, n)
                    );''')
     conn.commit()
 
