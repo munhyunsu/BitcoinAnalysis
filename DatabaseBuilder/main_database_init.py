@@ -51,7 +51,7 @@ def main():
                    );''')
     cur.execute('''CREATE TABLE addrid (
                      id INT NOT NULL,
-                     addr CHAR(64) NOT NULL,
+                     addr VARCHAR(128) NOT NULL,
                      PRIMARY KEY (id),
                      UNIQUE (addr)
                    );''')
