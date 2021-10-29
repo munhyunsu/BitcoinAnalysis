@@ -13,12 +13,12 @@ import utils
 FLAGS = _ = None
 DEBUG = False
 STIME = time.time()
-RPCM = None
 
 
 def get_block(height):
-    global RPCM
-    rpc = RPCM
+    rpc = AuthServiceProxy((f'http://{secret.rpcuser}:{secret.rpcpassword}@'
+                            f'{secret.rpchost}:{secret.rpcport}'),
+                           timeout=FLAGS.rpctimeout)
     blockhash = rpc.getblockhash(height)
     block = rpc.getblock(blockhash, 2)
     return height, blockhash, block
@@ -40,7 +40,6 @@ def main():
     rpc = AuthServiceProxy((f'http://{secret.rpcuser}:{secret.rpcpassword}@'
                             f'{secret.rpchost}:{secret.rpcport}'),
                            timeout=FLAGS.rpctimeout)
-    RPCM = rpc
 
     cur.execute('''SELECT MAX(id) FROM blkid;''')
     next_blkid = cur.fetchall()[0][0]
@@ -90,14 +89,13 @@ def main():
     for height in range(height_start, height_end+1):
         if height not in cache_block.keys():
             with multiprocessing.Pool(FLAGS.process) as p:
-                try:
-                    results = p.imap(get_block, range(height, min(height_end+1, height+bulk)))
-                    for mheight, mblockhash, mblock in results:
-                        cache_block[mheight] = (mblockhash, mblock)
+                results = p.imap(get_block, range(height, min(height_end+1, height+FLAGS.bulk)))
+                for mheight, mblockhash, mblock in results:
+                    cache_block[mheight] = (mblockhash, mblock)
+            if DEBUG:
+                print(f'[{int(time.time()-STIME)}] Cache update: {height} ~ {min(height_end+1, height+FLAGS.bulk)-1}')
         blockhash = cache_block[height][0]
         block = cache_block[height][1]
-#         blockhash = rpc.getblockhash(height)
-#         block = rpc.getblock(blockhash, 2)
         if block['height'] != next_blkid:
             print(f'Something is wrong: {block["height"]} != {next_blkid}')
             conn.close()
@@ -195,10 +193,6 @@ def main():
             conn.commit()
             if DEBUG:
                 print(f'[{int(time.time()-STIME)}] Job  done {height}')
-            rpc = AuthServiceProxy((f'http://{secret.rpcuser}:{secret.rpcpassword}@'
-                                    f'{secret.rpchost}:{secret.rpcport}'),
-                                   timeout=FLAGS.rpctimeout)
-            RPCM = rpc
             data_blkid = []
             map_blkid = {}
             data_txid = []
