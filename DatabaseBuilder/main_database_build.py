@@ -77,9 +77,6 @@ def main():
     data_txin = []
     map_txin = {}
     for height in range(height_start, height_end+1):
-        rpc = AuthServiceProxy((f'http://{secret.rpcuser}:{secret.rpcpassword}@'
-                                f'{secret.rpchost}:{secret.rpcport}'),
-                               timeout=FLAGS.rpctimeout)
         blockhash = rpc.getblockhash(height)
         block = rpc.getblock(blockhash, 2)
         if block['height'] != next_blkid:
@@ -179,6 +176,9 @@ def main():
             conn.commit()
             if DEBUG:
                 print(f'[{int(time.time()-STIME)}] Job  done {height}')
+            rpc = AuthServiceProxy((f'http://{secret.rpcuser}:{secret.rpcpassword}@'
+                                    f'{secret.rpchost}:{secret.rpcport}'),
+                                   timeout=FLAGS.rpctimeout)
             data_blkid = []
             map_blkid = {}
             data_txid = []
