@@ -13,6 +13,15 @@ import utils
 FLAGS = _ = None
 DEBUG = False
 STIME = time.time()
+RPCM = None
+
+
+def get_block(height):
+    global RPCM
+    rpc = RPCM
+    blockhash = rpc.getblockhash(height)
+    block = rpc.getblock(blockhash, 2)
+    return height, blockhash, block
 
 
 def main():
@@ -31,6 +40,7 @@ def main():
     rpc = AuthServiceProxy((f'http://{secret.rpcuser}:{secret.rpcpassword}@'
                             f'{secret.rpchost}:{secret.rpcport}'),
                            timeout=FLAGS.rpctimeout)
+    RPCM = rpc
 
     cur.execute('''SELECT MAX(id) FROM blkid;''')
     next_blkid = cur.fetchall()[0][0]
@@ -62,6 +72,7 @@ def main():
     print(f'[{int(time.time()-STIME)}] Start from {height_start} to {height_end}')
     print(f'[{int(time.time()-STIME)}] with starting blkid: {next_blkid}, txid: {next_txid}, addrid: {next_addrid}')
 
+    cache_block = {}
     data_blkid = []
     map_blkid = {}
     data_txid = []
@@ -77,8 +88,16 @@ def main():
     data_txin = []
     map_txin = {}
     for height in range(height_start, height_end+1):
-        blockhash = rpc.getblockhash(height)
-        block = rpc.getblock(blockhash, 2)
+        if height not in cache_block.keys():
+            with multiprocessing.Pool(FLAGS.process) as p:
+                try:
+                    results = p.imap(get_block, range(height, min(height_end+1, height+bulk)))
+                    for mheight, mblockhash, mblock in results:
+                        cache_block[mheight] = (mblockhash, mblock)
+        blockhash = cache_block[height][0]
+        block = cache_block[height][1]
+#         blockhash = rpc.getblockhash(height)
+#         block = rpc.getblock(blockhash, 2)
         if block['height'] != next_blkid:
             print(f'Something is wrong: {block["height"]} != {next_blkid}')
             conn.close()
@@ -139,7 +158,7 @@ def main():
                 pn = vin['vout']
                 data_txin.append((txid, n, ptxid, pn))
         
-        if height % FLAGS.insertwindow == 1:
+        if height % FLAGS.bulk == 1:
             for key, value in map_blkid.items():
                 data_blkid.append((value, key))
             data_blkid.sort(key=operator.itemgetter(0))
@@ -179,6 +198,7 @@ def main():
             rpc = AuthServiceProxy((f'http://{secret.rpcuser}:{secret.rpcpassword}@'
                                     f'{secret.rpchost}:{secret.rpcport}'),
                                    timeout=FLAGS.rpctimeout)
+            RPCM = rpc
             data_blkid = []
             map_blkid = {}
             data_txid = []
@@ -252,8 +272,11 @@ if __name__ == '__main__':
                         help='The rpc timeout secounds')
     parser.add_argument('--untrust', type=int, default=100,
                         help='The block height that untrusted')
-    parser.add_argument('--insertwindow', type=int, default=10000,
+    parser.add_argument('--bulk', type=int, default=10000,
                         help='The bulk insert block height')
+    parser.add_argument('--process', type=int, 
+                        default=min(multiprocessing.cpu_count()//2, 16),
+                        help='The number of multiprocess')
 
     FLAGS, _ = parser.parse_known_args()
     DEBUG = FLAGS.debug
