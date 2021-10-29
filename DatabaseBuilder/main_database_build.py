@@ -62,22 +62,24 @@ def main():
     print(f'[{int(time.time()-STIME)}] Start from {height_start} to {height_end}')
     print(f'[{int(time.time()-STIME)}] with starting blkid: {next_blkid}, txid: {next_txid}, addrid: {next_addrid}')
 
+    data_blkid = []
+    map_blkid = {}
+    data_txid = []
+    map_txid = {}
+    data_addrid = []
+    map_addrid = {}
+    data_blktime = []
+    map_blktime = {}
+    data_blktx = []
+    map_blktx = {}
+    data_txout = []
+    map_txout = {}
+    data_txin = []
+    map_txin = {}
     for height in range(height_start, height_end+1):
-        data_blkid = []
-        map_blkid = {}
-        data_txid = []
-        map_txid = {}
-        data_addrid = []
-        map_addrid = {}
-        data_blktime = []
-        map_blktime = {}
-        data_blktx = []
-        map_blktx = {}
-        data_txout = []
-        map_txout = {}
-        data_txin = []
-        map_txin = {}
-        
+        rpc = AuthServiceProxy((f'http://{secret.rpcuser}:{secret.rpcpassword}@'
+                                f'{secret.rpchost}:{secret.rpcport}'),
+                               timeout=FLAGS.rpctimeout)
         blockhash = rpc.getblockhash(height)
         block = rpc.getblock(blockhash, 2)
         if block['height'] != next_blkid:
@@ -139,44 +141,99 @@ def main():
                     ptxid = map_txid[ptx]
                 pn = vin['vout']
                 data_txin.append((txid, n, ptxid, pn))
-
-        for key, value in map_blkid.items():
-            data_blkid.append((value, key))
-        data_blkid.sort(key=operator.itemgetter(0))
-        for key, value in map_txid.items():
-            data_txid.append((value, key))
-        data_txid.sort(key=operator.itemgetter(0))
-        for key, value in map_addrid.items():
-            data_addrid.append((value, key))
-        data_addrid.sort(key=operator.itemgetter(0))
         
-        cur.execute('''START TRANSACTION;''')
-        if len(data_blkid) != 0:
-            cur.executemany('''INSERT INTO blkid (id, blkhash)
-                                 VALUES (?, ?);''', data_blkid)
-        if len(data_txid) != 0:
-            cur.executemany('''INSERT INTO txid (id, tx)
-                                 VALUES (?, ?);''', data_txid)
-        if len(data_addrid) != 0:
-            cur.executemany('''INSERT INTO addrid (id, addr)
-                                 VALUES (?, ?);''', data_addrid)
-        if len(data_blktime) != 0:
-            cur.executemany('''INSERT INTO blktime (blk, miningtime)
-                                 VALUES (?, FROM_UNIXTIME(?));''', data_blktime)
-        if len(data_blktx) != 0:
-            cur.executemany('''INSERT INTO blktx (blk, tx)
-                                 VALUES (?, ?);''', data_blktx)
-        if len(data_txout) != 0:
-            cur.executemany('''INSERT INTO txout (tx, n, addr, btc)
-                                 VALUES (?, ?, ?, ?);''', data_txout)
-        if len(data_txin) != 0:
-            cur.executemany('''INSERT INTO txin (tx, n, ptx, pn)
-                                 VALUES (?, ?, ?, ?);''', data_txin)
-        cur.execute('''COMMIT;''')
-        conn.commit()
-        if DEBUG:
-            print(f'[{int(time.time()-STIME)}] Job done {height}')
-    
+        if height % FLAGS.insertwindow == 1:
+            for key, value in map_blkid.items():
+                data_blkid.append((value, key))
+            data_blkid.sort(key=operator.itemgetter(0))
+            for key, value in map_txid.items():
+                data_txid.append((value, key))
+            data_txid.sort(key=operator.itemgetter(0))
+            for key, value in map_addrid.items():
+                data_addrid.append((value, key))
+            data_addrid.sort(key=operator.itemgetter(0))
+
+            cur.execute('''START TRANSACTION;''')
+            if len(data_blkid) != 0:
+                cur.executemany('''INSERT INTO blkid (id, blkhash)
+                                     VALUES (?, ?);''', data_blkid)
+            if len(data_txid) != 0:
+                cur.executemany('''INSERT INTO txid (id, tx)
+                                     VALUES (?, ?);''', data_txid)
+            if len(data_addrid) != 0:
+                cur.executemany('''INSERT INTO addrid (id, addr)
+                                     VALUES (?, ?);''', data_addrid)
+            if len(data_blktime) != 0:
+                cur.executemany('''INSERT INTO blktime (blk, miningtime)
+                                     VALUES (?, FROM_UNIXTIME(?));''', data_blktime)
+            if len(data_blktx) != 0:
+                cur.executemany('''INSERT INTO blktx (blk, tx)
+                                     VALUES (?, ?);''', data_blktx)
+            if len(data_txout) != 0:
+                cur.executemany('''INSERT INTO txout (tx, n, addr, btc)
+                                     VALUES (?, ?, ?, ?);''', data_txout)
+            if len(data_txin) != 0:
+                cur.executemany('''INSERT INTO txin (tx, n, ptx, pn)
+                                     VALUES (?, ?, ?, ?);''', data_txin)
+            cur.execute('''COMMIT;''')
+            conn.commit()
+            if DEBUG:
+                print(f'[{int(time.time()-STIME)}] Job  done {height}')
+            data_blkid = []
+            map_blkid = {}
+            data_txid = []
+            map_txid = {}
+            data_addrid = []
+            map_addrid = {}
+            data_blktime = []
+            map_blktime = {}
+            data_blktx = []
+            map_blktx = {}
+            data_txout = []
+            map_txout = {}
+            data_txin = []
+            map_txin = {}
+        else:
+            if DEBUG:
+                print(f'[{int(time.time()-STIME)}] Load done {height}', end='\r')
+
+    for key, value in map_blkid.items():
+        data_blkid.append((value, key))
+    data_blkid.sort(key=operator.itemgetter(0))
+    for key, value in map_txid.items():
+        data_txid.append((value, key))
+    data_txid.sort(key=operator.itemgetter(0))
+    for key, value in map_addrid.items():
+        data_addrid.append((value, key))
+    data_addrid.sort(key=operator.itemgetter(0))
+
+    cur.execute('''START TRANSACTION;''')
+    if len(data_blkid) != 0:
+        cur.executemany('''INSERT INTO blkid (id, blkhash)
+                             VALUES (?, ?);''', data_blkid)
+    if len(data_txid) != 0:
+        cur.executemany('''INSERT INTO txid (id, tx)
+                             VALUES (?, ?);''', data_txid)
+    if len(data_addrid) != 0:
+        cur.executemany('''INSERT INTO addrid (id, addr)
+                             VALUES (?, ?);''', data_addrid)
+    if len(data_blktime) != 0:
+        cur.executemany('''INSERT INTO blktime (blk, miningtime)
+                             VALUES (?, FROM_UNIXTIME(?));''', data_blktime)
+    if len(data_blktx) != 0:
+        cur.executemany('''INSERT INTO blktx (blk, tx)
+                             VALUES (?, ?);''', data_blktx)
+    if len(data_txout) != 0:
+        cur.executemany('''INSERT INTO txout (tx, n, addr, btc)
+                             VALUES (?, ?, ?, ?);''', data_txout)
+    if len(data_txin) != 0:
+        cur.executemany('''INSERT INTO txin (tx, n, ptx, pn)
+                             VALUES (?, ?, ?, ?);''', data_txin)
+    cur.execute('''COMMIT;''')
+    conn.commit()
+    if DEBUG:
+        print(f'[{int(time.time()-STIME)}] Job done {height}')
+  
     print(f'[{int(time.time()-STIME)}] All job completed from {height_start} to {height_end}')
     
     conn.commit()
@@ -195,9 +252,8 @@ if __name__ == '__main__':
                         help='The rpc timeout secounds')
     parser.add_argument('--untrust', type=int, default=100,
                         help='The block height that untrusted')
-    parser.add_argument('--process', type=int, 
-                        default=min(multiprocessing.cpu_count()//2, 16),
-                        help='The number of multiprocess')
+    parser.add_argument('--insertwindow', type=int, default=10000,
+                        help='The bulk insert block height')
 
     FLAGS, _ = parser.parse_known_args()
     DEBUG = FLAGS.debug
