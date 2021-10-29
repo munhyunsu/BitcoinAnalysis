@@ -151,20 +151,27 @@ def main():
         data_addrid.sort(key=operator.itemgetter(0))
         
         cur.execute('''START TRANSACTION;''')
-        cur.executemany('''INSERT INTO blkid (id, blkhash)
-                             VALUES (?, ?);''', data_blkid)
-        cur.executemany('''INSERT INTO txid (id, tx)
-                             VALUES (?, ?);''', data_txid)
-        cur.executemany('''INSERT INTO addrid (id, addr)
-                             VALUES (?, ?);''', data_addrid)
-        cur.executemany('''INSERT INTO blktime (blk, miningtime)
-                             VALUES (?, FROM_UNIXTIME(?));''', data_blktime)
-        cur.executemany('''INSERT INTO blktx (blk, tx)
-                             VALUES (?, ?);''', data_blktx)
-        cur.executemany('''INSERT INTO txout (tx, n, addr, btc)
-                             VALUES (?, ?, ?, ?);''', data_txout)
-        cur.executemany('''INSERT INTO txin (tx, n, ptx, pn)
-                             VALUES (?, ?, ?, ?);''', data_txin)
+        if len(data_blkid) != 0:
+            cur.executemany('''INSERT INTO blkid (id, blkhash)
+                                 VALUES (?, ?);''', data_blkid)
+        if len(data_txid) != 0:
+            cur.executemany('''INSERT INTO txid (id, tx)
+                                 VALUES (?, ?);''', data_txid)
+        if len(data_addrid) != 0:
+            cur.executemany('''INSERT INTO addrid (id, addr)
+                                 VALUES (?, ?);''', data_addrid)
+        if len(data_blktime) != 0:
+            cur.executemany('''INSERT INTO blktime (blk, miningtime)
+                                 VALUES (?, FROM_UNIXTIME(?));''', data_blktime)
+        if len(data_blktx) != 0:
+            cur.executemany('''INSERT INTO blktx (blk, tx)
+                                 VALUES (?, ?);''', data_blktx)
+        if len(data_txout) != 0:
+            cur.executemany('''INSERT INTO txout (tx, n, addr, btc)
+                                 VALUES (?, ?, ?, ?);''', data_txout)
+        if len(data_txin) != 0:
+            cur.executemany('''INSERT INTO txin (tx, n, ptx, pn)
+                                 VALUES (?, ?, ?, ?);''', data_txin)
         cur.execute('''COMMIT;''')
         conn.commit()
         if DEBUG:
