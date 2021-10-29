@@ -66,7 +66,7 @@ def main():
     height_end = bestblock['height'] - FLAGS.untrust
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Best Block Heights: {bestblock["height"]}')
-        print(f'[{int(time.time()-STIME)}] Time: {utils.gettime(bestblock["height"]).isoformat()}')
+        print(f'[{int(time.time()-STIME)}] Time: {utils.gettime(bestblock["time"]).isoformat()}')
 
     print(f'[{int(time.time()-STIME)}] Start from {height_start} to {height_end}')
     print(f'[{int(time.time()-STIME)}] with starting blkid: {next_blkid}, txid: {next_txid}, addrid: {next_addrid}')
