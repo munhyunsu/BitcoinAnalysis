@@ -88,12 +88,14 @@ def main():
     map_txin = {}
     for height in range(height_start, height_end+1):
         if height not in cache_block.keys():
+            if DEBUG:
+                print(f'[{int(time.time()-STIME)}] Cache update: {height} ~ {min(height_end+1, height+FLAGS.bulk)-1}')
             with multiprocessing.Pool(FLAGS.process) as p:
                 results = p.imap(get_block, range(height, min(height_end+1, height+FLAGS.bulk)))
                 for mheight, mblockhash, mblock in results:
                     cache_block[mheight] = (mblockhash, mblock)
             if DEBUG:
-                print(f'[{int(time.time()-STIME)}] Cache update: {height} ~ {min(height_end+1, height+FLAGS.bulk)-1}')
+                print(f'[{int(time.time()-STIME)}] Cache update done')
         blockhash = cache_block[height][0]
         block = cache_block[height][1]
         if block['height'] != next_blkid:
@@ -166,7 +168,9 @@ def main():
             for key, value in map_addrid.items():
                 data_addrid.append((value, key))
             data_addrid.sort(key=operator.itemgetter(0))
-
+            
+            if DEBUG:
+                print(f'[{int(time.time()-STIME)}] Ready to transaction {height}')
             cur.execute('''START TRANSACTION;''')
             if len(data_blkid) != 0:
                 cur.executemany('''INSERT INTO blkid (id, blkhash)
@@ -223,6 +227,8 @@ def main():
         data_addrid.append((value, key))
     data_addrid.sort(key=operator.itemgetter(0))
 
+    if DEBUG:
+        print(f'[{int(time.time()-STIME)}] Ready to transaction {height}')
     cur.execute('''START TRANSACTION;''')
     if len(data_blkid) != 0:
         cur.executemany('''INSERT INTO blkid (id, blkhash)
