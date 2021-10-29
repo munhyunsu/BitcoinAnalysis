@@ -175,7 +175,7 @@ def main():
             cur.execute('''COMMIT;''')
             conn.commit()
             if DEBUG:
-                print(f'[{int(time.time()-STIME)}] Job done {height}')
+                print(f'[{int(time.time()-STIME)}] Job  done {height}')
             data_blkid = []
             map_blkid = {}
             data_txid = []
