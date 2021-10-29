@@ -193,6 +193,8 @@ def main():
             conn.commit()
             if DEBUG:
                 print(f'[{int(time.time()-STIME)}] Job  done {height}')
+            
+            cache_block = {}
             data_blkid = []
             map_blkid = {}
             data_txid = []
