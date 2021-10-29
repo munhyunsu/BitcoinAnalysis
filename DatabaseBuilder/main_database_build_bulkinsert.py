@@ -99,11 +99,11 @@ def main():
                     txid = next_txid
                     next_txid = next_txid + 1
                     map_txid[tx] = txid
-                    map_blktx[txid] = blkid
                 else:
                     txid = res[0][0]
             else:
                 txid = map_txid[tx]
+            data_blktx.append((blkid, txid))
             for n, vout in enumerate(btx['vout'], start=0):
                 try:
                     for addr, btc in utils.addr_btc_from_vout(vout):
