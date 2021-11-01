@@ -124,6 +124,20 @@ def main():
     print(f'[{int(time.time()-STIME)}] with starting blkid: {next_blkid}, txid: {next_txid}, addrid: {next_addrid}')
 
     cache_block = {}
+    data_blkid = []
+    map_blkid = {}
+    data_txid = []
+    map_txid = {}
+    data_addrid = []
+    map_addrid = {}
+    data_blktime = []
+    map_blktime = {}
+    data_blktx = []
+    map_blktx = {}
+    data_txout = []
+    map_txout = {}
+    data_txin = []
+    map_txin = {}
     for height in range(height_start, height_end+1):
         if height not in cache_block.keys():
             if DEBUG:
