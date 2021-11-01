@@ -87,7 +87,7 @@ def get_block(height):
         list_vin = []
         for n, vin in enumerate(btx['vin'], start=0):
             if 'coinbase' in vin:
-                list_vin.append((0, 0))
+                list_vin.append((-1, 0))
                 continue
             ptx = vin['txid']
             cur.execute('''SELECT id FROM txid
@@ -106,6 +106,9 @@ def get_block(height):
             'blktime': blktime,
             'txes': txes
            }
+
+    if DEBUG:
+        print(f'[{int(time.time()-STIME)}] Data read: {height:<7d}', end='\r')
 
     return data
 
@@ -130,19 +133,19 @@ def main():
     cur.execute('''SELECT MAX(id) FROM blkid;''')
     next_blkid = cur.fetchall()[0][0]
     if next_blkid is None:
-        next_blkid = 1
+        next_blkid = 0
     else:
         next_blkid = next_blkid + 1
     cur.execute('''SELECT MAX(id) FROM txid;''')
     next_txid = cur.fetchall()[0][0]
     if next_txid is None:
-        next_txid = 1
+        next_txid = 0
     else:
         next_txid = next_txid + 1
     cur.execute('''SELECT MAX(id) FROM addrid;''')
     next_addrid = cur.fetchall()[0][0]
     if next_addrid is None:
-        next_addrid = 1
+        next_addrid = 0
     else:
         next_addrid = next_addrid + 1
     
