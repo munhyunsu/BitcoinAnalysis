@@ -15,10 +15,29 @@ FLAGS = _ = None
 DEBUG = False
 STIME = time.time()
 RPCM = None
+CONN = None
+CUR = None
 
 
 def get_block(height):
     global RPCM
+    global CONN
+    global CUR
+    
+    try:
+        if CONN is None:
+            raise mariadb.Error
+        CUR.execute('''SHOW TABLES;''')
+        res = CUR.fetchall()
+    except mariadb.Error as e:
+        CONN, CUR = utils.connectdb(user=secret.dbuser,
+                                password=secret.dbpassword,
+                                host=secret.dbhost,
+                                port=secret.dbport,
+                                database=secret.dbdatabase)
+    finally:
+        conn = CONN
+        cur = CUR
     
     list_blockhash = []
     list_blktime = []
@@ -46,11 +65,21 @@ def get_block(height):
     txes = []
     for btx in block['tx']:
         tx = btx['txid']
+        cur.execute('''SELECT id FROM txid
+                         WHERE tx = ?;''', (tx,))
+        res = cur.fetchall()
+        if len(res) != 0:
+            tx = res[0][0]
         list_vout = []
         for n, vout in enumerate(btx['vout'], start=0):
             list_addr_btc = []
             try:
                 for addr, btc in utils.addr_btc_from_vout(vout):
+                    cur.execute('''SELECT id FROM addrid
+                                     WHERE addr = ?;''', (addr,))
+                    res = cur.fetchall()
+                    if len(res) != 0:
+                        addr = res[0][0]
                     list_addr_btc.append((addr, btc))
             except Exception:
                 raise Exception(f'For debug! {tx}:{n}:{vout}')
@@ -61,6 +90,11 @@ def get_block(height):
                 list_vin.append((0, 0))
                 continue
             ptx = vin['txid']
+            cur.execute('''SELECT id FROM txid
+                             WHERE tx = ?;''', (ptx,))
+            res = cur.fetchall()
+            if len(res) != 0:
+                ptx = res[0][0]
             pn = vin['vout']
             list_vin.append((ptx, pn))
         txes.append({'tx': tx,
@@ -160,47 +194,33 @@ def main():
         data_blktime.append((blkid, blktime))
         for txes in cache_block[height]['txes']:
             tx = txes['tx']
-            if tx not in map_txid.keys():
-                cur.execute('''SELECT id FROM txid
-                                 WHERE tx = ?;''', (tx,))
-                res = cur.fetchall()
-                if len(res) == 0:
-                    txid = next_txid
-                    next_txid = next_txid + 1
-                    map_txid[tx] = txid
-                else:
-                    txid = res[0][0]
+            if type(tx) == int:
+                txid = tx
+            elif tx not in map_txid.keys():
+                txid = next_txid
+                next_txid = next_txid + 1
+                map_txid[tx] = txid
             else:
                 txid = map_txid[tx]
             data_blktx.append((blkid, txid))
             for n, elements in enumerate(txes['vout'], start=0):
                 for addr, btc in elements:
-                    if addr not in map_addrid.keys():
-                        cur.execute('''SELECT id FROM addrid
-                                         WHERE addr = ?;''', (addr,))
-                        res = cur.fetchall()
-                        if len(res) == 0:
-                            addrid = next_addrid
-                            next_addrid = next_addrid + 1
-                            map_addrid[addr] = addrid
-                        else:
-                            addrid = res[0][0]
+                    if type(addr) == int:
+                        addrid = addr
+                    elif addr not in map_addrid.keys():
+                        addrid = next_addrid
+                        next_addrid = next_addrid + 1
+                        map_addrid[addr] = addrid
                     else:
                         addrid = map_addrid[addr]
                     data_txout.append((txid, n, addrid, btc))
             for n, elements in enumerate(txes['vin'], start=0):
                 ptx = elements[0]
                 pn = elements[1]
-                if ptx == 0:
-                    ptxid = 0
+                if type(ptx) == int:
+                    ptxid = ptx
                 elif ptx not in map_txid.keys():
-                    cur.execute('''SELECT id FROM txid
-                                     WHERE tx = ?;''', (ptx,))
-                    res = cur.fetchall()
-                    if len(res) == 0:
-                        raise Exception(f'ptx not found! {tx}:{n}:{ptx}')
-                    else:
-                        ptxid = res[0][0]
+                    raise Exception(f'ptx not found! {tx}:{n}:{ptx}')
                 else:
                     ptxid = map_txid[ptx]
                 data_txin.append((txid, n, ptxid, pn))
