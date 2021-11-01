@@ -57,7 +57,7 @@ sudo usermod -aG docker $USER
 
 ```bash
 docker pull mariadb
-docker run --name bitsqldb -p 3306:3306 -v /my/own/datadir/var/lib/mysql:/var/lib/mysql -e MARIADB_ROOT_PASSWORD=my-secret-pw -d mariadb:latest
+docker run --name bitsqldb -p 3306:3306 -v /my/own/datadir/var/lib/mysql:/var/lib/mysql -e MARIADB_ROOT_PASSWORD=my-secret-pw -d mariadb:latest --innodb_buffer_pool_size=137438953472 --key_buffer_size=137438953472 --max_allowed_packet=1073741824
 ```
 
 - Create user and database
@@ -73,6 +73,7 @@ CREATE USER IF NOT EXISTS user@bitsqldb IDENTIFIED BY 'user-secret-pw';
 SHOW WARNINGS;
 GRANT ALL PRIVILEGES ON bitsqldb.* TO 'user'@'%' IDENTIFIED BY 'user-secret-pw';
 FLUSH PRIVILEGES;
+SET GLOBAL query_cache_size = 1073741824;
 ```
 
 - Create `secret.py`
@@ -91,7 +92,8 @@ dbport = PORT
 
 6. Install python3 library and install library
 
-```
+```bash
+apt install libmariadb-dev
 python3 -m venv venv
 source venv/bin/activate
 pip3 install --upgrade -r requirements.txt
