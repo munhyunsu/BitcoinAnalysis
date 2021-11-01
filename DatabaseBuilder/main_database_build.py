@@ -158,7 +158,7 @@ def main():
         data_blkid.append((blkid, blockhash))
         blktime = cache_block[height]['blktime']
         data_blktime.append((blkid, blktime))
-        for txes in cache_block['txes']:
+        for txes in cache_block[height]['txes']:
             tx = txes['tx']
             if tx not in map_txid.keys():
                 cur.execute('''SELECT id FROM txid
