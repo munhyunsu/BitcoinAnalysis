@@ -1,4 +1,5 @@
 import argparse
+import sys
 import os
 import time
 import multiprocessing
@@ -18,6 +19,10 @@ RPCM = None
 
 def get_block(height):
     global RPCM
+    
+    list_blockhash = []
+    list_blktime = []
+    
     blockhash = None
     block = None
     try:
@@ -36,8 +41,39 @@ def get_block(height):
             blockhash = rpc.getblockhash(height)
         if block is None:
             block = rpc.getblock(blockhash, 2)
+    blktime = block['time']
 
-    return height, blockhash, block
+    txes = []
+    for btx in block['tx']:
+        tx = btc['txid']
+        list_vout = []
+        for n, vout in enumerate(btc['vout'], start=0):
+            list_addr_btc = []
+            try:
+                for addr, btc in utils.addr_btc_from_vout(vout):
+                    list_addr_btc.append((addr, btc))
+            except Exception:
+                raise Exception(f'For debug! {tx}:{n}:{vout}')
+            list_vout.append(list_addr_btc)
+        list_vin = []
+        for n, vin in enumerate(btc['vin'], start=0):
+            if 'coinbase' in vin:
+                list_vin.append((0, 0))
+                continue
+            ptx = vin['txid']
+            pn = vin['vout']
+            list_vin.append((ptx, pn))
+        txes.append({'tx': tx,
+                     'vout': list_vout,
+                     'vin': list_vin})
+    
+    data = {'height': height,
+            'blkhash': blockhash,
+            'blktime': blktime,
+            'txes': txes
+           }
+
+    return data
 
 
 def main():
@@ -88,43 +124,28 @@ def main():
     print(f'[{int(time.time()-STIME)}] with starting blkid: {next_blkid}, txid: {next_txid}, addrid: {next_addrid}')
 
     cache_block = {}
-    data_blkid = []
-    map_blkid = {}
-    data_txid = []
-    map_txid = {}
-    data_addrid = []
-    map_addrid = {}
-    data_blktime = []
-    map_blktime = {}
-    data_blktx = []
-    map_blktx = {}
-    data_txout = []
-    map_txout = {}
-    data_txin = []
-    map_txin = {}
     for height in range(height_start, height_end+1):
         if height not in cache_block.keys():
             if DEBUG:
                 print(f'[{int(time.time()-STIME)}] Cache update: {height} ~ {min(height_end+1, height+FLAGS.bulk)-1}')
             with multiprocessing.Pool(FLAGS.process) as p:
-                results = p.imap(get_block, range(height, min(height_end+1, height+FLAGS.bulk)))
-                for mheight, mblockhash, mblock in results:
-                    cache_block[mheight] = (mblockhash, mblock)
+                results = p.map(get_block, range(height, min(height_end+1, height+FLAGS.bulk)))
+                for data in results:
+                    cache_block[data['height']] = data
             if DEBUG:
                 print(f'[{int(time.time()-STIME)}] Cache update done')
-        blockhash = cache_block[height][0]
-        block = cache_block[height][1]
-        if block['height'] != next_blkid:
+        if cache_block[height]['height'] != next_blkid:
             print(f'Something is wrong: {block["height"]} != {next_blkid}')
             conn.close()
             sys.exit(0)
+        blockhash = cache_block[height]['blkhash']
         blkid = next_blkid
         next_blkid = next_blkid + 1
         data_blkid.append((blkid, blockhash))
-        blktime = block['time']
+        blktime = cache_block[height]['blktime']
         data_blktime.append((blkid, blktime))
-        for btx in block['tx']:
-            tx = btx['txid']
+        for txes in cache_block['txes']:
+            tx = txes['tx']
             if tx not in map_txid.keys():
                 cur.execute('''SELECT id FROM txid
                                  WHERE tx = ?;''', (tx,))
@@ -138,29 +159,24 @@ def main():
             else:
                 txid = map_txid[tx]
             data_blktx.append((blkid, txid))
-            for n, vout in enumerate(btx['vout'], start=0):
-                try:
-                    for addr, btc in utils.addr_btc_from_vout(vout):
-                        if addr not in map_addrid.keys():
-                            cur.execute('''SELECT id FROM addrid
-                                             WHERE addr = ?;''', (addr,))
-                            res = cur.fetchall()
-                            if len(res) == 0:
-                                addrid = next_addrid
-                                next_addrid = next_addrid + 1
-                                map_addrid[addr] = addrid
-                            else:
-                                addrid = res[0][0]
+            for n, elements in enumerate(txes['vout'], start=0):
+                for addr, btc in elements:
+                    if addr not in map_addrid.keys():
+                        cur.execute('''SELECT id FROM addrid
+                                         WHERE addr = ?;''', (addr,))
+                        res = cur.fetchall()
+                        if len(res) == 0:
+                            addrid = next_addrid
+                            next_addrid = next_addrid + 1
+                            map_addrid[addr] = addrid
                         else:
-                            addrid = map_addrid[addr]
-                        data_txout.append((txid, n, addrid, btc))
-                except Exception:
-                    raise Exception(f'For debug! {tx}:{n}:{vout}')
-            for n, vin in enumerate(btx['vin'], start=0):
-                if 'coinbase' in vin:
-                    data_txin.append((txid, n, 0, 0))
-                    continue
-                ptx = vin['txid']
+                            addrid = res[0][0]
+                    else:
+                        addrid = map_addrid[addr]
+                    data_txout.append((txid, n, addrid, btc))
+            for n, elements in enumerate(txes['vin'], start=0):
+                ptx = elements[0]
+                pn = elements[1]
                 if ptx not in map_txid.keys():
                     cur.execute('''SELECT id FROM txid
                                      WHERE tx = ?;''', (ptx,))
@@ -171,9 +187,8 @@ def main():
                         ptxid = res[0][0]
                 else:
                     ptxid = map_txid[ptx]
-                pn = vin['vout']
                 data_txin.append((txid, n, ptxid, pn))
-        
+
         if height % FLAGS.bulk == 1:
             for key, value in map_blkid.items():
                 data_blkid.append((value, key))
@@ -184,7 +199,7 @@ def main():
             for key, value in map_addrid.items():
                 data_addrid.append((value, key))
             data_addrid.sort(key=operator.itemgetter(0))
-            
+
             if DEBUG:
                 print(f'[{int(time.time()-STIME)}] Ready to transaction {height}')
             try:
@@ -217,7 +232,7 @@ def main():
                 sys.exit(1)
             if DEBUG:
                 print(f'[{int(time.time()-STIME)}] Job  done {height}')
-            
+
             cache_block = {}
             data_blkid = []
             map_blkid = {}
