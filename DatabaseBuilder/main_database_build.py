@@ -47,7 +47,7 @@ def get_block(height):
     for btx in block['tx']:
         tx = btx['txid']
         list_vout = []
-        for n, vout in enumerate(btc['vout'], start=0):
+        for n, vout in enumerate(btx['vout'], start=0):
             list_addr_btc = []
             try:
                 for addr, btc in utils.addr_btc_from_vout(vout):
@@ -56,7 +56,7 @@ def get_block(height):
                 raise Exception(f'For debug! {tx}:{n}:{vout}')
             list_vout.append(list_addr_btc)
         list_vin = []
-        for n, vin in enumerate(btc['vin'], start=0):
+        for n, vin in enumerate(btx['vin'], start=0):
             if 'coinbase' in vin:
                 list_vin.append((0, 0))
                 continue
