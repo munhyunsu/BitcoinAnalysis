@@ -191,7 +191,9 @@ def main():
             for n, elements in enumerate(txes['vin'], start=0):
                 ptx = elements[0]
                 pn = elements[1]
-                if ptx not in map_txid.keys():
+                if ptx == 0:
+                    ptxid = 0
+                elif ptx not in map_txid.keys():
                     cur.execute('''SELECT id FROM txid
                                      WHERE tx = ?;''', (ptx,))
                     res = cur.fetchall()
