@@ -45,7 +45,7 @@ def get_block(height):
 
     txes = []
     for btx in block['tx']:
-        tx = btc['txid']
+        tx = btx['txid']
         list_vout = []
         for n, vout in enumerate(btc['vout'], start=0):
             list_addr_btc = []
