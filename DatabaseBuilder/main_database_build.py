@@ -13,14 +13,30 @@ import utils
 FLAGS = _ = None
 DEBUG = False
 STIME = time.time()
+RPCM = None
 
 
 def get_block(height):
-    rpc = AuthServiceProxy((f'http://{secret.rpcuser}:{secret.rpcpassword}@'
-                            f'{secret.rpchost}:{secret.rpcport}'),
-                           timeout=FLAGS.rpctimeout)
-    blockhash = rpc.getblockhash(height)
-    block = rpc.getblock(blockhash, 2)
+    global RPCM
+    blockhash = None
+    block = None
+    try:
+        if RPCM is None:
+            raise BrokenPipeError
+        rpc = RPCM
+        blockhash = rpc.getblockhash(height)
+        block = rpc.getblock(blockhash, 2)
+    except (BrokenPipeError, JSONRPCException):
+        RPCM = AuthServiceProxy((f'http://{secret.rpcuser}:{secret.rpcpassword}@'
+                                 f'{secret.rpchost}:{secret.rpcport}'),
+                                timeout=FLAGS.rpctimeout)
+        rpc = RPCM
+    finally:
+        if blockhash is None:
+            blockhash = rpc.getblockhash(height)
+        if block is None:
+            block = rpc.getblock(blockhash, 2)
+
     return height, blockhash, block
 
 
@@ -171,30 +187,34 @@ def main():
             
             if DEBUG:
                 print(f'[{int(time.time()-STIME)}] Ready to transaction {height}')
-            cur.execute('''START TRANSACTION;''')
-            if len(data_blkid) != 0:
-                cur.executemany('''INSERT INTO blkid (id, blkhash)
-                                     VALUES (?, ?);''', data_blkid)
-            if len(data_txid) != 0:
-                cur.executemany('''INSERT INTO txid (id, tx)
-                                     VALUES (?, ?);''', data_txid)
-            if len(data_addrid) != 0:
-                cur.executemany('''INSERT INTO addrid (id, addr)
-                                     VALUES (?, ?);''', data_addrid)
-            if len(data_blktime) != 0:
-                cur.executemany('''INSERT INTO blktime (blk, miningtime)
-                                     VALUES (?, FROM_UNIXTIME(?));''', data_blktime)
-            if len(data_blktx) != 0:
-                cur.executemany('''INSERT INTO blktx (blk, tx)
-                                     VALUES (?, ?);''', data_blktx)
-            if len(data_txout) != 0:
-                cur.executemany('''INSERT INTO txout (tx, n, addr, btc)
-                                     VALUES (?, ?, ?, ?);''', data_txout)
-            if len(data_txin) != 0:
-                cur.executemany('''INSERT INTO txin (tx, n, ptx, pn)
-                                     VALUES (?, ?, ?, ?);''', data_txin)
-            cur.execute('''COMMIT;''')
-            conn.commit()
+            try:
+                cur.execute('''START TRANSACTION;''')
+                if len(data_blkid) != 0:
+                    cur.executemany('''INSERT INTO blkid (id, blkhash)
+                                         VALUES (?, ?);''', data_blkid)
+                if len(data_txid) != 0:
+                    cur.executemany('''INSERT INTO txid (id, tx)
+                                         VALUES (?, ?);''', data_txid)
+                if len(data_addrid) != 0:
+                    cur.executemany('''INSERT INTO addrid (id, addr)
+                                         VALUES (?, ?);''', data_addrid)
+                if len(data_blktime) != 0:
+                    cur.executemany('''INSERT INTO blktime (blk, miningtime)
+                                         VALUES (?, FROM_UNIXTIME(?));''', data_blktime)
+                if len(data_blktx) != 0:
+                    cur.executemany('''INSERT INTO blktx (blk, tx)
+                                         VALUES (?, ?);''', data_blktx)
+                if len(data_txout) != 0:
+                    cur.executemany('''INSERT INTO txout (tx, n, addr, btc)
+                                         VALUES (?, ?, ?, ?);''', data_txout)
+                if len(data_txin) != 0:
+                    cur.executemany('''INSERT INTO txin (tx, n, ptx, pn)
+                                         VALUES (?, ?, ?, ?);''', data_txin)
+                cur.execute('''COMMIT;''')
+                conn.commit()
+            except mariadb.OperationalError as e:
+                print(f'[{int(time.time()-STIME)}] MariaDB Error: {e}')
+                sys.exit(1)
             if DEBUG:
                 print(f'[{int(time.time()-STIME)}] Job  done {height}')
             
@@ -229,30 +249,34 @@ def main():
 
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Ready to transaction {height}')
-    cur.execute('''START TRANSACTION;''')
-    if len(data_blkid) != 0:
-        cur.executemany('''INSERT INTO blkid (id, blkhash)
-                             VALUES (?, ?);''', data_blkid)
-    if len(data_txid) != 0:
-        cur.executemany('''INSERT INTO txid (id, tx)
-                             VALUES (?, ?);''', data_txid)
-    if len(data_addrid) != 0:
-        cur.executemany('''INSERT INTO addrid (id, addr)
-                             VALUES (?, ?);''', data_addrid)
-    if len(data_blktime) != 0:
-        cur.executemany('''INSERT INTO blktime (blk, miningtime)
-                             VALUES (?, FROM_UNIXTIME(?));''', data_blktime)
-    if len(data_blktx) != 0:
-        cur.executemany('''INSERT INTO blktx (blk, tx)
-                             VALUES (?, ?);''', data_blktx)
-    if len(data_txout) != 0:
-        cur.executemany('''INSERT INTO txout (tx, n, addr, btc)
-                             VALUES (?, ?, ?, ?);''', data_txout)
-    if len(data_txin) != 0:
-        cur.executemany('''INSERT INTO txin (tx, n, ptx, pn)
-                             VALUES (?, ?, ?, ?);''', data_txin)
-    cur.execute('''COMMIT;''')
-    conn.commit()
+    try:
+        cur.execute('''START TRANSACTION;''')
+        if len(data_blkid) != 0:
+            cur.executemany('''INSERT INTO blkid (id, blkhash)
+                                 VALUES (?, ?);''', data_blkid)
+        if len(data_txid) != 0:
+            cur.executemany('''INSERT INTO txid (id, tx)
+                                 VALUES (?, ?);''', data_txid)
+        if len(data_addrid) != 0:
+            cur.executemany('''INSERT INTO addrid (id, addr)
+                                 VALUES (?, ?);''', data_addrid)
+        if len(data_blktime) != 0:
+            cur.executemany('''INSERT INTO blktime (blk, miningtime)
+                                 VALUES (?, FROM_UNIXTIME(?));''', data_blktime)
+        if len(data_blktx) != 0:
+            cur.executemany('''INSERT INTO blktx (blk, tx)
+                                 VALUES (?, ?);''', data_blktx)
+        if len(data_txout) != 0:
+            cur.executemany('''INSERT INTO txout (tx, n, addr, btc)
+                                 VALUES (?, ?, ?, ?);''', data_txout)
+        if len(data_txin) != 0:
+            cur.executemany('''INSERT INTO txin (tx, n, ptx, pn)
+                                 VALUES (?, ?, ?, ?);''', data_txin)
+        cur.execute('''COMMIT;''')
+        conn.commit()
+    except mariadb.OperationalError as e:
+        print(f'[{int(time.time()-STIME)}] MariaDB Error: {e}')
+        sys.exit(1)
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Job done {height}')
   
