@@ -243,27 +243,27 @@ def main():
                 print(f'[{int(time.time()-STIME)}] Ready to transaction {height}')
             try:
                 cur.execute('''START TRANSACTION;''')
-                if len(data_blkid) != 0:
-                    cur.executemany('''INSERT INTO blkid (id, blkhash)
-                                         VALUES (?, ?);''', data_blkid)
-                if len(data_txid) != 0:
-                    cur.executemany('''INSERT INTO txid (id, tx)
-                                         VALUES (?, ?);''', data_txid)
-                if len(data_addrid) != 0:
-                    cur.executemany('''INSERT INTO addrid (id, addr)
-                                         VALUES (?, ?);''', data_addrid)
-                if len(data_blktime) != 0:
-                    cur.executemany('''INSERT INTO blktime (blk, miningtime)
-                                         VALUES (?, FROM_UNIXTIME(?));''', data_blktime)
-                if len(data_blktx) != 0:
-                    cur.executemany('''INSERT INTO blktx (blk, tx)
-                                         VALUES (?, ?);''', data_blktx)
-                if len(data_txout) != 0:
-                    cur.executemany('''INSERT INTO txout (tx, n, addr, btc)
-                                         VALUES (?, ?, ?, ?);''', data_txout)
-                if len(data_txin) != 0:
-                    cur.executemany('''INSERT INTO txin (tx, n, ptx, pn)
-                                         VALUES (?, ?, ?, ?);''', data_txin)
+                for blkid_id, blkid_blkhash in data_blkid:
+                    cur.execute('''INSERT INTO blkid (id, blkhash)
+                                     VALUES (?, ?);''', (blkid_id, blkid_blkhash))
+                for txid_id, txid_tx in data_txid:
+                    cur.execute('''INSERT INTO txid (id, tx)
+                                     VALUES (?, ?);''', (txid_id, txid_tx))
+                for addrid_id, addrid_addr in data_addrid:
+                    cur.execute('''INSERT INTO addrid (id, addr)
+                                     VALUES (?, ?);''', (addrid_id, addrid_addr))
+                for blktime_blk, blktime_miningtime in data_blktime:
+                    cur.execute('''INSERT INTO blktime (blk, miningtime)
+                                     VALUES (?, ?);''', (blktime_blk, blktime_miningtime))
+                for blktx_blk, blktx_tx in data_blktx:
+                    cur.execute('''INSERT INTO blktx (blk, tx)
+                                     VALUES (?, ?);''', (blktx_blk, blktx_tx))
+                for txout_tx, txout_n, txout_addr, txout_btc in data_txout:
+                    cur.execute('''INSERT INTO txout (tx, n, addr, btc)
+                                     VALUES (?, ?);''', (txout_tx, txout_n, txout_addr, txout_btc))
+                for txin_tx, txin_n, txin_ptx, txin_pn in data_txin:
+                    cur.execute('''INSERT INTO txin (tx, n, ptx, pn)
+                                     VALUES (?, ?, ?, ?);''', (txin_tx, txin_n, txin_ptx, txin_pn))
                 cur.execute('''COMMIT;''')
                 conn.commit()
             except mariadb.OperationalError as e:
@@ -305,27 +305,27 @@ def main():
         print(f'[{int(time.time()-STIME)}] Ready to transaction {height}')
     try:
         cur.execute('''START TRANSACTION;''')
-        if len(data_blkid) != 0:
-            cur.executemany('''INSERT INTO blkid (id, blkhash)
-                                 VALUES (?, ?);''', data_blkid)
-        if len(data_txid) != 0:
-            cur.executemany('''INSERT INTO txid (id, tx)
-                                 VALUES (?, ?);''', data_txid)
-        if len(data_addrid) != 0:
-            cur.executemany('''INSERT INTO addrid (id, addr)
-                                 VALUES (?, ?);''', data_addrid)
-        if len(data_blktime) != 0:
-            cur.executemany('''INSERT INTO blktime (blk, miningtime)
-                                 VALUES (?, FROM_UNIXTIME(?));''', data_blktime)
-        if len(data_blktx) != 0:
-            cur.executemany('''INSERT INTO blktx (blk, tx)
-                                 VALUES (?, ?);''', data_blktx)
-        if len(data_txout) != 0:
-            cur.executemany('''INSERT INTO txout (tx, n, addr, btc)
-                                 VALUES (?, ?, ?, ?);''', data_txout)
-        if len(data_txin) != 0:
-            cur.executemany('''INSERT INTO txin (tx, n, ptx, pn)
-                                 VALUES (?, ?, ?, ?);''', data_txin)
+        for blkid_id, blkid_blkhash in data_blkid:
+            cur.execute('''INSERT INTO blkid (id, blkhash)
+                             VALUES (?, ?);''', (blkid_id, blkid_blkhash))
+        for txid_id, txid_tx in data_txid:
+            cur.execute('''INSERT INTO txid (id, tx)
+                             VALUES (?, ?);''', (txid_id, txid_tx))
+        for addrid_id, addrid_addr in data_addrid:
+            cur.execute('''INSERT INTO addrid (id, addr)
+                             VALUES (?, ?);''', (addrid_id, addrid_addr))
+        for blktime_blk, blktime_miningtime in data_blktime:
+            cur.execute('''INSERT INTO blktime (blk, miningtime)
+                             VALUES (?, ?);''', (blktime_blk, blktime_miningtime))
+        for blktx_blk, blktx_tx in data_blktx:
+            cur.execute('''INSERT INTO blktx (blk, tx)
+                             VALUES (?, ?);''', (blktx_blk, blktx_tx))
+        for txout_tx, txout_n, txout_addr, txout_btc in data_txout:
+            cur.execute('''INSERT INTO txout (tx, n, addr, btc)
+                             VALUES (?, ?);''', (txout_tx, txout_n, txout_addr, txout_btc))
+        for txin_tx, txin_n, txin_ptx, txin_pn in data_txin:
+            cur.execute('''INSERT INTO txin (tx, n, ptx, pn)
+                             VALUES (?, ?, ?, ?);''', (txin_tx, txin_n, txin_ptx, txin_pn))
         cur.execute('''COMMIT;''')
         conn.commit()
     except mariadb.OperationalError as e:
