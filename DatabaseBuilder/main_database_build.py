@@ -254,7 +254,7 @@ def main():
                                      VALUES (?, ?);''', (addrid_id, addrid_addr))
                 for blktime_blk, blktime_miningtime in data_blktime:
                     cur.execute('''INSERT INTO blktime (blk, miningtime)
-                                     VALUES (?, ?);''', (blktime_blk, blktime_miningtime))
+                                     VALUES (?, FROM_UNIXTIME(?));''', (blktime_blk, blktime_miningtime))
                 for blktx_blk, blktx_tx in data_blktx:
                     cur.execute('''INSERT INTO blktx (blk, tx)
                                      VALUES (?, ?);''', (blktx_blk, blktx_tx))
@@ -316,7 +316,7 @@ def main():
                              VALUES (?, ?);''', (addrid_id, addrid_addr))
         for blktime_blk, blktime_miningtime in data_blktime:
             cur.execute('''INSERT INTO blktime (blk, miningtime)
-                             VALUES (?, ?);''', (blktime_blk, blktime_miningtime))
+                             VALUES (?, FROM_UNIXTIME(?));''', (blktime_blk, blktime_miningtime))
         for blktx_blk, blktx_tx in data_blktx:
             cur.execute('''INSERT INTO blktx (blk, tx)
                              VALUES (?, ?);''', (blktx_blk, blktx_tx))
