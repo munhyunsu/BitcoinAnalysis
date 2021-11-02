@@ -260,7 +260,7 @@ def main():
                                      VALUES (?, ?);''', (blktx_blk, blktx_tx))
                 for txout_tx, txout_n, txout_addr, txout_btc in data_txout:
                     cur.execute('''INSERT INTO txout (tx, n, addr, btc)
-                                     VALUES (?, ?);''', (txout_tx, txout_n, txout_addr, txout_btc))
+                                     VALUES (?, ?, ?, ?);''', (txout_tx, txout_n, txout_addr, txout_btc))
                 for txin_tx, txin_n, txin_ptx, txin_pn in data_txin:
                     cur.execute('''INSERT INTO txin (tx, n, ptx, pn)
                                      VALUES (?, ?, ?, ?);''', (txin_tx, txin_n, txin_ptx, txin_pn))
@@ -322,7 +322,7 @@ def main():
                              VALUES (?, ?);''', (blktx_blk, blktx_tx))
         for txout_tx, txout_n, txout_addr, txout_btc in data_txout:
             cur.execute('''INSERT INTO txout (tx, n, addr, btc)
-                             VALUES (?, ?);''', (txout_tx, txout_n, txout_addr, txout_btc))
+                             VALUES (?, ?, ?, ?);''', (txout_tx, txout_n, txout_addr, txout_btc))
         for txin_tx, txin_n, txin_ptx, txin_pn in data_txin:
             cur.execute('''INSERT INTO txin (tx, n, ptx, pn)
                              VALUES (?, ?, ?, ?);''', (txin_tx, txin_n, txin_ptx, txin_pn))
