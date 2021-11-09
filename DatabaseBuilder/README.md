@@ -98,3 +98,7 @@ python3 -m venv venv
 source venv/bin/activate
 pip3 install --upgrade -r requirements.txt
 ```
+
+### Now
+
+- Boost insert using sqlite
