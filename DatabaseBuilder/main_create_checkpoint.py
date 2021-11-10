@@ -5,7 +5,7 @@ import time
 import multiprocessing
 import operator
 
-import sqlite
+import sqlite3
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
 import secret
@@ -20,16 +20,20 @@ CUR = None
 
 
 def get_block(height):
+    global DEBUG
     global RPCM
     global CONN
     global CUR
     
     try:
         if CONN is None:
-            raise mariadb.Error
-        CUR.execute('''SHOW TABLES;''')
-        res = CUR.fetchall()
-    except mariadb.Error as e:
+            raise sqlite3.Error:
+        CUR.execute('''SELECT * FROM sqlite_master LIMIT 1;''')
+        res= CUR.fetchall()
+    except sqlite3.Error as e:
+        if DEBUG:
+            print(f'SQLite3 Error {e}')
+        CONN = sqlite3.connect(
         CONN, CUR = utils.connectdb(user=secret.dbuser,
                                 password=secret.dbpassword,
                                 host=secret.dbhost,
@@ -350,15 +354,22 @@ if __name__ == '__main__':
                          help='The present debug message')
     parser.add_argument('--rpctimeout', type=int, default=60,
                         help='The rpc timeout secounds')
-    parser.add_argument('--untrust', type=int, default=100,
-                        help='The block height that untrusted')
-    parser.add_argument('--bulk', type=int, default=10000,
-                        help='The bulk insert block height')
+    parser.add_argument('--output', type=str, default='./checkpoints',
+                        help='The prefix for checkpoint csv files')
+    parser.add_argument('--endheight', type=int, default=float('inf'),
+                        help='The max height to create checkpoint')
+    parser.add_argument('--bulk', type=int, default=100000,
+                        help='The bulk process height')
     parser.add_argument('--process', type=int, 
                         default=min(multiprocessing.cpu_count()//2, 16),
                         help='The number of multiprocess')
+    parser.add_argument('--pagesize', type=int, default=64*1024,
+                        help='The page size of database (Max: 64×1024)')
+    parser.add_argument('--cachesize', type=int, default=4194304,
+                        help='The cache size of page (GB×1024×1024×1024÷(64×1024))')
 
     FLAGS, _ = parser.parse_known_args()
+    FLAGS.output = os.path.abspath(os.path.expanduser(FLAGS.output))
     DEBUG = FLAGS.debug
 
     main()
