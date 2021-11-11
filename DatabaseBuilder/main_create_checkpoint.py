@@ -20,25 +20,24 @@ CUR = None
 
 
 def get_block(height):
+    global FLAGS
     global DEBUG
     global RPCM
     global CONN
     global CUR
     
     try:
-        if CONN is None:
+        if CONN is None or CUR is None:
             raise sqlite3.Error:
         CUR.execute('''SELECT * FROM sqlite_master LIMIT 1;''')
-        res= CUR.fetchall()
+        res = CUR.fetchall()
     except sqlite3.Error as e:
         if DEBUG:
             print(f'SQLite3 Error {e}')
-        CONN = sqlite3.connect(
-        CONN, CUR = utils.connectdb(user=secret.dbuser,
-                                password=secret.dbpassword,
-                                host=secret.dbhost,
-                                port=secret.dbport,
-                                database=secret.dbdatabase)
+        os.makedirs(FLAGS.output, exist_ok=True)
+        dbpath = os.path.join(FLAGS.output, 'checkpoint.db')
+        CONN = sqlite3.connect(f'{dbpath}')
+        CUR = CONN.cursor()
     finally:
         conn = CONN
         cur = CUR
