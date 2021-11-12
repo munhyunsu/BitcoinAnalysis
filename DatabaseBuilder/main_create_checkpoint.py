@@ -32,8 +32,6 @@ def get_block(height):
         CUR.execute('''SELECT * FROM sqlite_master LIMIT 1;''')
         res = CUR.fetchall()
     except sqlite3.Error as e:
-        if DEBUG:
-            print(f'SQLite3 Error {e}')
         os.makedirs(FLAGS.output, exist_ok=True)
         dbpath = os.path.join(FLAGS.output, 'checkpoint.db')
         CONN = sqlite3.connect(f'{dbpath}')
@@ -131,7 +129,7 @@ def main():
     os.makedirs(FLAGS.output, exist_ok=True)
     dbpath = os.path.join(FLAGS.output, 'checkpoint.db')
     conn = sqlite3.connect(f'{dbpath}')
-    cur = CONN.cursor()
+    cur = conn.cursor()
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Connect to SQLite3 database: {dbpath}')
 
@@ -165,15 +163,13 @@ def main():
                      tx INTEGER NOT NULL,
                      n INTEGER NOT NULL,
                      addr INTEGER NOT NULL,
-                     btc REAL NOT NULL,
-                     UNIQUE (tx, n, addr)
+                     btc REAL NOT NULL
                    );''')
     cur.execute('''CREATE TABLE txin (
                      tx INTEGER NOT NULL,
                      n INTEGER NOT NULL,
                      ptx INTEGER NOT NULL,
-                     pn INTEGER NOT NULL,
-                     UNIQUE(tx, n)
+                     pn INTEGER NOT NULL
                    );''')
     conn.commit()
     cur.execute(f'''PRAGMA journal_mode = OFF;''')
@@ -183,6 +179,10 @@ def main():
     cur.execute(f'''VACUUM;''')
     conn.commit()
 
+    next_blkid = 0
+    next_txid = 0
+    next_addrid = 0
+
     height_start = 0
     bestblockhash = rpc.getbestblockhash()
     bestblock = rpc.getblock(bestblockhash)
@@ -191,7 +191,7 @@ def main():
         print(f'[{int(time.time()-STIME)}] Best Block Heights: {bestblock["height"]}')
         print(f'[{int(time.time()-STIME)}] Time: {utils.gettime(bestblock["time"]).isoformat()}')
 
-    print(f'[{int(time.time()-STIME)}] Start from {height_start} to {height_end}')
+    print(f'[{int(time.time()-STIME)}] Begin build database from {height_start} to {height_end}')
     print(f'[{int(time.time()-STIME)}] with starting blkid: {next_blkid}, txid: {next_txid}, addrid: {next_addrid}')
 
     cache_block = {}
@@ -322,8 +322,8 @@ def main():
             if DEBUG:
                 print(f'[{int(time.time()-STIME)}] Load done {height}', end='\r')
 
-    print(f'[{int(time.time()-STIME)}] All job completed from {height_start} to {height_end}')
-    
+    print(f'[{int(time.time()-STIME)}] End build database from {height_start} to {height_end}')
+
     conn.commit()
     conn.close()
 
@@ -340,7 +340,7 @@ if __name__ == '__main__':
                         help='The rpc timeout secounds')
     parser.add_argument('--untrust', type=int, default=100,
                         help='The block height that untrusted')
-    parser.add_argument('--endheight', type=int, default=float('inf'),
+    parser.add_argument('--maxheight', type=int, default=float('inf'),
                         help='The max height to create checkpoint')
     parser.add_argument('--bulk', type=int, default=100000,
                         help='The bulk process height')
