@@ -121,41 +121,69 @@ def main():
         print(f'Parsed arguments {FLAGS}')
         print(f'Unparsed arguments {_}')
 
-    conn, cur = utils.connectdb(user=secret.dbuser,
-                                password=secret.dbpassword,
-                                host=secret.dbhost,
-                                port=secret.dbport,
-                                database=secret.dbdatabase)
+    os.shutil.rmtree(FLAGS.output)
     if DEBUG:
-        print(f'[{int(time.time()-STIME)}] Connect to database')
+        print(f'[{int(time.time()-STIME)}] Remove directory {FLAGS.output}')
+
+    os.makedirs(FLAGS.output, exist_ok=True)
+    dbpath = os.path.join(FLAGS.output, 'checkpoint.db')
+    conn = sqlite3.connect(f'{dbpath}')
+    cur = CONN.cursor()
+    if DEBUG:
+        print(f'[{int(time.time()-STIME)}] Connect to SQLite3 database: {dbpath}')
 
     rpc = AuthServiceProxy((f'http://{secret.rpcuser}:{secret.rpcpassword}@'
                             f'{secret.rpchost}:{secret.rpcport}'),
                            timeout=FLAGS.rpctimeout)
 
-    cur.execute('''SELECT MAX(id) FROM blkid;''')
-    next_blkid = cur.fetchall()[0][0]
-    if next_blkid is None:
-        next_blkid = 0
-    else:
-        next_blkid = next_blkid + 1
-    cur.execute('''SELECT MAX(id) FROM txid;''')
-    next_txid = cur.fetchall()[0][0]
-    if next_txid is None:
-        next_txid = 0
-    else:
-        next_txid = next_txid + 1
-    cur.execute('''SELECT MAX(id) FROM addrid;''')
-    next_addrid = cur.fetchall()[0][0]
-    if next_addrid is None:
-        next_addrid = 0
-    else:
-        next_addrid = next_addrid + 1
-    
-    height_start = next_blkid
+    cur.execute('''CREATE TABLE blkid (
+                     id INTEGER PRIMARY KEY,
+                     blkhash TEXT NOT NULL UNIQUE
+                   );''')
+    cur.execute('''CREATE TABLE txid (
+                     id INTEGER PRIMARY KEY,
+                     tx TEXT NOT NULL UNIQUE
+                   );''')
+    cur.execute('''CREATE TABLE addrid (
+                     id INTEGER PRIMARY KEY,
+                     addr TEXT NOT NULL
+                   );''')
+    cur.execute('''CREATE TABLE blktime (
+                     blk INTETER NOT NULL,
+                     miningtime INTEGER NOT NULL,
+                     UNIQUE (blk, miningtime)
+                   );''')
+    cur.execute('''CREATE TABLE blktx (
+                     blk INTEGER NOT NULL,
+                     tx INTEGER NOT NULL,
+                     UNIQUE (blk, tx)
+                   );''')
+    cur.execute('''CREATE TABLE txout (
+                     tx INTEGER NOT NULL,
+                     n INTEGER NOT NULL,
+                     addr INTEGER NOT NULL,
+                     btc REAL NOT NULL,
+                     UNIQUE (tx, n, addr)
+                   );''')
+    cur.execute('''CREATE TABLE txin (
+                     tx INTEGER NOT NULL,
+                     n INTEGER NOT NULL,
+                     ptx INTEGER NOT NULL,
+                     pn INTEGER NOT NULL,
+                     UNIQUE(tx, n)
+                   );''')
+    conn.commit()
+    cur.execute(f'''PRAGMA journal_mode = OFF;''')
+    cur.execute(f'''PRAGMA synchronous = OFF;''')
+    cur.execute(f'''PRAGMA cache_size = {FLAGS.cachesize};''')
+    cur.execute(f'''PRAGMA page_size = {FLAGS.pagesize};''')
+    cur.execute(f'''VACUUM;''')
+    conn.commit()
+
+    height_start = 0
     bestblockhash = rpc.getbestblockhash()
     bestblock = rpc.getblock(bestblockhash)
-    height_end = bestblock['height'] - FLAGS.untrust
+    height_end = min(FLAGS.maxheight, bestblock['height'] - FLAGS.untrust)
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Best Block Heights: {bestblock["height"]}')
         print(f'[{int(time.time()-STIME)}] Time: {utils.gettime(bestblock["time"]).isoformat()}')
@@ -164,6 +192,8 @@ def main():
     print(f'[{int(time.time()-STIME)}] with starting blkid: {next_blkid}, txid: {next_txid}, addrid: {next_addrid}')
 
     cache_block = {}
+    cache_start = 0
+    cache_end = 0
     data_blkid = []
     map_blkid = {}
     data_txid = []
@@ -180,10 +210,12 @@ def main():
     map_txin = {}
     for height in range(height_start, height_end+1):
         if height not in cache_block.keys():
+            cache_start = height
+            cache_end = min(height_end+1, height+FLAGS.bulk)
             if DEBUG:
-                print(f'[{int(time.time()-STIME)}] Cache update: {height} ~ {min(height_end+1, height+FLAGS.bulk)-1}')
+                print(f'[{int(time.time()-STIME)}] Cache update: {cache_start} ~ {cache_end-1}')
             with multiprocessing.Pool(FLAGS.process) as p:
-                results = p.map(get_block, range(height, min(height_end+1, height+FLAGS.bulk)))
+                results = p.map(get_block, range(cache_start, cache_end))
                 for data in results:
                     cache_block[data['height']] = data
             if DEBUG:
@@ -231,7 +263,7 @@ def main():
                     ptxid = map_txid[ptx]
                 data_txin.append((txid, n, ptxid, pn))
 
-        if height % FLAGS.bulk == 1:
+        if height == cache_end-1:
             for key, value in map_blkid.items():
                 data_blkid.append((value, key))
             data_blkid.sort(key=operator.itemgetter(0))
@@ -245,32 +277,25 @@ def main():
             if DEBUG:
                 print(f'[{int(time.time()-STIME)}] Ready to transaction {height}')
             try:
-                cur.execute('''START TRANSACTION;''')
-                for blkid_id, blkid_blkhash in data_blkid:
-                    cur.execute('''INSERT INTO blkid (id, blkhash)
-                                     VALUES (?, ?);''', (blkid_id, blkid_blkhash))
-                for txid_id, txid_tx in data_txid:
-                    cur.execute('''INSERT INTO txid (id, tx)
-                                     VALUES (?, ?);''', (txid_id, txid_tx))
-                for addrid_id, addrid_addr in data_addrid:
-                    cur.execute('''INSERT INTO addrid (id, addr)
-                                     VALUES (?, ?);''', (addrid_id, addrid_addr))
-                for blktime_blk, blktime_miningtime in data_blktime:
-                    cur.execute('''INSERT INTO blktime (blk, miningtime)
-                                     VALUES (?, FROM_UNIXTIME(?));''', (blktime_blk, blktime_miningtime))
-                for blktx_blk, blktx_tx in data_blktx:
-                    cur.execute('''INSERT INTO blktx (blk, tx)
-                                     VALUES (?, ?);''', (blktx_blk, blktx_tx))
-                for txout_tx, txout_n, txout_addr, txout_btc in data_txout:
-                    cur.execute('''INSERT INTO txout (tx, n, addr, btc)
-                                     VALUES (?, ?, ?, ?);''', (txout_tx, txout_n, txout_addr, txout_btc))
-                for txin_tx, txin_n, txin_ptx, txin_pn in data_txin:
-                    cur.execute('''INSERT INTO txin (tx, n, ptx, pn)
-                                     VALUES (?, ?, ?, ?);''', (txin_tx, txin_n, txin_ptx, txin_pn))
-                cur.execute('''COMMIT;''')
+                cur.execute('''BEGIN TRANSACTION;''')
+                cur.executemany('''INSERT INTO blkid (id, blkhash)
+                                     VALUES (?, ?);''', data_blkid)
+                cur.executemany('''INSERT INTO txid (id, tx)
+                                     VALUES (?, ?);''', data_txid)
+                cur.executemany('''INSERT INTO addrid (id, addr)
+                                     VALUES (?, ?);''', data_addrid)
+                cur.executemany('''INSERT INTO blktime (blk, miningtime)
+                                     VALUES (?, ?);''', data_blktime)
+                cur.executemany('''INSERT INTO blktx (blk, tx)
+                                     VALUES (?, ?);''', data_blktx)
+                cur.executemany('''INSERT INTO txout (tx, n, addr, btc)
+                                     VALUES (?, ?, ?, ?);''', data_txout)
+                cur.executemany('''INSERT INTO txin (tx, n, ptx, pn)
+                                     VALUES (?, ?, ?, ?);''', data_txin)
+                cur.execute('''COMMIT TRANSACTION;''')
                 conn.commit()
-            except mariadb.OperationalError as e:
-                print(f'[{int(time.time()-STIME)}] MariaDB Error: {e}')
+            except sqlite3.Error as e:
+                print(f'[{int(time.time()-STIME)}] SQLite3 Error: {e}')
                 sys.exit(1)
             if DEBUG:
                 print(f'[{int(time.time()-STIME)}] Job  done {height}')
@@ -294,49 +319,6 @@ def main():
             if DEBUG:
                 print(f'[{int(time.time()-STIME)}] Load done {height}', end='\r')
 
-    for key, value in map_blkid.items():
-        data_blkid.append((value, key))
-    data_blkid.sort(key=operator.itemgetter(0))
-    for key, value in map_txid.items():
-        data_txid.append((value, key))
-    data_txid.sort(key=operator.itemgetter(0))
-    for key, value in map_addrid.items():
-        data_addrid.append((value, key))
-    data_addrid.sort(key=operator.itemgetter(0))
-
-    if DEBUG:
-        print(f'[{int(time.time()-STIME)}] Ready to transaction {height}')
-    try:
-        cur.execute('''START TRANSACTION;''')
-        for blkid_id, blkid_blkhash in data_blkid:
-            cur.execute('''INSERT INTO blkid (id, blkhash)
-                             VALUES (?, ?);''', (blkid_id, blkid_blkhash))
-        for txid_id, txid_tx in data_txid:
-            cur.execute('''INSERT INTO txid (id, tx)
-                             VALUES (?, ?);''', (txid_id, txid_tx))
-        for addrid_id, addrid_addr in data_addrid:
-            cur.execute('''INSERT INTO addrid (id, addr)
-                             VALUES (?, ?);''', (addrid_id, addrid_addr))
-        for blktime_blk, blktime_miningtime in data_blktime:
-            cur.execute('''INSERT INTO blktime (blk, miningtime)
-                             VALUES (?, FROM_UNIXTIME(?));''', (blktime_blk, blktime_miningtime))
-        for blktx_blk, blktx_tx in data_blktx:
-            cur.execute('''INSERT INTO blktx (blk, tx)
-                             VALUES (?, ?);''', (blktx_blk, blktx_tx))
-        for txout_tx, txout_n, txout_addr, txout_btc in data_txout:
-            cur.execute('''INSERT INTO txout (tx, n, addr, btc)
-                             VALUES (?, ?, ?, ?);''', (txout_tx, txout_n, txout_addr, txout_btc))
-        for txin_tx, txin_n, txin_ptx, txin_pn in data_txin:
-            cur.execute('''INSERT INTO txin (tx, n, ptx, pn)
-                             VALUES (?, ?, ?, ?);''', (txin_tx, txin_n, txin_ptx, txin_pn))
-        cur.execute('''COMMIT;''')
-        conn.commit()
-    except mariadb.OperationalError as e:
-        print(f'[{int(time.time()-STIME)}] MariaDB Error: {e}')
-        sys.exit(1)
-    if DEBUG:
-        print(f'[{int(time.time()-STIME)}] Job done {height}')
-  
     print(f'[{int(time.time()-STIME)}] All job completed from {height_start} to {height_end}')
     
     conn.commit()
@@ -353,8 +335,8 @@ if __name__ == '__main__':
                          help='The present debug message')
     parser.add_argument('--rpctimeout', type=int, default=60,
                         help='The rpc timeout secounds')
-    parser.add_argument('--output', type=str, default='./checkpoints',
-                        help='The prefix for checkpoint csv files')
+    parser.add_argument('--untrust', type=int, default=100,
+                        help='The block height that untrusted')
     parser.add_argument('--endheight', type=int, default=float('inf'),
                         help='The max height to create checkpoint')
     parser.add_argument('--bulk', type=int, default=100000,
@@ -366,6 +348,8 @@ if __name__ == '__main__':
                         help='The page size of database (Max: 64×1024)')
     parser.add_argument('--cachesize', type=int, default=4194304,
                         help='The cache size of page (GB×1024×1024×1024÷(64×1024))')
+    parser.add_argument('--output', type=str, default='./checkpoints',
+                        help='The prefix for checkpoint csv files')
 
     FLAGS, _ = parser.parse_known_args()
     FLAGS.output = os.path.abspath(os.path.expanduser(FLAGS.output))
