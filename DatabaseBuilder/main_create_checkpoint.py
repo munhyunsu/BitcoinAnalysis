@@ -121,7 +121,10 @@ def main():
         print(f'Parsed arguments {FLAGS}')
         print(f'Unparsed arguments {_}')
 
-    os.shutil.rmtree(FLAGS.output)
+    with os.scandir(FLAGS.output) as it:
+        for entry in it:
+            if not entry.name.startswith('.') and entry.is_file():
+                os.remove(entry.path)
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Remove directory {FLAGS.output}')
 
