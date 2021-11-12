@@ -28,7 +28,7 @@ def get_block(height):
     
     try:
         if CONN is None or CUR is None:
-            raise sqlite3.Error:
+            raise sqlite3.Error
         CUR.execute('''SELECT * FROM sqlite_master LIMIT 1;''')
         res = CUR.fetchall()
     except sqlite3.Error as e:
