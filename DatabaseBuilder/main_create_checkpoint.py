@@ -236,109 +236,47 @@ def main():
 
     print(f'[{int(time.time()-STIME)}] Begin build index database from {height_start} to {height_end}')
 
-    cache_block = {}
-    cache_start = 0
-    cache_end = 0
-    blkids = []
-    txids = []
-    addrids = []
-    for height in range(height_start, height_end+1):
-        if height not in cache_block.keys():
-            cache_start = height
-            cache_end = min(height_end+1, height+FLAGS.bulk)
-            if DEBUG:
-                print(f'[{int(time.time()-STIME)}] Cache update: {cache_start} ~ {cache_end-1}')
-            with multiprocessing.Pool(FLAGS.process) as p:
-                results = p.map(get_block_index, range(cache_start, cache_end))
-                for data in results:
-                    cache_block[data['height']] = data
-            if DEBUG:
-                print(f'[{int(time.time()-STIME)}] Cache update done')
-            cur.execute('''BEGIN TRANSACTION;''')
-        if cache_block[height]['height'] != height:
-            print(f'Something is wrong: {block["height"]} != {next_blkid}')
-            conn.close()
-            sys.exit(0)
+    for start, stop in utils.get_range(height_start, height_end+1, FLAGS.bulk):
+        if DEBUG:
+            print(f'[{int(time.time()-STIME)}] Index insert {start} ~ {stop}')
+        cur.execute('''BEGIN TRANSACTION;''')
+        with multiprocessing.Pool(FLAGS.process) as p:
+            results = p.imap(get_block_index, range(start, stop), FLAGS.chunksize)
+            for result in results:
+                cur.executemany('''INSERT OR IGNORE INTO blkid (blkhash)
+                                     VALUES (?);''', result['blkids'])
+                cur.executemany('''INSERT OR IGNORE INTO txid (tx)
+                                     VALUES (?);''', result['txids'])
+                cur.executemany('''INSERT OR IGNORE INTO addrid (addr)
+                                     VALUES (?);''', result['addrids'])
+        if DEBUG:
+            print(f'[{int(time.time()-STIME)}] Ready to transaction {start} ~ {stop}')
+        cur.execute('''COMMIT TRANSACTION;''')
+        conn.commit()
+        if DEBUG:
+            print(f'[{int(time.time()-STIME)}] Index insert transaction done {start} ~ {stop}')
 
-        cur.executemany('''INSERT OR IGNORE INTO blkid (blkhash)
-                             VALUES (?);''', cache_block[height]['blkids'])
-        cur.executemany('''INSERT OR IGNORE INTO txid (tx)
-                             VALUES (?);''', cache_block[height]['txids'])
-        cur.executemany('''INSERT OR IGNORE INTO addrid (addr)
-                             VALUES (?);''', cache_block[height]['addrids'])
-
-        if height == cache_end-1:
-            if DEBUG:
-                print(f'[{int(time.time()-STIME)}] Ready to transaction {height}')
-            try:
-                cur.execute('''COMMIT TRANSACTION;''')
-                conn.commit()
-            except sqlite3.Error as e:
-                print(f'[{int(time.time()-STIME)}] SQLite3 Error: {e}')
-                sys.exit(1)
-            if DEBUG:
-                print(f'[{int(time.time()-STIME)}] Index insert transaction done {height}')
-            cache_block.clear()
-            blkids.clear()
-            txids.clear()
-            addrids.clear()
-        else:
-            if DEBUG:
-                print(f'[{int(time.time()-STIME)}] Load done {height}', end='\r')
-
-    cache_block = {}
-    cache_start = 0
-    cache_end = 0
-    blktime = []
-    blktx = []
-    txout = []
-    txin = []
-    for height in range(height_start, height_end+1):
-        if height not in cache_block.keys():
-            cache_start = height
-            cache_end = min(height_end+1, height+FLAGS.bulk)
-            if DEBUG:
-                print(f'[{int(time.time()-STIME)}] Cache update: {cache_start} ~ {cache_end-1}')
-            with multiprocessing.Pool(FLAGS.process) as p:
-                results = p.map(get_block_data, range(cache_start, cache_end))
-                for data in results:
-                    cache_block[data['height']] = data
-            if DEBUG:
-                print(f'[{int(time.time()-STIME)}] Cache update done')
-            cur.execute('''BEGIN TRANSACTION;''')
-        if cache_block[height]['height'] != height:
-            print(f'Something is wrong: {block["height"]} != {next_blkid}')
-            conn.close()
-            sys.exit(0)
-
-        cur.executemany('''INSERT INTO blktime (blk, miningtime)
-                             VALUES (?, ?);''', cache_block[height]['blktime'])
-        cur.executemany('''INSERT INTO blktx (blk, tx)
-                             VALUES (?, ?);''', cache_block[height]['blktx'])
-        cur.executemany('''INSERT INTO txout (tx, n, addr, btc)
-                             VALUES (?, ?, ?, ?);''', cache_block[height]['txout'])
-        cur.executemany('''INSERT INTO txin (tx, n, ptx, pn)
-                             VALUES (?, ?, ?, ?);''', cache_block[height]['txin'])
-
-        if height == cache_end-1:
-            if DEBUG:
-                print(f'[{int(time.time()-STIME)}] Ready to transaction {height}')
-            try:
-                cur.execute('''COMMIT TRANSACTION;''')
-                conn.commit()
-            except sqlite3.Error as e:
-                print(f'[{int(time.time()-STIME)}] SQLite3 Error: {e}')
-                sys.exit(1)
-            if DEBUG:
-                print(f'[{int(time.time()-STIME)}] Data insert transaction done {height}')
-            cache_block.clear()
-            blktime.clear()
-            blktx.clear()
-            txout.clear()
-            txin.clear()
-        else:
-            if DEBUG:
-                print(f'[{int(time.time()-STIME)}] Load done {height}', end='\r')
+    for start, stop in utils.get_range(height_start, height_end+1, FLAGS.bulk):
+        if DEBUG:
+            print(f'[{int(time.time()-STIME)}] Data insert {start} ~ {stop}')
+        cur.execute('''BEGIN TRANSACTION;''')
+        with multiprocessing.Pool(FLAGS.process) as p:
+            results = p.imap(get_block_data, range(start, stop), FLAGS.chunksize)
+            for result in results:
+                cur.executemany('''INSERT INTO blktime (blk, miningtime)
+                                     VALUES (?, ?);''', result['blktime'])
+                cur.executemany('''INSERT INTO blktx (blk, tx)
+                                     VALUES (?, ?);''', result['blktx'])
+                cur.executemany('''INSERT INTO txout (tx, n, addr, btc)
+                                     VALUES (?, ?, ?, ?);''', result['txout'])
+                cur.executemany('''INSERT INTO txin (tx, n, ptx, pn)
+                                     VALUES (?, ?, ?, ?);''', result['txin'])
+        if DEBUG:
+            print(f'[{int(time.time()-STIME)}] Ready to transaction {start} ~ {stop}')
+        cur.execute('''COMMIT TRANSACTION;''')
+        conn.commit()
+        if DEBUG:
+            print(f'[{int(time.time()-STIME)}] Data insert transaction done {start} ~ {stop}')
 
     print(f'[{int(time.time()-STIME)}] End build database from {height_start} to {height_end}')
 
@@ -365,6 +303,8 @@ if __name__ == '__main__':
     parser.add_argument('--process', type=int, 
                         default=min(multiprocessing.cpu_count()//2, 16),
                         help='The number of multiprocess')
+    parser.add_argument('--chunksize', type=int, default=1,
+                        help='The multiprocess chunksize')
     parser.add_argument('--pagesize', type=int, default=64*1024,
                         help='The page size of database (Max: 64×1024)')
     parser.add_argument('--cachesize', type=int, default=4194304,
