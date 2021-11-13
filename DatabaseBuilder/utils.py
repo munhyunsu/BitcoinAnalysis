@@ -104,3 +104,11 @@ def addr_btc_from_vout(vout):
     else:
         raise Exception(f'BUG!! \n{vout}')
     return results
+
+
+def get_range(start, stop, step=1):
+    for val1, val2 in zip(range(start     , stop     , step),
+                          range(start+step, stop+step, step)):
+        if val2 > stop:
+            val2 = stop
+        yield val1, val2
