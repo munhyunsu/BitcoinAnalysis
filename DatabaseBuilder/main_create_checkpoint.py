@@ -139,7 +139,7 @@ def get_block_data(height):
                 raise Exception(f'For debug! {tx}:{n}:{vout}')
         for n, vin in enumerate(btx['vin'], start=0):
             if 'coinbase' in vin:
-                list_vin.append((txid, n, 0, 0))
+                list_txin.append((txid, n, 0, 0))
                 continue
             ptx = vin['txid']
             cur.execute('''SELECT id FROM txid
