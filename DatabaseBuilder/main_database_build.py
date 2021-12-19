@@ -19,6 +19,7 @@ CONN = None
 CUR = None
 
 
+## TODO(LuHa): Need to update for schema changing
 def get_block(height):
     global RPCM
     global CONN
