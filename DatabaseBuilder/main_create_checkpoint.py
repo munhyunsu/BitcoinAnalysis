@@ -197,7 +197,8 @@ def main():
                    );''')
     cur.execute('''CREATE TABLE addrid (
                      id INTEGER PRIMARY KEY,
-                     addr TEXT NOT NULL UNIQUE
+                     addr TEXT NOT NULL UNIQUE,
+                     tx INTEGER NOT NULL
                    );''')
     cur.execute('''CREATE TABLE txout (
                      tx INTEGER NOT NULL,
