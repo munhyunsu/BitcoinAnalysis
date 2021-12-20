@@ -187,25 +187,17 @@ def main():
 
     cur.execute('''CREATE TABLE blkid (
                      id INTEGER PRIMARY KEY,
-                     blkhash TEXT NOT NULL UNIQUE
+                     blkhash TEXT NOT NULL UNIQUE,
+                     miningtime INTEGER NOT NULL
                    );''')
     cur.execute('''CREATE TABLE txid (
                      id INTEGER PRIMARY KEY,
-                     tx TEXT NOT NULL UNIQUE
+                     tx TEXT NOT NULL UNIQUE,
+                     blk INTEGER NOT NULL
                    );''')
     cur.execute('''CREATE TABLE addrid (
                      id INTEGER PRIMARY KEY,
                      addr TEXT NOT NULL UNIQUE
-                   );''')
-    cur.execute('''CREATE TABLE blktime (
-                     blk INTETER NOT NULL,
-                     miningtime INTEGER NOT NULL,
-                     UNIQUE (blk, miningtime)
-                   );''')
-    cur.execute('''CREATE TABLE blktx (
-                     blk INTEGER NOT NULL,
-                     tx INTEGER NOT NULL,
-                     UNIQUE (blk, tx)
                    );''')
     cur.execute('''CREATE TABLE txout (
                      tx INTEGER NOT NULL,
