@@ -19,6 +19,7 @@ CONN = None
 CUR = None
 
 
+## TODO(LuHa): Need to update
 def get_block_index(height):
     global FLAGS
     global DEBUG
