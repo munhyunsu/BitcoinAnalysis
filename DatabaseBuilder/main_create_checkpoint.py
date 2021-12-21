@@ -220,6 +220,7 @@ def main():
     cur.execute(f'''VACUUM;''')
     conn.commit()
 
+    ## TODO(LuHa): Need to update for schema!!
     height_start = 0
     bestblockhash = rpc.getbestblockhash()
     bestblock = rpc.getblock(bestblockhash)
