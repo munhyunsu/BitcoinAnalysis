@@ -181,7 +181,7 @@ def main():
             if DEBUG:
                 print(f'[{int(time.time()-STIME)}] Cache update: {height} ~ {min(height_end+1, height+FLAGS.bulk)-1}')
             with multiprocessing.Pool(FLAGS.process) as p:
-                results = p.map(get_block, range(height, min(height_end+1, height+FLAGS.bulk)))
+                results = p.imap(get_block, range(height, min(height_end+1, height+FLAGS.bulk)), FLAGS.chunksize)
                 for data in results:
                     cache_block[data['height']] = data
             if DEBUG:
@@ -358,6 +358,8 @@ if __name__ == '__main__':
     parser.add_argument('--process', type=int, 
                         default=min(multiprocessing.cpu_count()//2, 16),
                         help='The number of multiprocess')
+    parser.add_argument('--chunksize', type=int, default=32,
+                        help='The multiprocess chunksize')
 
     FLAGS, _ = parser.parse_known_args()
     DEBUG = FLAGS.debug
