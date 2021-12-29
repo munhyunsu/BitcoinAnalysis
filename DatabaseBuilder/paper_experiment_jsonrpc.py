@@ -55,6 +55,11 @@ if __name__ == '__main__':
                         help='The rpc timeout secounds')
     parser.add_argument('--bulk', type=int, default=100000,
                         help='The bulk process height')
+    parser.add_argument('--process', type=int,
+                        default=min(multiprocessing.cpu_count()//2, 16),
+                        help='The number of multiprocess')
+    parser.add_argument('--chunksize', type=int, default=1,
+                        help='The multiprocess chunksize')
 
 
     FLAGS, _ = parser.parse_known_args()
