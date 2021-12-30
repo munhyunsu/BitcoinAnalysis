@@ -1,6 +1,7 @@
 import argparse
 import os
 import time
+import multiprocessing
 import csv
 
 import pandas as pd
@@ -69,7 +70,7 @@ def main():
     df = pd.DataFrame(data, columns=['Start', 'End', 'Time'])
 
     os.makedirs(FLAGS.output, exist_ok=True)
-    path = os.path.join(FLAGS.output, f'{bestblock["height"]}_{FLAGS.process}_{FLAGS.chunksize}.csv')
+    path = os.path.join(FLAGS.output, f'{int(STIME)}_{bestblock["height"]}_{FLAGS.process}_{FLAGS.chunksize}.csv')
     df.to_csv(path)
 
     if DEBUG:
