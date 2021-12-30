@@ -3,6 +3,8 @@ import os
 import time
 import csv
 
+import pandas as pd
+
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
 import secret
@@ -12,35 +14,66 @@ DEBUG = False
 STIME = time.time()
 
 
+def get_block(height):
+    global FLAGS
+    global DEBUG
+    global RPCM
+
+    blockhash = None
+    block = None
+    try:
+        if RPCM is None:
+            raise BrokenPipeError
+        rpc = RPCM
+        blockhash = rpc.getblockhash(height)
+        block = rpc.getblock(blockhash, 2)
+    except (BrokenPipeError, JSONRPCException):
+        RPCM = AuthServiceProxy((f'http://{secret.rpcuser}:{secret.rpcpassword}@'
+                                 f'{secret.rpchost}:{secret.rpcport}'),
+                                timeout=FLAGS.rpctimeout)
+        rpc = RPCM
+    finally:
+        if blockhash is None:
+            blockhash = rpc.getblockhash(height)
+        if block is None:
+            block = rpc.getblock(blockhash, 2)
+    
+    return height
+
+    if DEBUG:
+        print(f'[{int(time.time()-STIME)}] Index read: {height:<7d}', end='\r')
+
+    return data
+
+
 def main():
     if DEBUG:
         print(f'Parsed arguments {FLAGS}')
         print(f'Unparsed arguments {_}')
-    csvfile = open('rpc_experiment.csv', 'w')
-    csvwriter = csv.writer(csvfile, quoting=csv.QUOTE_MINIMAL,
-                           lineterminator=os.linesep)
 
-    csvwriter.writerow(['Height', 'Time'])
-    rpc = AuthServiceProxy((f'http://{secret.rpcuser}:{secret.rpcpassword}@'
-                            f'{secret.rpchost}:{secret.rpcport}'),
-                           timeout=FLAGS.rpctimeout)
+    if DEBUG:
+        print(f'[{int(time.time()-STIME)}] Job start')
 
     bestblockhash = rpc.getbestblockhash()
     bestblock = rpc.getblock(bestblockhash, 2)
     
-    for i in range(0, bestblock['height']+1):
-        time1 = time.time()
-        blockhash = rpc.getblockhash(i)
-        block = rpc.getblock(blockhash, 2)
-        time2 = time.time()
-        csvwriter.writerow([i, time2-time1])
-        if i % FLAGS.bulk == 0:
-            print(f'[{int(time.time()-STIME)}] JSON RPC Call {i}')
-        else:
-            print(f'[{int(time.time()-STIME)}] JSON RPC Call {i}', end='\r')
-    print(f'[{int(time.time()-STIME)}] JSON RPC Call {i}')
-    
-    csvfile.close()
+    data = []
+    for start, stop in utils.get_range(0, bestblock['height']+1, FLAGS.bulk):
+        if DEBUG:
+            print(f'[{int(time.time()-STIME)}] Index insert {start} ~ {stop}')
+        with multiprocessing.Pool(FLAGS.process) as p:
+            results = p.imap(get_block, range(start, stop), FLAGS.chunksize)
+            for result in results:
+                continue
+        data.append((start, stop, int(time.time()-STIME)))
+    df = pd.DataFrame(data, columns=['Start', 'End', 'Time'])
+
+    os.makedirs(FLAGS.output, exist_ok=True)
+    path = os.path.join(FLAGS.output, f'{bestblock["height"]}_{FLAGS.process}_{FLAGS.chunksize}.csv')
+    df.to_csv(path)
+
+    if DEBUG:
+        print(f'[{int(time.time()-STIME)}] Job done')
 
 
 if __name__ == '__main__':
@@ -60,9 +93,12 @@ if __name__ == '__main__':
                         help='The number of multiprocess')
     parser.add_argument('--chunksize', type=int, default=1,
                         help='The multiprocess chunksize')
-
+    parser.add_argument('--outputdir', type=str,
+                        default='./experiment_jsonrpc',
+                        help='The jsonrpc experiment directory')
 
     FLAGS, _ = parser.parse_known_args()
+    FLAGS.output = os.path.abspath(os.path.expanduser(FLAGS.output))
     DEBUG = FLAGS.debug
 
     main()
