@@ -55,6 +55,10 @@ def main():
     if DEBUG:
         print(f'[{int(time.time()-STIME)}] Job start')
 
+    rpc = AuthServiceProxy((f'http://{secret.rpcuser}:{secret.rpcpassword}@'
+                            f'{secret.rpchost}:{secret.rpcport}'),
+                           timeout=FLAGS.rpctimeout)
+
     bestblockhash = rpc.getbestblockhash()
     bestblock = rpc.getblock(bestblockhash, 2)
     
