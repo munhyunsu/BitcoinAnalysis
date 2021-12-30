@@ -94,7 +94,7 @@ if __name__ == '__main__':
                         help='The number of multiprocess')
     parser.add_argument('--chunksize', type=int, default=1,
                         help='The multiprocess chunksize')
-    parser.add_argument('--outputdir', type=str,
+    parser.add_argument('--output', type=str,
                         default='./experiment_jsonrpc',
                         help='The jsonrpc experiment directory')
 
