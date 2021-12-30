@@ -9,6 +9,7 @@ import pandas as pd
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
 import secret
+import utils
 
 FLAGS = _ = None
 DEBUG = False
