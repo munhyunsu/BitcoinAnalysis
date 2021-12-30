@@ -14,6 +14,7 @@ import utils
 FLAGS = _ = None
 DEBUG = False
 STIME = time.time()
+RPCM = None
 
 
 def get_block(height):
