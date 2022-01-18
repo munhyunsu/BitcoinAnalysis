@@ -1,0 +1,22 @@
+1. Install essential library
+
+```bash
+sudo apt install build-essential vim
+sudo apt install tmux
+```
+
+```bash
+vi ~/.profile
+# if [ -d "$HOME/.local/share/bitcoin-core/bin" ] ; then
+#     PATH="$HOME/.local/share/bitcoin-core/bin:$PATH"
+# fi
+```
+
+1. Download bitcoin-core
+
+```bash
+wget https://bitcoincore.org/bin/bitcoin-core-22.0/bitcoin-22.0-x86_64-linux-gnu.tar.gz
+tar -xvf bitcoin-22.0-x86_64-linux-gnu.tar.gz
+mv bitcoin-22.0 ~/.local/share/
+mv 
+```
