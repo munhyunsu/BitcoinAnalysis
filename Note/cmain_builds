@@ -11,7 +11,7 @@ sudo apt install tmux
 wget https://bitcoincore.org/bin/bitcoin-core-22.0/bitcoin-22.0-x86_64-linux-gnu.tar.gz
 tar -xvf bitcoin-22.0-x86_64-linux-gnu.tar.gz
 mv bitcoin-22.0 ~/.local/share/
-mv 
+mv ~/.local/share/bitcoin-22.0 ~/.local/share/bitcoin-core
 ```
 
 ```bash
