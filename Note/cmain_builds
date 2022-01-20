@@ -33,4 +33,21 @@ vi ~/.profile
 # fi
 ```
 
-3. 
+3. `Bitcoin Core` configuration
+
+```bash
+bitcoind
+# End after first block download is complete
+```
+
+```bash
+cd ~/.bitcoin
+wget https://raw.githubusercontent.com/bitcoin/bitcoin/master/share/examples/bitcoin.conf
+vi bitcoin.conf
+# add at line 86
+#server=1
+# add at line 113: result from _BitcoinCoreRPCAuth.ipynb_
+#rpcauth=...
+# add at line 168
+#txindex=1
+```
