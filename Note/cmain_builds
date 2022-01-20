@@ -5,6 +5,18 @@ sudo apt install build-essential vim
 sudo apt install tmux
 ```
 
+```bash
+vi ~/.vimrc
+# set number
+# set tabstop=4
+# set shiftwidth=4
+# set expandtab
+# set autoindent
+# syntax on
+# set list
+# set colorcolumn=80
+```
+
 2. Download bitcoin-core
 
 ```bash
@@ -20,3 +32,5 @@ vi ~/.profile
 #     PATH="$HOME/.local/share/bitcoin-core/bin:$PATH"
 # fi
 ```
+
+3. 
