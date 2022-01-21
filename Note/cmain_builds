@@ -51,3 +51,8 @@ vi bitcoin.conf
 # add at line 168
 #txindex=1
 ```
+
+```bash
+tmux new-session -s bitcoind
+bitcoind -reindex -rescan
+```
