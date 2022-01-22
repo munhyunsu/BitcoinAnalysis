@@ -61,6 +61,7 @@ vi bitcoin.conf
 ```bash
 tmux new-session -s bitcoind
 bitcoind -reindex -rescan
+# Only run `bitcoind` after initial setup
 ```
 
 
