@@ -17,6 +17,12 @@ vi ~/.vimrc
 # set colorcolumn=80
 ```
 
+```bash
+vi ~/.bashrc
+# Line 47
+#force_color_prompt=yes
+```
+
 2. Download bitcoin-core
 
 ```bash
@@ -56,3 +62,5 @@ vi bitcoin.conf
 tmux new-session -s bitcoind
 bitcoind -reindex -rescan
 ```
+
+
