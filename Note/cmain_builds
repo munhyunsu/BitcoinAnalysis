@@ -1,7 +1,7 @@
 1. Install essential library
 
 ```bash
-sudo apt install build-essential vim
+sudo apt install build-essential vim git
 sudo apt install tmux
 ```
 
