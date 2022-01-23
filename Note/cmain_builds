@@ -29,7 +29,7 @@ wget https://www.python.org/ftp/python/3.9.10/Python-3.9.10.tar.xz
 tar -xvf Python-3.9.10.tar.xz
 cd Python-3.9.10/
 ./configure --prefix=/opt/Python39 --enable-optimizations
-sudo make install -j5
+sudo -H make install -j5
 ```
 
 2. Download bitcoin-core
@@ -73,4 +73,13 @@ bitcoind -reindex -rescan
 # Only run `bitcoind` after initial setup
 ```
 
+4. Build BitSQL database
 
+```bash
+cd
+git clone https://github.com/munhyunsu/BitcoinAnalysis.git
+cd ~/BitcoinAnalysis/BitcoinBlockSampler/
+/opt/Python39/bin/python3 -m venv venv
+source venv/bin/activate
+pip3 install --upgrade -r requirements.txt
+```
