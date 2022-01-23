@@ -23,6 +23,15 @@ vi ~/.bashrc
 #force_color_prompt=yes
 ```
 
+```bash
+sudo apt install build-essential libbz2-dev libcurses-ocaml-dev libdbm-deep-perl libgdbm-dev liblzma-dev libsqlite3-dev libssl-dev libreadline-dev zlib1g-dev libtk-img-dev libffi-dev
+wget https://www.python.org/ftp/python/3.9.10/Python-3.9.10.tar.xz
+tar -xvf Python-3.9.10.tar.xz
+cd Python-3.9.10/
+./configure --prefix=/opt/Python39 --enable-optimizations
+sudo make install -j5
+```
+
 2. Download bitcoin-core
 
 ```bash
