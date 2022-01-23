@@ -8,7 +8,7 @@ def addr_btc_from_vout(txid, vout):
                                         'witness_v1_taproot',
                                         'witness_unknown', 'multisig'):
         if 'address' in vout['scriptPubKey']: # compatibility Bitcoin-Core
-            results.append(vout['scriptPubKey']['address'], float(vout['value']))
+            results.append((vout['scriptPubKey']['address'], float(vout['value'])))
         else:
             for addr in vout['scriptPubKey']['addresses']:
                 results.append((addr, float(vout['value'])))
