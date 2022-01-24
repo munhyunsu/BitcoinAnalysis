@@ -83,3 +83,12 @@ cd ~/BitcoinAnalysis/BitcoinBlockSampler/
 source venv/bin/activate
 pip3 install --upgrade -r requirements.txt
 ```
+
+```bash
+vi secret.py
+# result from _BitcoinCoreRPCAuth.ipynb_
+#rpc_user = ''
+#rpc_password = ''
+```
+
+
