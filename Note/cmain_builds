@@ -35,8 +35,9 @@ sudo -H make install -j5
 2. Download bitcoin-core
 
 ```bash
-wget https://bitcoincore.org/bin/bitcoin-core-21.1/bitcoin-21.1-x86_64-linux-gnu.tar.gz
-tar -xvf bitcoin-21.1-x86_64-linux-gnu.tar.gz
+wget https://bitcoin.org/bin/bitcoin-core-0.21.1/bitcoin-0.21.1-x86_64-linux-gnu.tar.gz
+tar -xvf bitcoin-0.21.1-x86_64-linux-gnu.tar.gz
+rm -rf ~/.local/share/bitcoin-core/
 mv bitcoin-21.1 ~/.local/share/
 mv ~/.local/share/bitcoin-21.1 ~/.local/share/bitcoin-core
 ```
