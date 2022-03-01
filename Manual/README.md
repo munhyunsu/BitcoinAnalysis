@@ -16,4 +16,22 @@
 
 ### Bitcoin Core 설정파일 수정 내역
 
+1. _BitcoinCoreRPCAuth.py_ 활용 Bitcoin Core RPC 계정 생성
 
+2. RPC 서버 설정 (라인 75)
+
+```
+server=1
+```
+
+3. RPC 인증 설정 (라인 102)
+
+```
+rpcauth=...
+```
+
+4. 트랜잭션 인덱싱 설정 (라인 153)
+
+```
+txindex=1
+```
