@@ -43,3 +43,9 @@
 ```bash
 bitcoind -reindex -rescan
 ```
+
+5. 테스트!
+
+```bash
+bitcoin-cli getblockheight 1
+```
