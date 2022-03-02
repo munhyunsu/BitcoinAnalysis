@@ -49,3 +49,17 @@ bitcoind -reindex -rescan
 ```bash
 bitcoin-cli getblockheight 1
 ```
+
+6. 데이터베이스 구축 스크립트 실행
+
+- 메모리 크기에 맞추어서 `pagesize`, `cachesize` 조절
+
+```bash
+./run_db_builder_init.sh
+```
+
+7. 데이터베이스 업데이트
+
+```bash
+./run_db_builder_resume.sh
+```
