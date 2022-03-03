@@ -27,69 +27,16 @@ def main():
         print(f'[{int(time.time()-STIME)}] Connect to database')
 
     if FLAGS.reset:
-        cur.execute('''DROP TABLE IF EXISTS tag;''')
-        cur.execute('''DROP TABLE IF EXISTS tagid;''')
-        cur.execute('''DROP TABLE IF EXISTS txin;''')
-        cur.execute('''DROP TABLE IF EXISTS txout;''')
-        cur.execute('''DROP TABLE IF EXISTS blktx;''')
-        cur.execute('''DROP TABLE IF EXISTS addrid;''')
-        cur.execute('''DROP TABLE IF EXISTS txid;''')
-        cur.execute('''DROP TABLE IF EXISTS blkid;''')
+        cur.execute('''DROP TABLE IF EXISTS blk;''')
         if DEBUG:
             print(f'[{int(time.time()-STIME)}] DROP all tables of {secret.dbdatabase}')
     
-    cur.execute('''CREATE TABLE blkid (
+    cur.execute('''CREATE TABLE blk (
                      id INT NOT NULL,
                      blkhash CHAR(64) NOT NULL,
                      miningtime TIMESTAMP NOT NULL,
                      PRIMARY KEY (id),
                      UNIQUE (blkhash)
-                   );''')
-    cur.execute('''CREATE TABLE txid (
-                     id INT NOT NULL,
-                     tx CHAR(64) NOT NULL,
-                     blk INT NOT NULL,
-                     PRIMARY KEY (id),
-                     UNIQUE (tx),
-                     FOREIGN KEY (blk) REFERENCES blkid (id)
-                   );''')
-    cur.execute('''CREATE TABLE addrid (
-                     id INT NOT NULL,
-                     addr VARCHAR(128) NOT NULL,
-                     tx INT NOT NULL,
-                     PRIMARY KEY (id),
-                     UNIQUE (addr),
-                     FOREIGN KEY (tx) REFERENCES txid (id)
-                   );''')
-    cur.execute('''CREATE INDEX idx_miningtime ON blkid (miningtime);''')
-    cur.execute('''CREATE TABLE txout (
-                     tx INT NOT NULL,
-                     n INT NOT NULL,
-                     addr INT NOT NULL,
-                     btc DOUBLE NOT NULL,
-                     FOREIGN KEY (tx) REFERENCES txid (id),
-                     FOREIGN KEY (addr) REFERENCES addrid (id)
-                   );''')
-    cur.execute('''CREATE TABLE txin (
-                     tx INT NOT NULL,
-                     n INT NOT NULL,
-                     ptx INT NOT NULL,
-                     pn INT NOT NULL,
-                     FOREIGN KEY (tx) REFERENCES txid (id)
-                   );''')
-
-    cur.execute('''CREATE TABLE tagid (
-                     id INT NOT NULL,
-                     tag CHAR(64) NOT NULL,
-                     PRIMARY KEY (id),
-                     UNIQUE (tag)
-                   );''')
-    cur.execute('''CREATE TABLE tag (
-                     addr INT NOT NULL,
-                     tag INT NOT NULL,
-                     UNIQUE (addr, tag),
-                     FOREIGN KEY (addr) REFERENCES addrid (id),
-                     FOREIGN KEY (tag) REFERENCES tagid (id)
                    );''')
     conn.commit()
 
