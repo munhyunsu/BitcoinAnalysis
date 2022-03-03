@@ -38,6 +38,7 @@ def main():
                      PRIMARY KEY (id),
                      UNIQUE (blkhash)
                    );''')
+    cur.execute('''CREATE INDEX idx_miningtime ON blk (miningtime);''')
     conn.commit()
 
     cur.execute('''SHOW TABLES;''')
