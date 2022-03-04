@@ -6,3 +6,6 @@ python-bitcoinrpc
 
 # MariaDB connector
 mariadb
+
+# ZeroMQ
+pyzmq
