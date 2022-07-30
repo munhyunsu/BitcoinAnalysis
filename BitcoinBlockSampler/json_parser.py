@@ -10,11 +10,12 @@ def addr_btc_from_vout(txid, vout):
         if 'address' in vout['scriptPubKey']: # compatibility Bitcoin-Core
             results.append((vout['scriptPubKey']['address'], float(vout['value'])))
         else:
-            try:
+            if 'addresses' in vout['scriptPubKey'].keys():
                 for addr in vout['scriptPubKey']['addresses']:
                     results.append((addr, float(vout['value'])))
-            except KeyError:
-                raise Exception(f'Exception {txid}\n{vout}')
+            else:
+                for addr in [pubkey_to_address(get_pubkey(vout['scriptPubKey']['hex']))]:
+                    results.append((addr, float(vout['value'])))
     elif vout['scriptPubKey']['type'] in ('pubkey', 'nonstandard', 'nulldata'):
         try:
             for addr in [pubkey_to_address(get_pubkey(vout['scriptPubKey']['hex']))]:
