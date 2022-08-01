@@ -18,3 +18,10 @@ python-bitcoinrpc
 scipy
 scikit-learn
 tensorflow
+
+# ZeroMQ
+pyzmq
+
+# FastAPI
+fastapi
+uvicorn[standard]
