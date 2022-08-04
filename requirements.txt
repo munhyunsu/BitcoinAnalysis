@@ -1,27 +1,34 @@
 pip
 wheel
 
-# jupyter kernel
+#jupyter
+#jupyterlab
+ipykernel
 ipympl
 
-# data analysis
+# essential
+tensorflow
+matplotlib
 numpy
 pandas
-
-# visualization
-matplotlib
+scipy
 
 # https://github.com/alecalve/python-bitcoin-blockchain-parser.git
+# https://github.com/twmht/python-rocksdb/tree/pybind11
 python-bitcoinrpc
 
-# machine learning
-scipy
-scikit-learn
-tensorflow
+python-igraph
+cairocffi
 
-# ZeroMQ
+# simple machine learning
+scikit-learn
+
+# database
+mariadb
+
+# MessageQ
 pyzmq
 
-# FastAPI
+# RestAPI
 fastapi
 uvicorn[standard]
