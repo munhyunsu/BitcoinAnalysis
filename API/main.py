@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from typing import Unin
+from typing import Union
 
 from fastapi import FastAPI
 
