@@ -1,28 +1,20 @@
 import os
 import sqlite3
+from typing import Unin
+
+from fastapi import FastAPI
 
 import secret
 
-FLAGS = _ = None
+app = FastAPI()
 
 
-def main():
-    pass
+@app.get('/')
+async def read_root():
+    return {'Hello': 'World'}
 
 
-if __name__ == '__main__':
-    root_path = os.path.abspath(__file__)
-    root_dir = os.path.dirname(root_path)
-    os.chdir(root_dir)
-
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--debug', action='store_true',
-                        help='The present debug message')
-
-    FLAGS, _ = parser.parse_known_args()
-    DEBUG = FLAGS.debug
-
-    main()
+@app.get('/items/{item_id}')
+async def read_item(item_id: int, q: Union[str, None] = None):
+    return {'item_id': item_id, 'q': q}
 
