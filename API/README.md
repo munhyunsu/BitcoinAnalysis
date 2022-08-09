@@ -1,3 +1,9 @@
+# Simple run (development)
+
+```bash
+uvicorn main:app --reload --port 8888
+```
+
 # BitSQL Service using `systemd`
 
 ```bash
