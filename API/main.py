@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 import secret
 
+conn = cur = None
 app = FastAPI()
 
 
@@ -14,6 +15,18 @@ class Item(BaseModel):
     name: str
     price: float
     is_offer: Union[bool, None] = None
+
+
+@app.on_event('startup')
+async def startup_event():
+    global cur
+    global conn
+    conn = sqlite3.connect(secret.path_service)
+    cur = conn.cursor()
+    cur.execute(f'''ATTATCH DATABASE {secret.path_index} AS DBINDEX;''')
+    cur.execute(f'''ATTATCH DATABASE {secret.path_core} AS DBINDEX;''')
+    cur.execute(f'''ATTATCH DATABASE {secret.path_util} AS DBINDEX;''')
+    conn.commit()
 
 
 @app.get('/')
