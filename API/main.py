@@ -23,9 +23,9 @@ async def startup_event():
     global conn
     conn = sqlite3.connect(secret.path_service)
     cur = conn.cursor()
-    cur.execute(f'''ATTATCH DATABASE {secret.path_index} AS DBINDEX;''')
-    cur.execute(f'''ATTATCH DATABASE {secret.path_core} AS DBINDEX;''')
-    cur.execute(f'''ATTATCH DATABASE {secret.path_util} AS DBINDEX;''')
+    cur.execute(f'''ATTACH DATABASE '{secret.path_index}' AS DBINDEX;''')
+    cur.execute(f'''ATTACH DATABASE '{secret.path_core}' AS DBCORE;''')
+    cur.execute(f'''ATTACH DATABASE '{secret.path_util}' AS DBUTIL;''')
     conn.commit()
 
 
