@@ -29,6 +29,13 @@ async def startup_event():
     conn.commit()
 
 
+@app.on_event('shutdown')
+async def shutdown_event():
+    global cur
+    global conn
+    conn.close()
+
+
 @app.get('/')
 async def read_root():
     return {'Hello': 'World'}
