@@ -38,7 +38,12 @@ async def shutdown_event():
 
 @app.get('/')
 async def read_root():
-    return {'Hello': 'World'}
+    global cur
+    global conn
+    cur.execute('''SELECT MAX(DBINDEX.BlkID.id) FROM DBINDEX.BlkID;''')
+    res = cur.fetchone()
+    return {'Hello': 'World',
+            'Latest Block Height': f'{res[0]}'}
 
 
 @app.get('/items/{item_id}')
