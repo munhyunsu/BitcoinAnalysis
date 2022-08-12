@@ -8,7 +8,7 @@ from pydantic import BaseModel
 import secret
 
 conn = cur = None
-app = FastAPI()
+app = FastAPI(root_path=secret.root_path)
 
 
 class Item(BaseModel):
