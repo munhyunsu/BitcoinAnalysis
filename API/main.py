@@ -49,13 +49,23 @@ async def clusters_search(clustername: Union[str, None] = None):
     global conn
     if clustername is None:
         return response
-    # TagID list
-    tagid_list = []
-    query = '''SELECT DBSERVICE.TagID.id
-               FROM DBSERVICE.TagID
-               WHERE DBSERVICE.TagID.tag = ?;'''
+    # Addr, TagID list
+    clusters = []
+    query = '''SELECT DBSERVICE.AddrTag.addr, DBSERVICE.AddrTag.tag
+               FROM DBSERVICE.AddrTag
+               WHERE DBSERVICE.AddrTag.tag IN (
+                 SELECT DBSERVICE.TagID.id
+                 FROM DBSERVICE.TagID
+                 WHERE DBSERVICE.TagID.tag = ?);'''
     for row in cur.execute(query, (clustername,)):
-        tagid_list.append(row[0])
+        clusters.append({'addr': row[0], 'tagid': row[1]})
+    # ClusterID list
+    query = '''SELECT DBSERVICE.Cluster.cluster
+               FROM DBSERVICE.Cluster
+               WHERE DBSERVICE.Cluster.addr = ?;'''
+    for cluster in clusters:
+        for row in cur.execute(query, (cluster['addr'],)):
+            cluster['clusterid'] = row[0]
 
     return response
 
