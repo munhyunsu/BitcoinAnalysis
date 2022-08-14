@@ -42,6 +42,15 @@ async def read_root():
     return {'Say': 'Hello world!'}
 
 
+@app.get('/address/{addr}', summary='Get address information')
+async def address_info():
+    response = []
+    global cur
+    global conn
+
+    return response
+
+
 @app.get('/clusters/search', summary='Search cluster information')
 async def clusters_search(clustername: Union[str, None] = None):
     response = []
@@ -88,6 +97,7 @@ async def clusters_search(clustername: Union[str, None] = None):
                          'transferCount': row[0],
                          'hasOsint': True})
     return response
+
 
 
 """
