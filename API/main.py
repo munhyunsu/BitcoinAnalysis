@@ -66,9 +66,28 @@ async def clusters_search(clustername: Union[str, None] = None):
     for cluster in clusters:
         for row in cur.execute(query, (cluster['addr'],)):
             cluster['clusterid'] = row[0]
-
+    # Make responses!!
+    query = '''SELECT Income.degree+Outcome.degree AS Degree, 
+                      Income.value-Outcome.value AS Balance
+               FROM (
+                 SELECT COUNT(*) AS degree, SUM(DBCORE.TxOut.btc) AS value
+                 FROM DBCORE.TxOut
+                 WHERE DBCORE.TxOut.addr = ?) AS Income, (
+                 SELECT COUNT(*) AS degree, SUM(DBCORE.TxOut.btc) AS value
+                 FROM DBCORE.TxIn
+                 INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND 
+                            DBCORE.TxIn.pn = DBCORE.TxOut.n
+                 WHERE DBCORE.TxOut.addr = ?) AS Outcome;'''
+    for cluster in clusters:
+        cur.execute(query, (cluster['addr'], cluster['addr']))
+        row = cur.fetchone()
+        response.append({'clusterID': cluster['clusterid'],
+                         'clusterName': clustername,
+                         'category': clustername,
+                         'balance': row[1],
+                         'transferCount': row[0],
+                         'hasOsint': True})
     return response
-
 
 
 """
