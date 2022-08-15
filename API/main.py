@@ -43,12 +43,57 @@ async def read_root():
 
 
 @app.get('/address/{addr}', summary='Get address information')
-async def address_info():
+async def address_info(addr: str):
     response = []
     global cur
     global conn
+    # Get transaction
+    txes = []
+    query = '''SELECT DISTINCT DBINDEX.TxID.txid AS txid
+               FROM DBUTIL.Edge
+               INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBUTIL.Edge.tx
+               WHERE DBUTIL.Edge.src = (
+                 SELECT DBINDEX.AddrID.id
+                 FROM DBINDEX.AddrID
+                 WHERE DBINDEX.AddrID.addr = ?)
+               OR DBUTIL.Edge.dst = (
+                 SELECT DBINDEX.AddrID.id
+                 FROM DBINDEX.AddrID
+                 WHERE DBINDEX.AddrID.addr = ?)
+               ORDER BY DBINDEX.TxID.id DESC;'''
+    for row in cur.execute(query, (addr, addr)):
+        txes.append(row[0])
+    # Get Income
+    query = '''SELECT SUM(DBCORE.TxOut.btc) AS value
+               FROM DBCORE.TxOut
+               WHERE DBCORE.TxOut.addr = (
+                 SELECT DBINDEX.AddrID.id
+                 FROM DBINDEX.AddrID
+                 WHERE DBINDEX.AddrID.addr = ?);'''
+    cur.execute(query, (addr,))
+    row = cur.fetchone()
+    income = row[0]
+    # Get Outcome
+    query = '''SELECT SUM(DBCORE.TxOut.btc) AS Outcome
+               FROM DBCORE.TxIn
+               INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx 
+                 AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+               WHERE TxOut.addr = (
+                 SELECT DBINDEX.AddrID.id
+                 FROM DBINDEX.AddrID
+                 WHERE DBINDEX.AddrID.addr = ?);'''
+    cur.execute(query, (addr,))
+    row = cur.fetchone()
+    outcome = row[0]
+    # Balance
+    balance = income - outcome
 
-    return response
+    return {'Address': addr,
+            'TxCount': len(txes),
+            'Income': income,
+            'Outcome': outcome,
+            'Balance': balance,
+            'Txes': txes}
 
 
 @app.get('/clusters/search', summary='Search cluster information')
