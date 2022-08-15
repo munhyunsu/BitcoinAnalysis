@@ -39,7 +39,21 @@ async def shutdown_event():
 
 @app.get('/', summary='Say hello to BitSQL API server')
 async def read_root():
-    return {'Say': 'Hello world!'}
+    global cur
+    global conn
+    query = '''SELECT MAX(DBINDEX.BlkID.id), 
+                      DBINDEX.BlkID.blkhash, 
+                      strftime('%Y-%m-%d %H:%M:%S', 
+                        DBCORE.BlkTime.unixtime, 'unixepoch')
+               FROM DBINDEX.BlkID
+               INNER JOIN DBCORE.BlkTime ON 
+                 DBCORE.BlkTime.blk = DBINDEX.BlkID.id;'''
+    cur.execute(query)
+    row = cur.fetchone()
+    return {'Say': 'Hello world!',
+            'Latest block height': row[0],
+            'Latest block hash': row[1],
+            'Latest mining time (UTC)': row[2]}
 
 
 @app.get('/address/{addr}', summary='Get address information')
