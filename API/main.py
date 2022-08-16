@@ -41,6 +41,7 @@ async def shutdown_event():
 async def read_root():
     global cur
     global conn
+    # Get latest block information
     query = '''SELECT MAX(DBINDEX.BlkID.id), 
                       DBINDEX.BlkID.blkhash, 
                       strftime('%Y-%m-%d %H:%M:%S', 
@@ -156,7 +157,6 @@ async def clusters_search(clustername: Union[str, None] = None):
                          'transferCount': row[0],
                          'hasOsint': True})
     return response
-
 
 
 """
