@@ -111,6 +111,79 @@ async def address_info(addr: str):
             'Txes': txes}
 
 
+@app.get('/transaction/{txid}', summary='Get transaction information')
+async def transaction_info(txid: str):
+    response = []
+    global cur
+    global conn
+    # Get block information
+    query = '''SELECT DBINDEX.TxID.id,
+                 DBINDEX.BlkID.id, 
+                 DBINDEX.BlkID.blkhash, 
+                 strftime('%Y-%m-%d %H:%M:%S', 
+                   DBCORE.BlkTime.unixtime, 'unixepoch')
+               FROM DBINDEX.TxID
+               INNER JOIN DBCORE.BlkTx 
+                 ON DBCORE.BlkTx.tx = DBINDEX.TxID.id
+               INNER JOIN DBCORE.BlkTime 
+                 ON DBCORE.BlkTime.blk = DBCORE.BlkTx.blk
+               INNER JOIN DBINDEX.BlkID 
+                 ON DBINDEX.BlkID.id = DBCORE.BlkTx.blk
+               WHERE DBINDEX.TxID.txid = ?;'''
+    cur.execute(query, (txid,))
+    row = cur.fetchone()
+    tx = row[0]
+    blockheight = row[1]
+    blockhash = row[2]
+    miningtime = row[3]
+    # Get input information
+    txincnt = 0
+    txinbtc = 0
+    txin = []
+    query = '''SELECT DBINDEX.AddrID.addr, DBCORE.TxOut.btc
+               FROM DBCORE.TxIn
+               INNER JOIN DBCORE.TxOut 
+                 ON DBCORE.TxOut.tx = DBCORE.TxIn.ptx 
+                 AND DBCORE.TxOut.n = DBCORE.TxIn.pn
+               INNER JOIn DBINDEX.AddrID 
+                 ON DBINDEX.AddrID.id = DBCORE.TxOut.addr
+               WHERE DBCORE.TxIn.tx = ?
+               ORDER BY DBCORE.TxOut.n ASC;'''
+    for row in cur.execute(query, (tx,)):
+        txin.append({'Address': row[0],
+                     'BTC': row[1]})
+        txincnt = txincnt + 1
+        txinbtc = txinbtc + row[1]
+    # Get output information
+    txoutcnt = 0
+    txoutbtc = 0
+    txout = []
+    query = '''SELECT DBINDEX.AddrID.addr, DBCORE.TxOut.btc
+               FROM DBCORE.TxOut
+               INNER JOIn DBINDEX.AddrID 
+                 ON DBINDEX.AddrID.id = DBCORE.TxOut.addr
+               WHERE DBCORE.TxOut.tx = ?
+               ORDER BY DBCORE.TxOut.n ASC;'''
+    for row in cur.execute(query, (tx,)):
+        txout.append({'Address': row[0],
+                      'BTC': row[1]})
+        txoutcnt = txoutcnt + 1
+        txoutbtc = txoutbtc + row[1]
+    # Calculate fee
+    fee = txinbtc - txoutbtc
+    
+    return {'TxID': txid,
+            'Block height': blockheight,
+            'Block hash': blockhash,
+            'Mining time': miningtime,
+            'In count': txincnt,
+            'In BTC': txinbtc,
+            'Out count': txoutcnt,
+            'Out BTC': txoutbtc,
+            'Fee': fee,
+            'In information': txin,
+            'Out information': txout}
+
 @app.get('/clusters/search', summary='Search cluster information')
 async def clusters_search(clustername: Union[str, None] = None):
     response = []
