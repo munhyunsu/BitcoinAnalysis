@@ -6,10 +6,12 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 import secret
+import information
 
 conn = cur = None
 app = FastAPI(
-  title='BitSQL++ RESTful API',
+  title=information.title,
+  description=information.description,
   root_path=secret.root_path)
 
 
