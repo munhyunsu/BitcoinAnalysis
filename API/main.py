@@ -12,6 +12,7 @@ conn = cur = None
 app = FastAPI(
   title=information.title,
   description=information.description,
+  version=information.version,
   root_path=secret.root_path)
 
 
