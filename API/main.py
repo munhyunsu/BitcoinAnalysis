@@ -8,7 +8,9 @@ from pydantic import BaseModel
 import secret
 
 conn = cur = None
-app = FastAPI(root_path=secret.root_path)
+app = FastAPI(
+  title='BitSQL++ RESTful API',
+  root_path=secret.root_path)
 
 
 class Item(BaseModel):
