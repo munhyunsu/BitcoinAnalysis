@@ -13,6 +13,7 @@ app = FastAPI(
   title=information.title,
   description=information.description,
   version=information.version,
+  contact=information.contact,
   root_path=secret.root_path)
 
 
