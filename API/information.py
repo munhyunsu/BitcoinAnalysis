@@ -6,3 +6,5 @@ contact = {
   'name': 'Hyunsu Mun',
   'email': 'munhyunsu@cs-cnu.org',
 }
+license_info = {
+}
