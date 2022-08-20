@@ -3,7 +3,8 @@ title = 'BitSQL++ RESTful API'
 description = '''It serve Bitcoin address and transaction information.
 It use BitSQL database.'''
 contact = {
-  'name': 'Hyunsu Mun',
+  'name': 'Data Networks Lab',
+  'url': 'https://dnlab.cs-cnu.org/',
   'email': 'munhyunsu@cs-cnu.org',
 }
 license_info = {

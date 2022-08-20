@@ -14,7 +14,7 @@ app = FastAPI(
   description=information.description,
   version=information.version,
   contact=information.contact,
-  license_info=information.license,
+  license_info=information.license_info,
   root_path=secret.root_path)
 
 
