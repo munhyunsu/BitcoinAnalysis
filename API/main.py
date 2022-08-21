@@ -238,24 +238,3 @@ async def clusters_search(clustername: Union[str, None] = None):
                          'hasOsint': True})
     return response
 
-
-"""
-@app.get('/')
-async def read_root():
-    global cur
-    global conn
-    cur.execute('''SELECT MAX(DBINDEX.BlkID.id) FROM DBINDEX.BlkID;''')
-    res = cur.fetchone()
-    return {'Hello': 'World',
-            'Latest Block Height': f'{res[0]}'}
-
-
-@app.get('/items/{item_id}')
-async def read_item(item_id: int, q: Union[str, None] = None):
-    return {'item_id': item_id, 'q': q}
-
-
-@app.put('/items/{item_id}')
-async def update_item(item_id: int, item: Item):
-    return {'item_name': item.name, 'item_id': item_id}
-"""
