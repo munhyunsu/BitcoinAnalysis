@@ -18,12 +18,6 @@ app = FastAPI(
   root_path=secret.root_path)
 
 
-class Item(BaseModel):
-    name: str
-    price: float
-    is_offer: Union[bool, None] = None
-
-
 @app.on_event('startup')
 async def startup_event():
     global cur
