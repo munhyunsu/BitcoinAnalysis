@@ -185,13 +185,27 @@ async def transaction_info(txid: str):
             'In information': txin,
             'Out information': txout}
 
+@app.get('/clusters', summary='Get cluster names')
+async def clusters():
+    global cur
+    global conn
+    query = '''SELECT DISTINCT DBINDEX.AddrID.addr, DBSERVICE.TagID.tag
+               FROM DBSERVICE.Tag
+               INNER JOIN DBSERVICE.TagID ON DBSERVICE.Tag.tag = DBSERVICE.TagID.id
+               INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBSERVICE.Tag.addr
+               ORDER BY DBINDEX.AddrID.id ASC;'''
+    response = []
+    for row in cur.execute(query):
+        response.append({'Address': row[0],
+                         'Tag': row[1]})
+    return response
+
+
 @app.get('/clusters/search', summary='Search cluster information')
-async def clusters_search(clustername: Union[str, None] = None):
+async def clusters_search(clustername: str):
     response = []
     global cur
     global conn
-    if clustername is None:
-        return response
     # Addr, TagID list
     clusters = []
     query = '''SELECT DBSERVICE.AddrTag.addr, DBSERVICE.AddrTag.tag
@@ -230,5 +244,170 @@ async def clusters_search(clustername: Union[str, None] = None):
                          'balance': row[1],
                          'transferCount': row[0],
                          'hasOsint': True})
+    return response
+
+@app.get('/clusters/transactions', summary='Search transactions of clusters')
+async def clusters_transactions(clustername: str,
+                                from_cluster: bool = True, to_cluster: bool = True,
+                                counterparty: Union[str, None] = None):
+    global cur
+    global conn
+
+    response = []
+    if from_cluster and to_cluster:
+        query = '''SELECT DBCORE.BlkTime.Blk,
+                   strftime('%Y-%m-%d %H:%M:%S', DBCORE.BlkTime.unixtime, 'unixepoch'),
+                   DBINDEX.TxID.txid, 
+                   SRC.addr, DST.addr, DBUTIL.Edge.btc, 
+                   DBUTIL.Edge.tx, DBUTIL.Edge.src, DBUTIL.Edge.dst
+                   FROM DBUTIL.Edge
+                   INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBUTIL.Edge.tx
+                   INNER JOIN DBINDEX.AddrID AS SRC ON SRC.id = DBUTIL.Edge.src
+                   INNER JOIN DBINDEX.AddrID AS DST ON DST.id = DBUTIL.Edge.dst
+                   INNER JOIN DBCORE.BlkTx ON DBCORE.BlkTx.tx = DBUTIL.Edge.tx
+                   INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTime.blk = DBCORE.BlkTx.blk
+                   WHERE DBUTIL.Edge.src IN (
+                     SELECT DBSERVICE.Cluster.addr
+                     FROM DBSERVICE.Cluster
+                     WHERE DBSERVICE.Cluster.cluster = (
+                       SELECT DBSERVICE.Cluster.cluster
+                       FROM DBSERVICE.Cluster
+                       WHERE DBSERVICE.Cluster.addr IN (
+                         SELECT DBSERVICE.Tag.addr
+                         FROM DBSERVICE.Tag
+                         WHERE DBSERVICE.Tag.tag = (
+                           SELECT DBSERVICE.TagID.id
+                           FROM DBSERVICE.TagID
+                           WHERE DBSERVICE.TagID.tag = ?
+                         )
+                       )
+                     )
+                   )
+                   AND DBUTIL.Edge.dst IN (
+                     SELECT DBSERVICE.Cluster.addr
+                     FROM DBSERVICE.Cluster
+                     WHERE DBSERVICE.Cluster.cluster = (
+                       SELECT DBSERVICE.Cluster.cluster
+                       FROM DBSERVICE.Cluster
+                       WHERE DBSERVICE.Cluster.addr IN (
+                         SELECT DBSERVICE.Tag.addr
+                         FROM DBSERVICE.Tag
+                         WHERE DBSERVICE.Tag.tag = (
+                           SELECT DBSERVICE.TagID.id
+                           FROM DBSERVICE.TagID
+                           WHERE DBSERVICE.TagID.tag = ?
+                         )
+                       )
+                     )
+                   )
+                   ORDER BY SRC.id ASC;'''
+    elif not from_cluster and to_cluster:
+        query = '''SELECT DBCORE.BlkTime.Blk,
+                   strftime('%Y-%m-%d %H:%M:%S', DBCORE.BlkTime.unixtime, 'unixepoch'),
+                   DBINDEX.TxID.txid, 
+                   SRC.addr, DST.addr, DBUTIL.Edge.btc, 
+                   DBUTIL.Edge.tx, DBUTIL.Edge.src, DBUTIL.Edge.dst
+                   FROM DBUTIL.Edge
+                   INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBUTIL.Edge.tx
+                   INNER JOIN DBINDEX.AddrID AS SRC ON SRC.id = DBUTIL.Edge.src
+                   INNER JOIN DBINDEX.AddrID AS DST ON DST.id = DBUTIL.Edge.dst
+                   INNER JOIN DBCORE.BlkTx ON DBCORE.BlkTx.tx = DBUTIL.Edge.tx
+                   INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTime.blk = DBCORE.BlkTx.blk
+                   WHERE DBUTIL.Edge.src NOT IN (
+                     SELECT DBSERVICE.Cluster.addr
+                     FROM DBSERVICE.Cluster
+                     WHERE DBSERVICE.Cluster.cluster = (
+                       SELECT DBSERVICE.Cluster.cluster
+                       FROM DBSERVICE.Cluster
+                       WHERE DBSERVICE.Cluster.addr IN (
+                         SELECT DBSERVICE.Tag.addr
+                         FROM DBSERVICE.Tag
+                         WHERE DBSERVICE.Tag.tag = (
+                           SELECT DBSERVICE.TagID.id
+                           FROM DBSERVICE.TagID
+                           WHERE DBSERVICE.TagID.tag = ?
+                         )
+                       )
+                     )
+                   )
+                   AND DBUTIL.Edge.dst IN (
+                     SELECT DBSERVICE.Cluster.addr
+                     FROM DBSERVICE.Cluster
+                     WHERE DBSERVICE.Cluster.cluster = (
+                       SELECT DBSERVICE.Cluster.cluster
+                       FROM DBSERVICE.Cluster
+                       WHERE DBSERVICE.Cluster.addr IN (
+                         SELECT DBSERVICE.Tag.addr
+                         FROM DBSERVICE.Tag
+                         WHERE DBSERVICE.Tag.tag = (
+                           SELECT DBSERVICE.TagID.id
+                           FROM DBSERVICE.TagID
+                           WHERE DBSERVICE.TagID.tag = ?
+                         )
+                       )
+                     )
+                   )
+                   ORDER BY SRC.id ASC;'''
+    elif from_cluter and not to_cluster:
+        query = '''SELECT DBCORE.BlkTime.Blk,
+                   strftime('%Y-%m-%d %H:%M:%S', DBCORE.BlkTime.unixtime, 'unixepoch'),
+                   DBINDEX.TxID.txid, 
+                   SRC.addr, DST.addr, DBUTIL.Edge.btc, 
+                   DBUTIL.Edge.tx, DBUTIL.Edge.src, DBUTIL.Edge.dst
+                   FROM DBUTIL.Edge
+                   INNER JOIN DBINDEX.TxID ON DBINDEX.TxID.id = DBUTIL.Edge.tx
+                   INNER JOIN DBINDEX.AddrID AS SRC ON SRC.id = DBUTIL.Edge.src
+                   INNER JOIN DBINDEX.AddrID AS DST ON DST.id = DBUTIL.Edge.dst
+                   INNER JOIN DBCORE.BlkTx ON DBCORE.BlkTx.tx = DBUTIL.Edge.tx
+                   INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTime.blk = DBCORE.BlkTx.blk
+                   WHERE DBUTIL.Edge.src IN (
+                     SELECT DBSERVICE.Cluster.addr
+                     FROM DBSERVICE.Cluster
+                     WHERE DBSERVICE.Cluster.cluster = (
+                       SELECT DBSERVICE.Cluster.cluster
+                       FROM DBSERVICE.Cluster
+                       WHERE DBSERVICE.Cluster.addr IN (
+                         SELECT DBSERVICE.Tag.addr
+                         FROM DBSERVICE.Tag
+                         WHERE DBSERVICE.Tag.tag = (
+                           SELECT DBSERVICE.TagID.id
+                           FROM DBSERVICE.TagID
+                           WHERE DBSERVICE.TagID.tag = ?
+                         )
+                       )
+                     )
+                   )
+                   AND DBUTIL.Edge.dst NOT IN (
+                     SELECT DBSERVICE.Cluster.addr
+                     FROM DBSERVICE.Cluster
+                     WHERE DBSERVICE.Cluster.cluster = (
+                       SELECT DBSERVICE.Cluster.cluster
+                       FROM DBSERVICE.Cluster
+                       WHERE DBSERVICE.Cluster.addr IN (
+                         SELECT DBSERVICE.Tag.addr
+                         FROM DBSERVICE.Tag
+                         WHERE DBSERVICE.Tag.tag = (
+                           SELECT DBSERVICE.TagID.id
+                           FROM DBSERVICE.TagID
+                           WHERE DBSERVICE.TagID.tag = ?
+                         )
+                       )
+                     )
+                   )
+                   ORDER BY SRC.id ASC;'''
+    p1 = clustername
+    if counterparty is None:
+        p2 = clustername
+    else:
+        p2 = counterparty
+
+    for row in cur.execute(query, (p1, p2)):
+        response.append({'Mining time': row[1],
+                         'TxID': row[2],
+                         'Address from': row[3],
+                         'Address to': row[4],
+                         'BTC': row[5],
+                        })
+        
     return response
 
