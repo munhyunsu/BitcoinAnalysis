@@ -1,7 +1,13 @@
 # Simple run (development)
 
+- App server
 ```bash
-uvicorn main:app --reload --port 8888
+uvicorn --reload --host 127.0.0.1 --port 8888 --root-path '/btc' main:app
+```
+
+- Dev proxy
+```bash
+traefik --configFile ./traefik.toml
 ```
 
 ## Production mode (gunicorn)
