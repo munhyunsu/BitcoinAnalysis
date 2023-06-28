@@ -1,0 +1,11 @@
+[Unit]
+Description=BitSQL
+After=syslog.target network.target
+
+[Service]
+User=root
+Environment="PATH="
+ExecStart=/opt/bitsql/etc/systemd/run_bitsql
+
+[Install]
+WantedBy=multi-user.target
