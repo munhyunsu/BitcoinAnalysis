@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from typing import Union
+from typing import Union, List
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -56,6 +56,151 @@ async def read_root():
             'Latest block height': row[0],
             'Latest block hash': row[1],
             'Latest mining time (UTC)': row[2]}
+
+
+@app.post('/clusters/clusterRelations')
+async def cluster_relations(clusterId: int, nodeClusters: List[Union[int, None]]):
+    global cur
+    global conn
+    result = {}
+
+    # Real Cluster ID from Address ID
+    query = '''SELECT MIN(DBSERVICE.Cluster.addr)
+               FROM DBSERVICE.Cluster
+               WHERE DBSERVICE.Cluster.cluster = (
+                   SELECT DBSERVICE.Cluster.cluster
+                   FROM DBSERVICE.Cluster
+                   WHERE DBSERVICE.Cluster.addr = ?);'''
+    cur.execute(query, (clusterId,))
+    real_id = cur.fetchone()[0]
+
+    # Get Tags from clusters
+    query = '''SELECT DBSERVICE.TagID.tag
+               FROM DBSERVICE.Tag
+               INNER JOIN DBSERVICE.TagID ON DBSERVICE.Tag.tag = DBSERVICE.TagID.id
+               WHERE DBSERVICE.Tag.addr IN (SELECT DBSERVICE.Cluster.addr
+                   FROM DBSERVICE.Cluster
+                   WHERE DBSERVICE.Cluster.cluster = ?);'''
+    cur.execute(query, (real_id,))
+    tags = set()
+    for row in cur.fetchall():
+        tags.add(row[0])
+    tags = sorted(list(tags))
+
+    # Outcomes
+    query = '''SELECT DBCORE.TxIn.tx AS tx, DBCORE.TxOut.btc AS btc
+               FROM DBCORE.TxIn
+               INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+               WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
+                   FROM DBSERVICE.Cluster
+                   WHERE DBSERVICE.Cluster.cluster = ?);'''
+    cur.execute(query, (real_id,))
+    total_outcome_btc = 0.0
+    tx_set = set()
+    for row in cur.fetchall():
+        tx_set.add(row[0])
+        total_outcome_btc = total_outcome_btc + row[1]
+
+    # Incomes
+    query = '''SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.btc AS btc
+               FROM DBCORE.TxOut
+               WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
+                   FROM DBSERVICE.Cluster
+                   WHERE DBSERVICE.Cluster.cluster = ?);'''
+    cur.execute(query, (real_id,))
+    total_income_btc = 0.0
+    for row in cur.fetchall():
+        tx_set.add(row[0])
+        total_income_btc = total_income_btc + row[1]
+    total_tx_cnt = len(tx_set)
+
+    # result: Cluster
+    result['Cluster'] = [{'clusterId': real_id,
+                          'clusterName': tags[0] if len(tags) > 0 else 'Unknown',
+                          'category': 'deposit',
+                          'balance': total_income_btc-total_outcome_btc,
+                          'transferCount': total_tx_cnt}]
+    # Hard coding
+    if result['Cluster'][0]['clusterName'].lower() in ['bithumb', 'upbit', 'coinone', 'korbit']:
+        result['Cluster'][0]['category'] = 'exchange'
+    
+    # result: count
+    result['count'] = len(nodeClusters)
+
+    # result: Edge
+    edges = []
+    for lead_id in nodeClusters:
+        # Real Cluster ID from Node Address ID
+        query = '''SELECT MIN(DBSERVICE.Cluster.addr)
+                   FROM DBSERVICE.Cluster
+                   WHERE DBSERVICE.Cluster.cluster = (
+                       SELECT DBSERVICE.Cluster.cluster
+                       FROM DBSERVICE.Cluster
+                       WHERE DBSERVICE.Cluster.addr = ?);'''
+        cur.execute(query, (lead_id,))
+        real_lead_id = cur.fetchone()[0]
+
+        tx_set = set()
+        first_timestamp = 4133980799 # 2100-12-23T23:59:59
+        last_timestamp = 0 # 1970-01-01T12:00:00
+        from_me_btc = 0.0
+        to_me_btc = 0.0
+        # From me to lead_id
+        query = '''SELECT DBCORE.TxIn.tx AS tx, DBCORE.TxOut.btc AS btc, DBCORE.BlkTime.unixtime AS unixtime
+                   FROM DBCORE.TxIn
+                   INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+                   INNER JOIN DBCORE.BlkTx ON DBCORE.TxIn.tx = DBCORE.BlkTx.tx
+                   INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk
+                   WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
+                       FROM DBSERVICE.Cluster
+                       WHERE DBSERVICE.Cluster.cluster = ?)
+                   AND DBCORE.TxIn.tx IN (SELECT DBCORE.TxOut.tx
+                       FROM DBCORE.TxOut
+                       WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
+                           FROM DBSERVICE.Cluster
+                           WHERE DBSERVICE.Cluster.cluster = ?));'''
+        cur.execute(query, (real_id, real_lead_id))
+        for row in cur.fetchall():
+            tx_set.add(row[0])
+            from_me_btc = from_me_btc + row[1]
+            if first_timestamp > row[2]:
+                first_timestamp = row[2]
+            if last_timestamp < row[2]:
+                last_timestamp = row[2]
+
+        # From lead_id to me
+        query = '''SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.btc AS btc, DBCORE.BlkTime.unixtime AS unixtime
+                   FROM DBCORE.TxOut
+                   INNER JOIN DBCORE.BlkTx ON DBCORE.TxOut.tx = DBCORE.BlkTx.tx
+                   INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk
+                   WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
+                       FROM DBSERVICE.Cluster
+                       WHERE DBSERVICE.Cluster.cluster = ?)
+                   AND DBCORE.TxOut.tx IN (SELECT DBCORE.TxIn.tx
+                       FROM DBCORE.TxIn
+                       INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+                       WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
+                           FROM DBSERVICE.Cluster
+                           WHERE DBSERVICE.Cluster.cluster = ?));'''
+        cur.execute(query, (real_lead_id, real_id))
+        for row in cur.fetchall():
+            tx_set.add(row[0])
+            to_me_btc = to_me_btc + row[1]
+            if first_timestamp > row[2]:
+                first_timestamp = row[2]
+            if last_timestamp < row[2]:
+                last_timestamp = row[2]
+        
+        # add edge
+        edges.append({'leadClusterId': real_lead_id,
+                      'transferCount': len(tx_set),
+                      'sentTransferAmount': from_me_btc,
+                      'receivedTransferAmount': to_me_btc,
+                      'firstTransferTime': first_timestamp,
+                      'lastTrasferTime': last_timestamp})
+    result['Edge'] = edges
+
+    return result
 
 
 @app.get('/address/{addr}', summary='Get address information')
