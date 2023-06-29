@@ -59,7 +59,7 @@ async def read_root():
 
 
 @app.post('/clusters/clusterRelations')
-async def cluster_relations(clusterId: int, nodeClusters: List[Union[int, None]]):
+async def cluster_relations(clusterId: int, nodeClusters: List[int]):
     global cur
     global conn
     result = {}
@@ -201,6 +201,167 @@ async def cluster_relations(clusterId: int, nodeClusters: List[Union[int, None]]
     result['Edge'] = edges
 
     return result
+
+
+@app.post('/clusters/edgeSelect')
+async def edge_select(nodeClusters: List[int]):
+    result = {}
+    # Very dangerous assumtion! size of nodeClusters is 2!
+    lead_id = nodeClusters[0]
+    counter_id = nodeClusters[1]
+
+    # Real Cluster ID from Lead ID
+    query = '''SELECT MIN(DBSERVICE.Cluster.addr)
+               FROM DBSERVICE.Cluster
+               WHERE DBSERVICE.Cluster.cluster = (
+                   SELECT DBSERVICE.Cluster.cluster
+                   FROM DBSERVICE.Cluster
+                   WHERE DBSERVICE.Cluster.addr = ?);'''
+    cur.execute(query, (lead_id,))
+    real_lead_id = cur.fetchone()[0]
+    # Real Cluster ID from Counter ID
+    cur.execute(query, (counter_id,))
+    real_counter_id = cur.fetchone()[0]
+
+    # Get Tags from Lead ID
+    query = '''SELECT DBSERVICE.TagID.tag
+               FROM DBSERVICE.Tag
+               INNER JOIN DBSERVICE.TagID ON DBSERVICE.Tag.tag = DBSERVICE.TagID.id
+               WHERE DBSERVICE.Tag.addr IN (SELECT DBSERVICE.Cluster.addr
+                   FROM DBSERVICE.Cluster
+                   WHERE DBSERVICE.Cluster.cluster = ?);'''
+    cur.execute(query, (real_lead_id,))
+    lead_tags = set()
+    for row in cur.fetchall():
+        lead_tags.add(row[0])
+    lead_tags = sorted(list(lead_tags))
+    lead_tag = lead_tags[0] if len(lead_tags) > 0 else 'Unknown'
+    # Get Tags from Counter ID
+    cur.execute(query, (real_counter_id,))
+    counter_tags = set()
+    for row in cur.fetchall():
+        counter_tags.add(row[0])
+    counter_tags = sorted(list(counter_tags))
+    counter_tag = counter_tags[0] if len(counter_tags) > 0 else 'Unknown'
+
+    # Categories
+    # Hard coding!!!
+    lead_category = 'deposit'
+    if lead_tag.lower() in ['bithumb', 'upbit', 'coinone', 'korbit']:
+        lead_category = 'exchange'
+    counter_category = 'deposit'
+    if counter_tag.lower() in ['bithumb', 'upbit', 'coinone', 'korbit']:
+        counter_category = 'exchange'
+
+    # Txes informations
+    tx_set_lc = set()
+    # From lead to counter
+    query = '''SELECT DISTINCT DBCORE.TxOut.tx AS tx
+               FROM DBCORE.TxOut
+               WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
+                   FROM DBSERVICE.Cluster
+                   WHERE DBSERVICE.Cluster.cluster = ?)
+               AND DBCORE.TxOut.tx IN (SELECT DBCORE.TxIn.tx
+                   FROM DBCORE.TxIn
+                   INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+                   WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
+                       FROM DBSERVICE.Cluster
+                       WHERE DBSERVICE.Cluster.cluster = ?));'''
+    cur.execute(query, (real_counter_id, real_lead_id))
+    for row in cur.fetchall():
+        tx_set_lc.add(row[0])
+    tx_list_lc = sorted(list(tx_set_lc))
+    tx_set_cl = set()
+    query = '''SELECT DISTINCT DBCORE.TxIn.tx AS tx
+               FROM DBCORE.TxIn
+               INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+               WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
+                   FROM DBSERVICE.Cluster
+                   WHERE DBSERVICE.Cluster.cluster = ?)
+               AND DBCORE.TxIn.tx IN (SELECT DBCORE.TxOut.tx
+                   FROM DBCORE.TxOut
+                   WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
+                       FROM DBSERVICE.Cluster
+                       WHERE DBSERVICE.Cluster.cluster = ?));'''
+    cur.execute(query, (real_counter_id, real_lead_id))
+    for row in cur.fetchall():
+        tx_set_cl.add(row[0])
+    tx_list_cl = sorted(list(tx_set_cl))
+
+    # result: cluster
+    result['Cluster'] = [{'leadClusterId': real_lead_id,
+                          'counterpartyClusterId': real_counter_id,
+                          'leadClusterCategory': lead_category,
+                          'counterpartyClusterCategory': counter_category,
+                          'leadClusterName': lead_tag,
+                          'counterpartyClusterName': counter_tag,
+                          'transferCount': len(tx_list_lc) + len(tx_list_cl)}]
+    result['count'] = len(tx_list_lc) + len(tx_list_cl)
+
+    # Edges
+    edges = []
+    for idx, tx_list in enumerate([tx_list_lc, tx_list_cl]):
+        for tx in tx_list:
+            block_height = 0
+            block_timestamp = 0
+            sent_tag = lead_tag if idx == 0 else counter_tag
+            received_tag = counter_tag if idx == 0 else lead_tag
+            txid = ''
+            sent_addresses = []
+            sent_btc = 0.0
+            received_addresses = []
+            received_btc = 0.0
+            fee = 0.0
+            query = '''SELECT DBCORE.BlkTime.blk AS blk, DBCORE.BlkTime.unixtime AS unixtime, DBINDEX.TxID.txid AS txid, DBINDEX.AddrID.addr AS addr, DBCORE.TxOut.btc AS btc
+                       FROM DBCORE.TxIn
+                       INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+                       INNER JOIN DBCORE.BlkTx ON DBCORE.TxIn.tx = DBCORE.BlkTx.tx
+                       INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk
+                       INNER JOIN DBINDEX.TxID ON DBCORE.TxIn.tx = DBINDEX.TxID.id
+                       INNER JOIN DBINDEX.AddrID ON DBCORE.TxOut.addr = DBINDEX.AddrID.id
+                       WHERE DBCORE.TxIn.tx = ?
+                       ORDER BY DBCORE.TxIn.n ASC;'''
+            cur.execute(query, (tx,))
+            for row in cur.fetchall():
+                block_height = row[0]
+                block_timestamp = row[1]
+                txid = row[2]
+                if row[3] not in sent_addresses:
+                    sent_addresses.append(row[3])
+                sent_btc = sent_btc + row[4]
+            query = '''SELECT DBCORE.BlkTime.blk AS blk, DBCORE.BlkTime.unixtime AS unixtime, DBINDEX.TxID.txid AS txid, DBINDEX.AddrID.addr AS addr, DBCORE.TxOut.btc AS btc
+                       FROM DBCORE.TxOut
+                       INNER JOIN DBCORE.BlkTx ON DBCORE.TxOut.tx = DBCORE.BlkTx.tx
+                       INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk
+                       INNER JOIN DBINDEX.TxID ON DBCORE.TxOut.tx = DBINDEX.TxID.id
+                       INNER JOIN DBINDEX.AddrID ON DBCORE.TxOut.addr = DBINDEX.AddrID.id
+                       WHERE DBCORE.TxOut.tx = ?
+                       ORDER BY DBCORE.TxOut.n ASC;'''
+            cur.execute(query, (tx,))
+            for row in cur.fetchall():
+                block_height = row[0]
+                block_timestamp = row[1]
+                txid = row[2]
+                if row[3] not in received_addresses:
+                    received_addresses.append(row[3])
+                received_btc = received_btc + row[4]
+            fee = sent_btc - received_btc
+            edges.append({'txhashTime': block_timestamp,
+                          'txhash': txid,
+                          'txhashblock': block_height,
+                          'txhashfee': fee,
+                          'sentAddress': sent_addresses,
+                          'sentClusterName': sent_tag,
+                          'sentTransactionAmount': sent_btc,
+                          'receivedAddress': received_addresses,
+                          'receivedClusterName': received_tag,
+                          'receivedTransactionAmount': received_btc})
+    result['Edge'] = edges
+
+    return result
+
+
+
 
 
 @app.get('/address/{addr}', summary='Get address information')
