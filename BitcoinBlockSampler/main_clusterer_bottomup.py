@@ -35,7 +35,7 @@ def initialize_cluster(conn, cur):
     conn.commit()
     cur.execute('''CREATE TABLE IF NOT EXISTS Cluster (
                      addr INTEGER PRIMARY KEY,
-                     cluster NOT NULL);''')
+                     cluster INTEGER NOT NULL);''')
     cur.execute('''CREATE TABLE IF NOT EXISTS AddrTagID (
                      id INTEGER PRIMARY KEY,
                      tag TEXT UNIQUE);''')
