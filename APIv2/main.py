@@ -533,11 +533,12 @@ async def transfer_info(clusterId: int):
     real_id = cur.fetchone()[0]
 
     # Trainsactions
-    query = '''SELECT DBINDEX.TxID.txid AS tx, DBCORE.BlkTime.unixtime as unixtime, -SUM(DBCORE.TxOut.btc) AS btc, DBINDEX.AddrID.addr AS addr, DBINDEX.AddrID.id AS addrid
+    query = '''SELECT DBINDEX.TxID.txid AS tx, DBCORE.BlkTime.unixtime as unixtime, -SUM(DBCORE.TxOut.btc) AS btc, DBINDEX.AddrID.addr AS addr, DBSERVICE.Cluster.cluster AS clusterid
                FROM DBCORE.TxIn
                INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
                INNER JOIN DBCORE.BlkTx ON DBCORE.TxIn.tx = DBCORE.BlkTx.tx
                INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk
+               INNER JOIN DBSERVICE.Cluster ON DBCORE.TxOut.addr = DBSERVICE.Cluster.addr
                INNER JOIN DBINDEX.TxID ON DBCORE.TxIn.tx = DBINDEX.TxID.id
                INNER JOIN DBINDEX.AddrID ON DBCORE.TxOut.addr = DBINDEX.AddrID.id
                WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
@@ -545,10 +546,11 @@ async def transfer_info(clusterId: int):
                    WHERE DBSERVICE.Cluster.cluster = ?)
                GROUP BY DBCORE.TxIn.tx
                UNION
-               SELECT DBINDEX.TxID.txid AS tx, DBCORE.BlkTime.unixtime as unixtime, SUM(DBCORE.TxOut.btc) AS btc, DBINDEX.AddrID.addr AS addr, DBINDEX.AddrID.id AS addrid
+               SELECT DBINDEX.TxID.txid AS tx, DBCORE.BlkTime.unixtime as unixtime, SUM(DBCORE.TxOut.btc) AS btc, DBINDEX.AddrID.addr AS addr, DBSERVICE.Cluster.cluster AS clusterid
                FROM DBCORE.TxOut
                INNER JOIN DBCORE.BlkTx ON DBCORE.TxOut.tx = DBCORE.BlkTx.tx
                INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk
+               INNER JOIN DBSERVICE.Cluster ON DBCORE.TxOut.addr = DBSERVICE.Cluster.addr
                INNER JOIN DBINDEX.TxID ON DBCORE.TxOut.tx = DBINDEX.TxID.id
                INNER JOIN DBINDEX.AddrID ON DBCORE.TxOut.addr = DBINDEX.AddrID.id
                WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
@@ -565,46 +567,40 @@ async def transfer_info(clusterId: int):
                      'txhash': row[0],
                      'transferAmount': row[2],
                      'receivedAddress': row[3],
-                     'counterpartyClusterId': row[4], # Temporary
+                     'counterpartyClusterId': row[4],
                      'counterpartyClusterName': row[4], # Temporary
                     })
     result['count'] = tx_cnt
 
+    cache = {}
     for idx in range(len(txes)):
-        addr_id = txes[idx]['counterpartyClusterId']
-        # Real Cluster ID from Address ID
-        query = '''SELECT MIN(DBSERVICE.Cluster.addr)
-                   FROM DBSERVICE.Cluster
-                   WHERE DBSERVICE.Cluster.cluster = (
-                       SELECT DBSERVICE.Cluster.cluster
-                       FROM DBSERVICE.Cluster
-                       WHERE DBSERVICE.Cluster.addr = ?);'''
-        cur.execute(query, (addr_id,))
-        real_addr_id = cur.fetchone()[0]
+        cluster_id = txes[idx]['counterpartyClusterId']
+        if not cluster_id in cache.keys():
+            # Get Tags from clusters
+            query = '''SELECT DBSERVICE.TagID.tag
+                       FROM DBSERVICE.Tag
+                       INNER JOIN DBSERVICE.TagID ON DBSERVICE.Tag.tag = DBSERVICE.TagID.id
+                       WHERE DBSERVICE.Tag.addr IN (SELECT DBSERVICE.Cluster.addr
+                           FROM DBSERVICE.Cluster
+                           WHERE DBSERVICE.Cluster.cluster = ?);'''
+            cur.execute(query, (cluster_id,))
+            tags = set()
+            for row in cur.fetchall():
+                tags.add(row[0])
+            tags = sorted(list(tags))
+            tag = tags[0] if len(tags) > 0 else 'Unknown'
+            cache[cluster_id] = tag
 
-        # Get Tags from clusters
-        query = '''SELECT DBSERVICE.TagID.tag
-                   FROM DBSERVICE.Tag
-                   INNER JOIN DBSERVICE.TagID ON DBSERVICE.Tag.tag = DBSERVICE.TagID.id
-                   WHERE DBSERVICE.Tag.addr IN (SELECT DBSERVICE.Cluster.addr
-                       FROM DBSERVICE.Cluster
-                       WHERE DBSERVICE.Cluster.cluster = ?);'''
-        cur.execute(query, (real_addr_id,))
-        tags = set()
-        for row in cur.fetchall():
-            tags.add(row[0])
-        tags = sorted(list(tags))
-        tag = tags[0] if len(tags) > 0 else 'Unknown'
-
-        txes[idx]['counterpartyClusterId'] = real_addr_id
-        txes[idx]['counterpartyClusterName'] = tag
+        txes[idx]['counterpartyClusterName'] = cache[cluster_id]
 
     result['ClusterTransfer'] = txes
 
     return result
 
 
-
+@app.post('clusters/transferInfo/detailTransfer')
+async def detail_transfer(clusterId: int, transferTxhash: str):
+    pass
 
 
 
