@@ -48,13 +48,25 @@ def main():
     print(f'[{int(time.time()-STIME)}] Start tag insert')
 
     conn, cur = prepare_conn(FLAGS.service, FLAGS.index, FLAGS.core)
+
+    cur.execute('''CREATE TABLE IF NOT EXISTS TagID (
+                       id INTEGER PRIMARY KEY,
+                       tag TEXT UNIQUE);''');
+    cur.execute('''CREATE TABLE IF NOT EXISTS Tag (
+                       addr INTEGER NOT NULL,
+                       tag INTEGER NOT NULL,
+                       UNIQUE (addr, tag));''')
     
     with open(FLAGS.tag, 'r') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            insert_db(conn, cur,
-                      {'tag': row['ClusterName'],
-                       'address': row['RootAddress']})
+            try:
+                insert_db(conn, cur,
+                          {'tag': row['ClusterName'],
+                           'address': row['RootAddress']})
+            except TypeError as e:
+                print(f'TypeError: {row} with {e}')
+                continue
             print(f'[{int(time.time()-STIME)}] Inserted {row}')
     
     print(f'[{int(time.time()-STIME)}] Terminate tag insert')
