@@ -26,7 +26,7 @@ async def startup_event():
     cur = conn.cursor()
     cur.execute(f'''ATTACH DATABASE '{secret.path_index}' AS DBINDEX;''')
     cur.execute(f'''ATTACH DATABASE '{secret.path_core}' AS DBCORE;''')
-    cur.execute(f'''ATTACH DATABASE '{secret.path_util}' AS DBUTIL;''')
+    #cur.execute(f'''ATTACH DATABASE '{secret.path_util}' AS DBUTIL;''')
     cur.execute(f'''ATTACH DATABASE '{secret.path_service}' AS DBSERVICE;''')
     conn.commit()
 
