@@ -454,8 +454,8 @@ async def cluster_info(clusterId: int):
     cur.execute(query, (real_id,))
     for row in cur.fetchall():
         outcome_txes.add(row[0])
-        outcome_btc = income_btc + row[1]
-        outcome_cnt = income_cnt + 1
+        outcome_btc = outcome_btc + row[1]
+        outcome_cnt = outcome_cnt + 1
         if first_timestamp > row[2]:
             first_timestamp = row[2]
         if last_timestamp < row[2]:
