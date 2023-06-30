@@ -598,10 +598,67 @@ async def transfer_info(clusterId: int):
     return result
 
 
-@app.post('clusters/transferInfo/detailTransfer')
+@app.post('/clusters/transferInfo/detailTransfer')
 async def detail_transfer(clusterId: int, transferTxhash: str):
-    pass
+    global cur
+    global conn
+    result = {}
+    # Get transaction information
+    query = '''SELECT DBCORE.BlkTx.blk as height, DBINDEX.TxID.id as txid, DBCORE.BlkTime.unixtime AS unixtime
+               FROM DBCORE.TxIn
+               INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+               INNER JOIN DBCORE.BlkTx ON DBCORE.TxIn.tx = DBCORE.BlkTx.tx
+               INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk
+               INNER JOIN DBINDEX.TxID ON DBCORE.TxIn.tx = DBINDEX.TxID.id
+               INNER JOIN DBINDEX.AddrID ON DBCORE.TxOut.addr = DBINDEX.AddrID.id
+               WHERE DBINDEX.TxID.txid = ?
+               GROUP BY DBCORE.TxIn.tx;'''
+    cur.execute(query, (transferTxhash,))
+    block_height, txid, block_timestamp = cur.fetchone()
+    # Get inputs
+    query = '''SELECT DBINDEX.AddrID.addr AS addr, DBSERVICE.Cluster.cluster AS cluster, DBCORE.TxOut.btc AS btc
+               FROM DBCORE.TxIn
+               INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+               INNER JOIN DBINDEX.TxID ON DBCORE.TxIn.tx = DBINDEX.TxID.id
+               INNER JOIN DBINDEX.AddrID ON DBCORE.TxOut.addr = DBINDEX.AddrID.id
+               INNER JOIN DBSERVICE.Cluster ON DBCORE.TxOut.addr = DBSERVICE.Cluster.addr
+               WHERE DBCORE.TxIn.tx = ?
+               ORDER BY DBCORE.TxIn.tx, DBCORE.TxIn.n;'''
+    cur.execute(query, (txid,))
+    sents = []
+    sent_btc = 0.0
+    for row in cur.fetchall():
+        sents.append({'sentAddress': row[0],
+                      'sentClusterId': row[1],
+                      'sentTransferAmount': row[2]})
+        sent_btc = sent_btc + row[2]
+    # Get outputs
+    query = '''SELECT DBINDEX.AddrID.addr AS addr, DBSERVICE.Cluster.cluster AS cluster, DBCORE.TxOut.btc AS btc
+               FROM DBCORE.TxOut
+               INNER JOIN DBINDEX.TxID ON DBCORE.TxOut.tx = DBINDEX.TxID.id
+               INNER JOIN DBINDEX.AddrID ON DBCORE.TxOut.addr = DBINDEX.AddrID.id
+               INNER JOIN DBSERVICE.Cluster ON DBCORE.TxOut.addr = DBSERVICE.Cluster.addr
+               WHERE DBCORE.TxOut.tx = ?
+               ORDER BY DBCORE.TxOut.tx, DBCORE.TxOut.n;'''
+    cur.execute(query, (txid,))
+    receiveds = []
+    received_btc = 0.0
+    for row in cur.fetchall():
+        receiveds.append({'receivedAddress': row[0],
+                          'receivedClusterId': row[1],
+                          'receivedTransferAmount': row[2]})
+        received_btc = received_btc + row[2]
+    # result
+    result['ClusterTransfer'] = [{'txhash': transferTxhash,
+                                  'txhashTime': block_timestamp,
+                                  'txhashFee': sent_btc-received_btc,
+                                  'txhashBlock': block_height}]
+    result['sentCount'] = len(sents)
+    result['sentClusterTransfer'] = sents
+    result['receivedCount'] = len(receiveds)
+    result['receivedClusterTransfer'] = receiveds
 
+    return result
 
 
 @app.get('/address/{addr}', summary='Get address information')
