@@ -361,6 +361,207 @@ async def edge_select(nodeClusters: List[int]):
     return result
 
 
+@app.post('/clusters/clusterInfo')
+async def cluster_info(clusterId: int):
+    global cur
+    global conn
+    result = {}
+
+    # Real Cluster ID from Cluster ID
+    query = '''SELECT DBINDEX.AddrID.id, DBINDEX.AddrID.addr
+               FROM DBINDEX.AddrID
+               WHERE DBINDEX.AddrID.id = (SELECT MIN(DBSERVICE.Cluster.addr)
+                  FROM DBSERVICE.Cluster
+                  INNER JOIN DBINDEX.AddrID ON DBSERVICE.Cluster.addr = DBINDEX.AddrID.id
+                  WHERE DBSERVICE.Cluster.cluster = (SELECT DBSERVICE.Cluster.cluster
+                      FROM DBSERVICE.Cluster
+                      WHERE DBSERVICE.Cluster.addr = ?));'''
+    cur.execute(query, (clusterId,))
+    real_id, root_address = cur.fetchone()
+
+    # Get Tags from clusters
+    query = '''SELECT DBSERVICE.TagID.tag
+               FROM DBSERVICE.Tag
+               INNER JOIN DBSERVICE.TagID ON DBSERVICE.Tag.tag = DBSERVICE.TagID.id
+               WHERE DBSERVICE.Tag.addr IN (SELECT DBSERVICE.Cluster.addr
+                   FROM DBSERVICE.Cluster
+                   WHERE DBSERVICE.Cluster.cluster = ?);'''
+    cur.execute(query, (real_id,))
+    tags = set()
+    for row in cur.fetchall():
+        tags.add(row[0])
+    tags = sorted(list(tags))
+    tag = tags[0] if len(tags) > 0 else 'Unknown'
+
+    # Category
+    # Hard coding!!!
+    category = 'deposit'
+    if tag.lower() in ['bithumb', 'upbit', 'coinone', 'korbit']:
+        category = 'exchange'
+
+    # Address count
+    query = '''SELECT COUNT(DBSERVICE.Cluster.cluster)
+               FROM DBSERVICE.Cluster
+               WHERE DBSERVICE.Cluster.cluster = ?
+               GROUP BY DBSERVICE.Cluster.cluster;'''
+    cur.execute(query, (real_id,))
+    addr_cnt = cur.fetchone()[0]
+
+    # Incomes
+    income_btc = 0.0
+    income_cnt = 0
+    income_txes = set()
+    first_timestamp = 4133980799 # 2100-12-23T23:59:59
+    last_timestamp = 0 # 1970-01-01T12:00:00
+    query = '''SELECT DBCORE.TxOut.tx, SUM(DBCORE.TxOut.btc), MIN(DBCORE.BlkTime.unixtime)
+               FROM DBCORE.TxOut
+               INNER JOIN DBCORE.BlkTx ON DBCORE.TxOut.tx = DBCORE.BlkTx.tx
+               INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk
+               WHERE DBCORE.TxOut.tx IN (SELECT DISTINCT DBCORE.TxOut.tx
+                   FROM DBCORE.TxOut
+                   WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
+                       FROM DBSERVICE.Cluster
+                       WHERE DBSERVICE.Cluster.cluster = ?))
+               GROUP BY DBCORE.TxOut.tx
+               ORDER BY DBCORE.TxOut.tx ASC;'''
+    cur.execute(query, (real_id,))
+    for row in cur.fetchall():
+        income_txes.add(row[0])
+        income_btc = income_btc + row[1]
+        income_cnt = income_cnt + 1
+        if first_timestamp > row[2]:
+            first_timestamp = row[2]
+        if last_timestamp < row[2]:
+            last_timestamp = row[2]
+
+    # Outcomes
+    outcome_btc = 0.0
+    outcome_cnt = 0
+    outcome_txes = set()
+    query = '''SELECT DBCORE.TxIn.tx, SUM(DBCORE.TxOut.btc), MIN(DBCORE.BlkTime.unixtime)
+               FROM DBCORE.TxIn
+               INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+               INNER JOIN DBCORE.BlkTx ON DBCORE.TxIn.tx = DBCORE.BlkTx.tx
+               INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk
+               WHERE DBCORE.TxIn.tx IN (SELECT DISTINCT DBCORE.TxIn.tx
+                   FROM DBCORE.TxIn
+                   INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+                   WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
+                       FROM DBSERVICE.Cluster
+                       WHERE DBSERVICE.Cluster.cluster = ?))
+               GROUP BY DBCORE.TxIn.tx
+               ORDER BY DBCORE.TxIn.tx ASC;'''
+    cur.execute(query, (real_id,))
+    for row in cur.fetchall():
+        outcome_txes.add(row[0])
+        outcome_btc = income_btc + row[1]
+        outcome_cnt = income_cnt + 1
+        if first_timestamp > row[2]:
+            first_timestamp = row[2]
+        if last_timestamp < row[2]:
+            last_timestamp = row[2]
+    tx_cnt = len(income_txes | outcome_txes)
+
+    # Fees
+    fee = 0.0
+    query = '''SELECT DBCORE.TxIn.tx AS tx, SUM(DBCORE.TxOut.btc)-T.btc AS fee
+               FROM DBCORE.TxIn
+               INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+               INNER JOIN (SELECT DBCORE.TxOut.tx AS tx, SUM(DBCORE.TxOut.btc) AS btc
+                   FROM DBCORE.TxOut
+                   WHERE DBCORE.TxOut.tx IN (SELECT DISTINCT DBCORE.TxIn.tx
+                       FROM DBCORE.TxIn
+                       INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+                       WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
+                           FROM DBSERVICE.Cluster
+                           WHERE DBSERVICE.Cluster.cluster = ?)
+                       UNION
+                       SELECT DISTINCT DBCORE.TxOut.tx
+                       FROM DBCORE.TxOut
+                       WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
+                           FROM DBSERVICE.Cluster
+                           WHERE DBSERVICE.Cluster.cluster = ?))
+                   GROUP BY DBCORE.TxOut.tx) AS T ON DBCORE.TxIn.tx = T.tx
+               WHERE DBCORE.TxIn.tx IN (SELECT DISTINCT DBCORE.TxIn.tx
+                   FROM DBCORE.TxIn
+                   INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+                   WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
+                       FROM DBSERVICE.Cluster
+                       WHERE DBSERVICE.Cluster.cluster = ?)
+                   UNION
+                   SELECT DISTINCT DBCORE.TxOut.tx
+                   FROM DBCORE.TxOut
+                   WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
+                       FROM DBSERVICE.Cluster
+                       WHERE DBSERVICE.Cluster.cluster = ?))
+               GROUP BY DBCORE.TxIn.tx;'''
+    cur.execute(query, (real_id, real_id, real_id, real_id))
+    for row in cur.fetchall():
+        fee = fee + row[1]
+    
+    result['Cluster'] = {'clusterName': tag,
+                         'category': category,
+                         'root_address': root_address,
+                         'balance': income_btc-outcome_btc,
+                         'sentTransferAmount': outcome_btc,
+                         'receivedTransferAmount': income_btc,
+                         'transactionFee': fee,
+                         'trasferCount': tx_cnt,
+                         'sentTransferCount': len(outcome_txes),
+                         'receivedTransferCount': len(income_txes),
+                         'addressCount': addr_cnt,
+                         'firstTransferTime': first_timestamp,
+                         'lastTransferTime': last_timestamp}
+    
+    return result
+
+
+@app.post('/clusters/transferInfo')
+async def transfer_info(clusterId: int):
+    global cur
+    global conn
+    result = {}
+
+    # Real Cluster ID from Address ID
+    query = '''SELECT MIN(DBSERVICE.Cluster.addr)
+               FROM DBSERVICE.Cluster
+               WHERE DBSERVICE.Cluster.cluster = (
+                   SELECT DBSERVICE.Cluster.cluster
+                   FROM DBSERVICE.Cluster
+                   WHERE DBSERVICE.Cluster.addr = ?);'''
+    cur.execute(query, (clusterId,))
+    real_id = cur.fetchone()[0]
+
+    # 
+
+    # Get Tags from clusters
+    query = '''SELECT DBSERVICE.TagID.tag
+               FROM DBSERVICE.Tag
+               INNER JOIN DBSERVICE.TagID ON DBSERVICE.Tag.tag = DBSERVICE.TagID.id
+               WHERE DBSERVICE.Tag.addr IN (SELECT DBSERVICE.Cluster.addr
+                   FROM DBSERVICE.Cluster
+                   WHERE DBSERVICE.Cluster.cluster = ?);'''
+    cur.execute(query, (real_id,))
+    tags = set()
+    for row in cur.fetchall():
+        tags.add(row[0])
+    tags = sorted(list(tags))
+    tag = tags[0] if len(tags) > 0 else 'Unknown'
+
+    # Category
+    # Hard coding!!!
+    category = 'deposit'
+    if tag.lower() in ['bithumb', 'upbit', 'coinone', 'korbit']:
+        category = 'exchange'
+
+    # Address count
+    query = '''SELECT COUNT(DBSERVICE.Cluster.cluster)
+               FROM DBSERVICE.Cluster
+               WHERE DBSERVICE.Cluster.cluster = ?
+               GROUP BY DBSERVICE.Cluster.cluster;'''
+    cur.execute(query, (real_id,))
+    addr_cnt = cur.fetchone()[0]
+
 
 
 
@@ -490,6 +691,7 @@ async def transaction_info(txid: str):
             'Fee': fee,
             'In information': txin,
             'Out information': txout}
+
 
 @app.get('/clusters', summary='Get cluster names')
 async def clusters():
