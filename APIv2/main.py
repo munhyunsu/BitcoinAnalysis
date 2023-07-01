@@ -363,7 +363,7 @@ async def edge_select(body: schemas.EdgeSelectPost):
 
 
 @app.post('/clusters/clusterInfo')
-async def cluster_info(body: schemas.ClusterBase):
+async def cluster_info(body: schemas.ClusterInfoPost):
     global cur
     global conn
     result = {}
@@ -518,7 +518,7 @@ async def cluster_info(body: schemas.ClusterBase):
 
 
 @app.post('/clusters/transferInfo')
-async def transfer_info(body: schemas.ClusterBase):
+async def transfer_info(body: schemas.TransferInfoPost):
     global cur
     global conn
     result = {}
