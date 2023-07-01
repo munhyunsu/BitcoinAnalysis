@@ -363,7 +363,7 @@ async def edge_select(body: schemas.EdgeSelectPost):
 
 
 @app.post('/clusters/clusterInfo')
-async def cluster_info(clusterId: int):
+async def cluster_info(body: schemas.ClusterBase):
     global cur
     global conn
     result = {}
@@ -377,7 +377,7 @@ async def cluster_info(clusterId: int):
                   WHERE DBSERVICE.Cluster.cluster = (SELECT DBSERVICE.Cluster.cluster
                       FROM DBSERVICE.Cluster
                       WHERE DBSERVICE.Cluster.addr = ?));'''
-    cur.execute(query, (clusterId,))
+    cur.execute(query, (body.clusterId,))
     real_id, root_address = cur.fetchone()
 
     # Get Tags from clusters
@@ -518,7 +518,7 @@ async def cluster_info(clusterId: int):
 
 
 @app.post('/clusters/transferInfo')
-async def transfer_info(clusterId: int):
+async def transfer_info(body: schemas.ClusterBase):
     global cur
     global conn
     result = {}
@@ -530,7 +530,7 @@ async def transfer_info(clusterId: int):
                    SELECT DBSERVICE.Cluster.cluster
                    FROM DBSERVICE.Cluster
                    WHERE DBSERVICE.Cluster.addr = ?);'''
-    cur.execute(query, (clusterId,))
+    cur.execute(query, (body.clusterId,))
     real_id = cur.fetchone()[0]
 
     # Trainsactions
