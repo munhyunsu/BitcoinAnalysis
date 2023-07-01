@@ -60,7 +60,7 @@ async def read_root():
 
 
 @app.post('/clusters/clusterRelations')
-async def cluster_relations(clusterId: int, nodeClusters: List[int]):
+async def cluster_relations(body: schemas.ClusterRelationsPost):
     global cur
     global conn
     result = {}
@@ -72,7 +72,7 @@ async def cluster_relations(clusterId: int, nodeClusters: List[int]):
                    SELECT DBSERVICE.Cluster.cluster
                    FROM DBSERVICE.Cluster
                    WHERE DBSERVICE.Cluster.addr = ?);'''
-    cur.execute(query, (clusterId,))
+    cur.execute(query, (body.clusterId,))
     real_id = cur.fetchone()[0]
 
     # Get Tags from clusters
@@ -126,11 +126,11 @@ async def cluster_relations(clusterId: int, nodeClusters: List[int]):
         result['Cluster'][0]['category'] = 'exchange'
     
     # result: count
-    result['count'] = len(nodeClusters)
+    result['count'] = len(body.nodeClusters)
 
     # result: Edge
     edges = []
-    for lead_id in nodeClusters:
+    for lead_id in body.nodeClusters:
         # Real Cluster ID from Node Address ID
         query = '''SELECT MIN(DBSERVICE.Cluster.addr)
                    FROM DBSERVICE.Cluster
