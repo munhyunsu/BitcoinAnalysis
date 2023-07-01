@@ -28,7 +28,7 @@ class ClusterInfoPost(ClusterBase):
 
 
 class TransferInfoPost(ClusterBase):
-    pass
+    clusterId: int = 519495737
 
 
 class DetailTransferPost(ClusterBase, TransactionBase):
