@@ -600,7 +600,7 @@ async def transfer_info(body: schemas.TransferInfoPost):
 
 
 @app.post('/clusters/transferInfo/detailTransfer')
-async def detail_transfer(clusterId: int, transferTxhash: str):
+async def detail_transfer(body: schemas.DetailTransferPost):
     global cur
     global conn
     result = {}
@@ -614,7 +614,7 @@ async def detail_transfer(clusterId: int, transferTxhash: str):
                INNER JOIN DBINDEX.AddrID ON DBCORE.TxOut.addr = DBINDEX.AddrID.id
                WHERE DBINDEX.TxID.txid = ?
                GROUP BY DBCORE.TxIn.tx;'''
-    cur.execute(query, (transferTxhash,))
+    cur.execute(query, (body.transferTxhash,))
     block_height, txid, block_timestamp = cur.fetchone()
     # Get inputs
     query = '''SELECT DBINDEX.AddrID.addr AS addr, DBSERVICE.Cluster.cluster AS cluster, DBCORE.TxOut.btc AS btc
@@ -650,7 +650,7 @@ async def detail_transfer(clusterId: int, transferTxhash: str):
                           'receivedTransferAmount': row[2]})
         received_btc = received_btc + row[2]
     # result
-    result['ClusterTransfer'] = [{'txhash': transferTxhash,
+    result['ClusterTransfer'] = [{'txhash': body.transferTxhash,
                                   'txhashTime': block_timestamp,
                                   'txhashFee': sent_btc-received_btc,
                                   'txhashBlock': block_height}]

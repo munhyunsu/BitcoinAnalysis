@@ -29,3 +29,7 @@ class ClusterInfoPost(ClusterBase):
 
 class TransferInfoPost(ClusterBase):
     pass
+
+
+class DetailTransferPost(ClusterBase, TransactionBase):
+    pass
