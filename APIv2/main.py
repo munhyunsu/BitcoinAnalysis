@@ -205,11 +205,11 @@ async def cluster_relations(body: schemas.ClusterRelationsPost):
 
 
 @app.post('/clusters/edgeSelect')
-async def edge_select(nodeClusters: List[int]):
+async def edge_select(body: schemas.EdgeSelectPost):
     result = {}
     # Very dangerous assumtion! size of nodeClusters is 2!
-    lead_id = nodeClusters[0]
-    counter_id = nodeClusters[1]
+    lead_id = body.nodeClusters[0]
+    counter_id = body.nodeClusters[1]
 
     # Real Cluster ID from Lead ID
     query = '''SELECT MIN(DBSERVICE.Cluster.addr)
