@@ -185,12 +185,14 @@ async def cluster_relations(body: schemas.ClusterRelationsPost):
                 last_timestamp = row[2]
         
         # add edge
-        edges.append({'leadClusterId': real_lead_id,
-                      'transferCount': len(tx_set),
-                      'sentTransferAmount': np.format_float_positional(from_me_btc),
-                      'receivedTransferAmount': np.format_float_positional(to_me_btc),
-                      'firstTransferTime': first_timestamp,
-                      'lastTrasferTime': last_timestamp})
+        if last_timestamp != 0.0:
+            edges.append({'leadClusterId': real_lead_id,
+                          'transferCount': len(tx_set),
+                          'sentTransferAmount': np.format_float_positional(from_me_btc),
+                          'receivedTransferAmount': np.format_float_positional(to_me_btc),
+                          'firstTransferTime': first_timestamp,
+                          'lastTrasferTime': last_timestamp})
+
     result['Edge'] = edges
 
     return result
