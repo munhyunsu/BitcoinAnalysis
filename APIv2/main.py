@@ -148,20 +148,24 @@ async def cluster_relations(body: schemas.ClusterRelationsPost):
         from_me_btc = 0.0
         to_me_btc = 0.0
         # From me to lead_id
-        query = '''SELECT DBCORE.TxIn.tx AS tx, DBCORE.TxOut.btc AS btc, DBCORE.BlkTime.unixtime AS unixtime
-                   FROM DBCORE.TxIn
-                   INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
-                   INNER JOIN DBCORE.BlkTx ON DBCORE.TxIn.tx = DBCORE.BlkTx.tx
+        query = '''SELECT DBCORE.TxOut.tx AS tx, SUM(DBCORE.TxOut.btc) AS btc, DBCORE.BlkTime.unixtime AS unixtime
+                   FROM DBCORE.TxOut
+                   INNER JOIN DBCORE.BlkTx ON DBCORE.TxOut.tx = DBCORE.BlkTx.tx
                    INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk
-                   WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
-                       FROM DBSERVICE.Cluster
-                       WHERE DBSERVICE.Cluster.cluster = ?)
-                   AND DBCORE.TxIn.tx IN (SELECT DBCORE.TxOut.tx
+                   WHERE DBCORE.TxOut.tx IN (SELECT DBCORE.TxOut.tx
                        FROM DBCORE.TxOut
-                       WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
+                       WHERE DBCORE.TxOut.addr IN (SELECT DISTINCT DBSERVICE.Cluster.addr
                            FROM DBSERVICE.Cluster
-                           WHERE DBSERVICE.Cluster.cluster = ?));'''
-        cur.execute(query, (real_id, real_lead_id))
+                           WHERE DBSERVICE.Cluster.cluster = ?))
+                   AND DBCORE.TxOut.tx IN (SELECT DBCORE.TxIn.tx
+                       FROM DBCORE.TxIn
+                       INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+                       WHERE DBCORE.TxOut.addr IN (SELECT DISTINCT DBSERVICE.Cluster.addr
+                           FROM DBSERVICE.Cluster
+                           WHERE DBSERVICE.Cluster.cluster = ?))
+                   GROUP BY DBCORE.TxOut.tx
+                   ORDER BY DBCORE.TxOut.tx ASC;'''
+        cur.execute(query, (real_lead_id, real_id))
         for row in cur.fetchall():
             tx_set.add(row[0])
             from_me_btc = from_me_btc + row[1]
@@ -171,20 +175,7 @@ async def cluster_relations(body: schemas.ClusterRelationsPost):
                 last_timestamp = row[2]
 
         # From lead_id to me
-        query = '''SELECT DBCORE.TxOut.tx AS tx, DBCORE.TxOut.btc AS btc, DBCORE.BlkTime.unixtime AS unixtime
-                   FROM DBCORE.TxOut
-                   INNER JOIN DBCORE.BlkTx ON DBCORE.TxOut.tx = DBCORE.BlkTx.tx
-                   INNER JOIN DBCORE.BlkTime ON DBCORE.BlkTx.blk = DBCORE.BlkTime.blk
-                   WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
-                       FROM DBSERVICE.Cluster
-                       WHERE DBSERVICE.Cluster.cluster = ?)
-                   AND DBCORE.TxOut.tx IN (SELECT DBCORE.TxIn.tx
-                       FROM DBCORE.TxIn
-                       INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx AND DBCORE.TxIn.pn = DBCORE.TxOut.n
-                       WHERE DBCORE.TxOut.addr IN (SELECT DBSERVICE.Cluster.addr
-                           FROM DBSERVICE.Cluster
-                           WHERE DBSERVICE.Cluster.cluster = ?));'''
-        cur.execute(query, (real_lead_id, real_id))
+        cur.execute(query, (real_id, real_lead_id))
         for row in cur.fetchall():
             tx_set.add(row[0])
             to_me_btc = to_me_btc + row[1]
