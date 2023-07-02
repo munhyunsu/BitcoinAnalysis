@@ -2,6 +2,7 @@ import os
 import sqlite3
 from typing import Union, List
 
+import numpy as np
 from fastapi import FastAPI
 from pydantic import BaseModel
 
@@ -119,7 +120,7 @@ async def cluster_relations(body: schemas.ClusterRelationsPost):
     result['Cluster'] = [{'clusterId': real_id,
                           'clusterName': tags[0] if len(tags) > 0 else 'Unknown',
                           'category': 'deposit',
-                          'balance': total_income_btc-total_outcome_btc,
+                          'balance': np.format_float_positional(total_income_btc-total_outcome_btc),
                           'transferCount': total_tx_cnt}]
     # Hard coding
     if result['Cluster'][0]['clusterName'].lower() in ['bithumb', 'upbit', 'coinone', 'korbit']:
@@ -195,8 +196,8 @@ async def cluster_relations(body: schemas.ClusterRelationsPost):
         # add edge
         edges.append({'leadClusterId': real_lead_id,
                       'transferCount': len(tx_set),
-                      'sentTransferAmount': from_me_btc,
-                      'receivedTransferAmount': to_me_btc,
+                      'sentTransferAmount': np.format_float_positional(from_me_btc),
+                      'receivedTransferAmount': np.format_float_positional(to_me_btc),
                       'firstTransferTime': first_timestamp,
                       'lastTrasferTime': last_timestamp})
     result['Edge'] = edges
@@ -350,13 +351,13 @@ async def edge_select(body: schemas.EdgeSelectPost):
             edges.append({'txhashTime': block_timestamp,
                           'txhash': txid,
                           'txhashblock': block_height,
-                          'txhashfee': fee,
+                          'txhashfee': np.format_float_positional(fee),
                           'sentAddress': sent_addresses[0],
                           'sentClusterName': sent_tag,
-                          'sentTransactionAmount': sent_btc,
+                          'sentTransactionAmount': np.format_float_positional(sent_btc),
                           'receivedAddress': received_addresses[0],
                           'receivedClusterName': received_tag,
-                          'receivedTransactionAmount': received_btc})
+                          'receivedTransactionAmount': np.format_float_positional(received_btc)})
     result['Edge'] = edges
 
     return result
@@ -503,10 +504,10 @@ async def cluster_info(body: schemas.ClusterInfoPost):
     result['Cluster'] = {'clusterName': tag,
                          'category': category,
                          'root_address': root_address,
-                         'balance': income_btc-outcome_btc,
-                         'sentTransferAmount': outcome_btc,
-                         'receivedTransferAmount': income_btc,
-                         'transactionFee': fee,
+                         'balance': np.format_float_positional(income_btc-outcome_btc),
+                         'sentTransferAmount': np.format_float_positional(outcome_btc),
+                         'receivedTransferAmount': np.format_float_positional(income_btc),
+                         'transactionFee': np.format_float_positional(fee),
                          'trasferCount': tx_cnt,
                          'sentTransferCount': len(outcome_txes),
                          'receivedTransferCount': len(income_txes),
@@ -566,7 +567,7 @@ async def transfer_info(body: schemas.TransferInfoPost):
         tx_cnt = tx_cnt + 1
         txes.append({'txhashTime': row[1],
                      'txhash': row[0],
-                     'transferAmount': row[2],
+                     'transferAmount': np.format_float_positional(row[2]),
                      'receivedAddress': row[3],
                      'counterpartyClusterId': row[4],
                      'counterpartyClusterName': row[4], # Temporary
@@ -631,7 +632,7 @@ async def detail_transfer(body: schemas.DetailTransferPost):
     for row in cur.fetchall():
         sents.append({'sentAddress': row[0],
                       'sentClusterId': row[1],
-                      'sentTransferAmount': row[2]})
+                      'sentTransferAmount': np.format_float_positional(row[2])})
         sent_btc = sent_btc + row[2]
     # Get outputs
     query = '''SELECT DBINDEX.AddrID.addr AS addr, DBSERVICE.Cluster.cluster AS cluster, DBCORE.TxOut.btc AS btc
@@ -647,12 +648,12 @@ async def detail_transfer(body: schemas.DetailTransferPost):
     for row in cur.fetchall():
         receiveds.append({'receivedAddress': row[0],
                           'receivedClusterId': row[1],
-                          'receivedTransferAmount': row[2]})
+                          'receivedTransferAmount': np.format_float_positional(row[2])})
         received_btc = received_btc + row[2]
     # result
     result['ClusterTransfer'] = [{'txhash': body.transferTxhash,
                                   'txhashTime': block_timestamp,
-                                  'txhashFee': sent_btc-received_btc,
+                                  'txhashFee': np.format_float_positional(sent_btc-received_btc),
                                   'txhashBlock': block_height}]
     result['sentCount'] = len(sents)
     result['sentClusterTransfer'] = sents
