@@ -749,3 +749,282 @@ WHERE DBCORE.TxOut.addr IN (SELECT DBINDEX.AddrID.id
                             WHERE DBINDEX.AddrID.addr IN ('ADDR'));
 
 ```
+
+- ICBC2022
+
+```sql
+.header on
+.mode csv
+.once tx_by_blk.csv
+SELECT DBCORE.BlkTx.blk, COUNT(DBCORE.BlkTx.tx)
+FROM DBCORE.BlkTx
+GROUP BY DBCORE.BlkTx.blk
+ORDER BY DBCORE.BlkTx.blk ASC;
+
+.once txoutaddr_by_blk.csv
+SELECT DBCORE.BlkTx.blk, COUNT(DBCORE.TxOut.addr)
+FROM DBCORE.TxOut
+INNER JOIN DBCORE.BlkTx ON DBCORE.TxOut.tx = DBCORE.BlkTx.tx
+GROUP BY DBCORE.BlkTx.blk
+ORDER BY DBCORE.BlkTx.blk ASC;
+
+.once io_by_blktx.csv
+SELECT DBCORE.BlkTx.blk, TXIC.t, TXIC.c, TXOC.c
+FROM (SELECT DBCORE.TxIn.tx AS t, COUNT(DBCORE.TxIn.n) AS c
+      FROM DBCORE.TxIn
+      GROUP BY DBCORE.TxIn.tx
+      ORDER BY DBCORE.TxIn.tx ASC) AS TXIC
+INNER JOIN (SELECT DBCORE.TxOut.tx AS t, COUNT(DBCORE.TxOut.n) AS c
+            FROM DBCORE.TxOut
+            GROUP BY DBCORE.TxOut.tx
+            ORDER BY DBCORE.TxOut.tx ASC) AS TXOC
+        ON TXIC.t = TXOC.t
+INNER JOIN DBCORE.BlkTx ON TXIC.t = DBCORE.BlkTx.tx
+ORDER BY DBCORE.BlkTx.blk ASC, TXIC.t ASC;
+
+.once daddr_by_blk.csv
+SELECT TC.blk, TC.tc, MAX(DBCORE.TxOut.addr)
+FROM (SELECT DBCORE.BlkTx.blk AS blk, MAX(DBCORE.BlkTx.tx) AS tc
+      FROM DBCORE.BlkTx
+      GROUP BY DBCORE.BlkTx.blk) AS TC
+INNER JOIN DBCORE.BlkTx ON TC.tc = DBCORE.BlkTx.tx
+INNER JOIN DBCORE.TxOut ON DBCORE.BlkTx.tx = DBCORE.TxOut.tx
+GROUP BY DBCORE.BlkTx.tx
+ORDER BY DBCORE.BlkTx.tx ASC;
+
+-- Original
+-- 669565116,b675c78f0a2fc4d7c06d9351d5bb91323e1c198d05dad1b721ad8c6c62e7ffea
+SELECT DBINDEX.BlkID.blkhash AS blockhash, DBINDEX.TxID.txid AS txid, TI.address AS iaddress, TI.btc AS ibtc, DBINDEX.AddrID.addr AS oaddress, DBCORE.TxOut.btc AS obtc
+FROM (SELECT DBCORE.TxIn.tx AS tx, DBCORE.TxOut.addr AS addr, DBINDEX.AddrID.addr AS address, DBCORE.TxOut.btc
+      FROM DBCORE.TxIn
+      INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
+                             AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+      INNER JOIN DBINDEX.AddrID ON DBCORE.TxOut.addr = DBINDEX.AddrID.id) AS TI
+INNER JOIN DBCORE.TxOut ON TI.tx = DBCORE.TxOut.tx
+INNER JOIN DBCORE.BlkTx ON TI.tx = DBCORE.BlkTx.tx
+INNER JOIN DBINDEX.BlkID ON DBCORE.BlkTx.blk = DBINDEX.BlkID.id
+INNER JOIN DBINDEX.TxID ON TI.tx = DBINDEX.TxID.id
+INNER JOIN DBINDEX.AddrID ON DBCORE.TxOut.addr = DBINDEX.AddrID.id
+WHERE TI.tx = 669565116;
+
+SELECT DBINDEX.BlkID.id AS blockid, DBINDEX.BlkID.blkhash AS blockhash, DBINDEX.TxID.id AS tx, DBINDEX.TxID.txid AS txid, TI.addr AS iaddr, TI.address AS iaddress, TI.btc AS ibtc, DBINDEX.AddrID.id AS oaddr, DBINDEX.AddrID.addr AS oaddress, DBCORE.TxOut.btc AS obtc
+FROM (SELECT DBCORE.TxIn.tx AS tx, DBCORE.TxOut.addr AS addr, DBINDEX.AddrID.addr AS address, DBCORE.TxOut.btc
+      FROM DBCORE.TxIn
+      INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
+                             AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+      INNER JOIN DBINDEX.AddrID ON DBCORE.TxOut.addr = DBINDEX.AddrID.id) AS TI
+INNER JOIN DBCORE.TxOut ON TI.tx = DBCORE.TxOut.tx
+INNER JOIN DBCORE.BlkTx ON TI.tx = DBCORE.BlkTx.tx
+INNER JOIN DBINDEX.BlkID ON DBCORE.BlkTx.blk = DBINDEX.BlkID.id
+INNER JOIN DBINDEX.TxID ON TI.tx = DBINDEX.TxID.id
+INNER JOIN DBINDEX.AddrID ON DBCORE.TxOut.addr = DBINDEX.AddrID.id
+WHERE TI.tx = 669565116;
+
+SELECT DBINDEX.BlkID.id AS blockid, DBINDEX.TxID.id AS tx, TI.addr AS iaddr, TI.btc AS ibtc, DBINDEX.AddrID.id AS oaddr, DBCORE.TxOut.btc AS obtc
+FROM (SELECT DBCORE.TxIn.tx AS tx, DBCORE.TxOut.addr AS addr, DBINDEX.AddrID.addr AS address, DBCORE.TxOut.btc
+      FROM DBCORE.TxIn
+      INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
+                             AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+      INNER JOIN DBINDEX.AddrID ON DBCORE.TxOut.addr = DBINDEX.AddrID.id) AS TI
+INNER JOIN DBCORE.TxOut ON TI.tx = DBCORE.TxOut.tx
+INNER JOIN DBCORE.BlkTx ON TI.tx = DBCORE.BlkTx.tx
+INNER JOIN DBINDEX.BlkID ON DBCORE.BlkTx.blk = DBINDEX.BlkID.id
+INNER JOIN DBINDEX.TxID ON TI.tx = DBINDEX.TxID.id
+INNER JOIN DBINDEX.AddrID ON DBCORE.TxOut.addr = DBINDEX.AddrID.id
+WHERE TI.tx = 669565116;
+
+
+SELECT *
+FROM DBCORE.TxOut
+WHERE DBCORE.TxOut.tx = 669565116;
+
+
+ 
+SELECT DBCORE.BlkTx.blk, COUNT(DBCORE.TxIn.n), COUNT(DBCORE.TxOut.n)
+FROM DBCORE.TxOut
+INNER JOIN DBCORE.BlkTx ON DBCORE.TxOut.tx = DBCORE.BlkTx.tx
+GROUP BY DBCORE.BlkTx.blk
+ORDER BY DBCORE.BlkTx.blk ASC;
+
+```
+
+
+```sql
+SELECT COUNT(DISTINCT DBCORE.TxOut.addr)
+FROM DBCORE.TxOut
+INNER JOIN DBCORE.BlkTx ON DBCORE.TxOut.tx = DBCORE.BlkTx.tx
+WHERE DBCORE.BlkTx.blk <= 710000;
+
+
+.once daddr_by_blk.csv
+SELECT DBCORE.BlkTx.blk, COUNT(DISTINCT DBCORE.TxOut.addr)
+FROM DBCORE.TxOut
+INNER JOIN DBCORE.BlkTx ON (DBCORE.BlkTx.blk >= 0 AND DBCORE.BlkTx.blk <= 712895);
+
+.once daddr_by_blk.csv
+SELECT TC.blk, TC.tc, MAX(DBCORE.TxOut.addr)
+FROM (SELECT DBCORE.BlkTx.blk AS blk, MAX(DBCORE.BlkTx.tx) AS tc
+      FROM DBCORE.BlkTx
+      GROUP BY DBCORE.BlkTx.blk) AS TC
+INNER JOIN DBCORE.BlkTx ON TC.tc = DBCORE.BlkTx.tx
+INNER JOIN DBCORE.TxOut ON DBCORE.BlkTx.tx = DBCORE.TxOut.tx
+GROUP BY DBCORE.BlkTx.tx
+ORDER BY DBCORE.BlkTx.tx ASC;
+```
+
+- 2021. 12. 10.
+
+```sql
+--- Single output from hot walllet (DISTINCT address)
+--- Input: Hot wallet, Output: User wallet
+SELECT DISTINCT DBINDEX.AddrID.addr
+FROM DBCORE.TxIn
+INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.ptx AND DBCORE.TxOut.n = DBCORE.TxIn.pn
+INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBCORE.TxOut.addr
+WHERE DBCORE.TxIn.tx IN (
+    SELECT DBCORE.TxIn.tx
+    FROM DBCORE.TxIn
+    INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.tx
+    WHERE DBCORE.TxIn.tx IN (
+        SELECT DBCORE.TxOut.tx
+        FROM DBCORE.TxOut
+        WHERE DBCORE.TxOut.addr = (
+            SELECT DBINDEX.AddrID.id
+            FROM DBINDEX.AddrID
+            WHERE DBINDEX.AddrID.addr = '3Ld9ZzTLJ7iX6smhJY6AmqeZnr843pBw3c'
+        )
+    )
+    GROUP BY DBCORE.TxIn.tx
+    HAVING COUNT(DBCORE.TxIn.n) > 1 AND COUNT(DISTINCT DBCORE.TxOut.addr) = 1
+)
+LIMIT 10;
+
+--- Single output from user wallet (DISTINCT address)
+--- Input: User wallet/Hot wallet, Output: Hot wallet (estimated)
+SELECT DISTINCT DBINDEX.AddrID.addr
+FROM DBCORE.TxOut
+INNER JOIN DBINDEX.AddrID ON DBINDEX.AddrID.id = DBCORE.TxOut.addr
+WHERE DBCORE.TxOut.tx IN (
+    SELECT DBCORE.TxIn.tx
+    FROM DBCORE.TxIn
+    INNER JOIN DBCORE.TxOut ON DBCORE.TxOut.tx = DBCORE.TxIn.tx
+    WHERE DBCORE.TxIn.tx IN (
+        SELECT DBCORE.TxIn.tx
+        FROM DBCORE.TxIn
+        INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
+                               AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+        WHERE DBCORE.TxOut.addr = (
+            SELECT DBINDEX.AddrID.id
+            FROM DBINDEX.AddrID
+            WHERE DBINDEX.AddrID.addr = '3KAoW72jkHrh7mk2iekhKBRWyBuqYky1Mo'
+        )
+    )
+    GROUP BY DBCORE.TxIn.tx
+    HAVING COUNT(DBCORE.TxIn.n) > 1 AND COUNT(DISTINCT DBCORE.TxOut.addr) = 1
+);
+
+--- Peeling chain
+--- Input: Address, Output: Peeling chain transaction
+SELECT DBCORE.TxIn.tx, DBINDEX.TxID.txid
+FROM DBCORE.TxIn
+INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
+                       AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+INNER JOIN DBINDEX.TxID ON DBCORE.TxIn.tx = DBINDEX.TxID.id
+WHERE DBCORE.TxIn.tx IN (
+      SELECT DBCORE.TxOut.tx
+      FROM DBCORE.TxOut
+      WHERE DBCORE.TxOut.addr = (
+          SELECT DBINDEX.AddrID.id
+          FROM DBINDEX.AddrID
+          WHERE DBINDEX.AddrID.addr = '3B1sd9LfVGbLq6664mk5k98dRNWQ2au3Yg'))
+  AND DBCORE.TxIn.tx IN (
+      SELECT DBCORE.TxOut.tx
+      FROM DBCORE.TxOut
+      INNER JOIN DBINDEX.TxID ON DBCORE.TxOut.tx = DBINDEX.TxID.id
+      WHERE DBCORE.TxOut.tx IN (
+          SELECT DBCORE.TxOut.tx
+          FROM DBCORE.TxOut
+          WHERE DBCORE.TxOut.addr = (
+              SELECT DBINDEX.AddrID.id
+              FROM DBINDEX.AddrID
+              WHERE DBINDEX.AddrID.addr = '3B1sd9LfVGbLq6664mk5k98dRNWQ2au3Yg'))
+      GROUP BY DBCORE.TxOut.tx
+      HAVING COUNT(DBCORE.TxOut.n) = 2)
+GROUP BY DBCORE.TxIn.tx
+HAVING COUNT(DBCORE.TxIn.n) = 1;
+
+
+---
+SELECT DBCORE.TxIn.tx, DBINDEX.TxID.txid
+FROM DBCORE.TxIn
+INNER JOIN DBCORE.TxOut ON DBCORE.TxIn.ptx = DBCORE.TxOut.tx
+                       AND DBCORE.TxIn.pn = DBCORE.TxOut.n
+INNER JOIN DBINDEX.TxID ON DBCORE.TxIn.tx = DBINDEX.TxID.id
+WHERE DBCORE.TxIn.tx IN (
+      SELECT DBCORE.TxOut.tx
+      FROM DBCORE.TxOut
+      WHERE DBCORE.TxOut.addr = (
+          SELECT DBINDEX.AddrID.id
+          FROM DBINDEX.AddrID
+          WHERE DBINDEX.AddrID.addr = '3B1sd9LfVGbLq6664mk5k98dRNWQ2au3Yg'))
+  AND DBCORE.TxIn.tx IN (
+      SELECT DBCORE.TxOut.tx
+      FROM DBCORE.TxOut
+      INNER JOIN DBINDEX.TxID ON DBCORE.TxOut.tx = DBINDEX.TxID.id
+      WHERE DBCORE.TxOut.tx IN (
+          SELECT DBCORE.TxOut.tx
+          FROM DBCORE.TxOut
+          WHERE DBCORE.TxOut.addr = (
+              SELECT DBINDEX.AddrID.id
+              FROM DBINDEX.AddrID
+              WHERE DBINDEX.AddrID.addr = '3B1sd9LfVGbLq6664mk5k98dRNWQ2au3Yg'))
+      GROUP BY DBCORE.TxOut.tx
+      HAVING COUNT(DBCORE.TxOut.n) = 2)
+GROUP BY DBCORE.TxIn.tx
+HAVING COUNT(DBCORE.TxIn.n) = 1;
+
+
+
+
+
+
+SELECT DBCORE.TxOut.tx, DBINDEX.TxID.txid, COUNT(DBCORE.TxOut.n)
+FROM DBCORE.TxOut
+INNER JOIN DBINDEX.TxID ON DBCORE.TxOut.tx = DBINDEX.TxID.id
+WHERE DBCORE.TxOut.tx IN (
+      SELECT DBCORE.TxOut.tx
+      FROM DBCORE.TxOut
+      WHERE DBCORE.TxOut.addr = (
+          SELECT DBINDEX.AddrID.id
+          FROM DBINDEX.AddrID
+          WHERE DBINDEX.AddrID.addr = '3B1sd9LfVGbLq6664mk5k98dRNWQ2au3Yg')
+  )
+GROUP BY DBCORE.TxOut.tx
+HAVING COUNT(DBCORE.TxOut.n) = 2;
+```
+
+```sql
+SELECT DBCORE.TxOut.tx
+FROM DBCORE.TxOut
+INNER JOIN DBINDEX.TxID ON DBCORE.TxOut.tx = DBINDEX.TxID.id
+WHERE DBCORE.TxOut.addr = (
+    SELECT DBINDEX.AddrID.id
+    FROM DBINDEX.AddrID
+    WHERE DBINDEX.AddrID.addr = '3B1sd9LfVGbLq6664mk5k98dRNWQ2au3Yg')
+```
+
+
+--- TNSM 2022.09.
+
+```sql
+-- Clustering distribution
+.header on
+.mode csv
+.once cluster_groupby.csv
+SELECT DBSERVICE.Cluster.addr, COUNT(DBSERVICE.Cluster.addr)
+FROM DBSERVICE.Cluster
+GROUP BY DBSERVICE.Cluster.addr
+ORDER BY DBSERVICE.Cluster.addr;
+
+
+```
